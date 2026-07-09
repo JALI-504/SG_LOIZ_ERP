@@ -24,3 +24,7 @@ Route::get('/clientes', function () {
 Route::get('/servicios', function () {
     return view('servicios.index');
 })->name('servicios.index');
+
+Route::get('/insumos', function () {
+    return view('insumos.index');
+})->name('insumos.index');

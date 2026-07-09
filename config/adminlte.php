@@ -301,6 +301,11 @@ return [
     'menu' => [
         // Navbar items:
         [
+            'text' => 'Insumos',
+            'url'  => 'insumos',
+            'icon' => 'fas fa-boxes',
+        ],
+        [
             'text' => 'Servicios',
             'url'  => 'servicios',
             'icon' => 'fas fa-print',

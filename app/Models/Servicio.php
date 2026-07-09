@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Insumo;
 
 class Servicio extends Model
 {
@@ -24,6 +25,13 @@ class Servicio extends Model
         'descripcion',
         'activo',
     ];
+
+    public function insumos()
+    {
+        return $this->belongsToMany(Insumo::class, 'servicio_insumos')
+            ->withPivot('cantidad_por_unidad')
+            ->withTimestamps();
+    }
 
     public function getUtilidadUnitaraAttribute()
     {
