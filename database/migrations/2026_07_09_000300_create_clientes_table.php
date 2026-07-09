@@ -24,6 +24,7 @@ class CreateClientesTable extends Migration
 
             $table->string('codigo_pais', 5)->default('+504');
             $table->string('telefono', 8);
+            $table->string('correo', 150)->nullable();
 
             $table->string('dni', 13)->unique();
             $table->string('rtn', 14)->nullable();
