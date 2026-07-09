@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\LoteInsumo;
+use App\Models\MovimientoInventarioLote;
 
 class InsumoIndex extends Component
 {
@@ -301,7 +303,7 @@ class InsumoIndex extends Component
         $this->validate([
             'movimiento_insumo_id' => 'required|exists:insumos,id',
             'movimiento_tipo' => 'required',
-            'movimiento_cantidad' => 'required|numeric|min:0.0001',
+            'movimiento_cantidad' => 'required|numeric|min:0.01',
             'movimiento_costo_unitario' => 'required|numeric|min:0',
             'movimiento_referencia' => 'nullable|max:100',
             'movimiento_observacion' => 'nullable|max:500',
@@ -310,34 +312,57 @@ class InsumoIndex extends Component
         $insumo = Insumo::findOrFail($this->movimiento_insumo_id);
 
         $cantidad = (float) $this->movimiento_cantidad;
+        $costoUnitario = (float) $this->movimiento_costo_unitario;
 
-        if ($this->esSalida($this->movimiento_tipo) && $cantidad > $insumo->stock_actual) {
-            $this->addError('movimiento_cantidad', 'No hay suficiente stock para realizar esta salida.');
+        if ($this->esEntrada($this->movimiento_tipo) && $costoUnitario <= 0) {
+            $this->addError('movimiento_costo_unitario', 'Para una entrada debe ingresar un costo unitario mayor que cero.');
             return;
         }
 
-        DB::transaction(function () use ($insumo, $cantidad) {
-            $this->calcularTotalMovimiento();
+        if ($this->esSalida($this->movimiento_tipo)) {
+            $stockDisponiblePeps = LoteInsumo::where('insumo_id', $insumo->id)
+                ->where('activo', true)
+                ->where('cantidad_disponible', '>', 0)
+                ->sum('cantidad_disponible');
 
-            MovimientoInventario::create([
-                'insumo_id' => $this->movimiento_insumo_id,
-                'tipo_movimiento' => $this->movimiento_tipo,
-                'cantidad' => $cantidad,
-                'costo_unitario' => $this->movimiento_costo_unitario,
-                'total' => $this->movimiento_total,
-                'referencia' => $this->movimiento_referencia,
-                'observacion' => $this->movimiento_observacion,
-            ]);
+            if ($cantidad > $stockDisponiblePeps) {
+                $this->addError('movimiento_cantidad', 'No hay suficiente stock disponible en lotes PEPS.');
+                return;
+            }
+        }
 
+        DB::transaction(function () use ($insumo, $cantidad, $costoUnitario) {
             if ($this->esEntrada($this->movimiento_tipo)) {
-                $insumo->stock_actual = $insumo->stock_actual + $cantidad;
+                $this->registrarEntradaLote(
+                    $insumo,
+                    $this->movimiento_tipo,
+                    $cantidad,
+                    $costoUnitario,
+                    $this->movimiento_referencia,
+                    $this->movimiento_observacion
+                );
             }
 
             if ($this->esSalida($this->movimiento_tipo)) {
-                $insumo->stock_actual = $insumo->stock_actual - $cantidad;
-            }
+                $movimiento = MovimientoInventario::create([
+                    'insumo_id' => $insumo->id,
+                    'tipo_movimiento' => $this->movimiento_tipo,
+                    'cantidad' => $cantidad,
+                    'costo_unitario' => 0,
+                    'total' => 0,
+                    'referencia' => $this->movimiento_referencia,
+                    'observacion' => $this->movimiento_observacion,
+                ]);
 
-            $insumo->save();
+                $totalSalida = $this->descontarPorPeps($insumo, $cantidad, $movimiento->id);
+
+                $movimiento->update([
+                    'costo_unitario' => round($totalSalida / $cantidad, 4),
+                    'total' => round($totalSalida, 2),
+                ]);
+
+                $this->actualizarCostoActualPeps($insumo);
+            }
         });
 
         $this->resetMovimiento();
@@ -345,6 +370,152 @@ class InsumoIndex extends Component
         $this->dispatchBrowserEvent('close-movimiento-modal');
 
         session()->flash('message', 'Movimiento de inventario registrado correctamente.');
+    }
+
+    private function registrarEntradaLote($insumo, $tipoMovimiento, $cantidad, $costoUnitario, $referencia = null, $observacion = null)
+    {
+        $total = round($cantidad * $costoUnitario, 2);
+
+        $movimiento = MovimientoInventario::create([
+            'insumo_id' => $insumo->id,
+            'tipo_movimiento' => $tipoMovimiento,
+            'cantidad' => $cantidad,
+            'costo_unitario' => $costoUnitario,
+            'total' => $total,
+            'referencia' => $referencia,
+            'observacion' => $observacion,
+        ]);
+
+        $lote = LoteInsumo::create([
+            'insumo_id' => $insumo->id,
+            'codigo_lote' => 'LOT-' . $insumo->id . '-' . now()->format('YmdHis'),
+            'fecha_entrada' => now()->format('Y-m-d'),
+            'cantidad_inicial' => $cantidad,
+            'cantidad_disponible' => $cantidad,
+            'costo_unitario' => $costoUnitario,
+            'total' => $total,
+            'referencia' => $referencia,
+            'observacion' => $observacion,
+            'activo' => true,
+        ]);
+
+        MovimientoInventarioLote::create([
+            'movimiento_inventario_id' => $movimiento->id,
+            'lote_insumo_id' => $lote->id,
+            'cantidad' => $cantidad,
+            'costo_unitario' => $costoUnitario,
+            'total' => $total,
+        ]);
+
+        $this->actualizarCostoActualPeps($insumo);
+    }
+
+    private function descontarPorPeps($insumo, $cantidadSalida, $movimientoId)
+    {
+        $cantidadPendiente = $cantidadSalida;
+        $totalSalida = 0;
+
+        $lotes = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($lotes as $lote) {
+            if ($cantidadPendiente <= 0) {
+                break;
+            }
+
+            $cantidadDisponible = (float) $lote->cantidad_disponible;
+            $cantidadTomada = min($cantidadPendiente, $cantidadDisponible);
+
+            $totalDetalle = round($cantidadTomada * (float) $lote->costo_unitario, 2);
+
+            MovimientoInventarioLote::create([
+                'movimiento_inventario_id' => $movimientoId,
+                'lote_insumo_id' => $lote->id,
+                'cantidad' => $cantidadTomada,
+                'costo_unitario' => $lote->costo_unitario,
+                'total' => $totalDetalle,
+            ]);
+
+            $nuevaCantidadDisponible = round($cantidadDisponible - $cantidadTomada, 2);
+
+            $lote->update([
+                'cantidad_disponible' => $nuevaCantidadDisponible,
+                'activo' => $nuevaCantidadDisponible > 0,
+            ]);
+
+            $totalSalida += $totalDetalle;
+            $cantidadPendiente = round($cantidadPendiente - $cantidadTomada, 2);
+        }
+
+        return round($totalSalida, 2);
+    }
+
+    private function actualizarCostoActualPeps($insumo)
+    {
+        $stockActual = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->sum('cantidad_disponible');
+
+        $proximoLote = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->first();
+
+        $costoBase = $proximoLote
+            ? (float) $proximoLote->costo_unitario
+            : (float) $insumo->costo_unitario_base;
+
+        $merma = (float) $insumo->porcentaje_merma;
+
+        if ($merma > 0 && $merma < 100) {
+            $costoReal = $costoBase / (1 - ($merma / 100));
+        } else {
+            $costoReal = $costoBase;
+        }
+
+        $insumo->update([
+            'stock_actual' => round($stockActual, 2),
+            'costo_unitario_base' => round($costoBase, 4),
+            'costo_unitario_real' => round($costoReal, 4),
+        ]);
+    }
+    
+    private function actualizarCostoPromedio($insumo, $cantidadEntrada, $costoUnitarioEntrada)
+    {
+        $stockAnterior = (float) $insumo->stock_actual;
+        $costoAnterior = (float) $insumo->costo_unitario_base;
+
+        $valorAnterior = $stockAnterior * $costoAnterior;
+        $valorEntrada = $cantidadEntrada * $costoUnitarioEntrada;
+
+        $nuevoStock = $stockAnterior + $cantidadEntrada;
+
+        if ($nuevoStock > 0) {
+            $nuevoCostoBase = ($valorAnterior + $valorEntrada) / $nuevoStock;
+        } else {
+            $nuevoCostoBase = 0;
+        }
+
+        $merma = (float) $insumo->porcentaje_merma;
+
+        if ($merma > 0 && $merma < 100) {
+            $nuevoCostoReal = $nuevoCostoBase / (1 - ($merma / 100));
+        } else {
+            $nuevoCostoReal = $nuevoCostoBase;
+        }
+
+        $insumo->update([
+            'stock_actual' => round($nuevoStock, 2),
+            'costo_unitario_base' => round($nuevoCostoBase, 4),
+            'costo_unitario_real' => round($nuevoCostoReal, 4),
+        ]);
     }
 
     private function esEntrada($tipo)

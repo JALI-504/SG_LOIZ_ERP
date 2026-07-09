@@ -438,7 +438,7 @@
                         <div class="form-group col-md-6">
                             <label>Costo unitario</label>
                             <input type="number"
-                                   step="0.01"
+                                   step="0.0001"
                                    min="0"
                                    class="form-control"
                                    wire:model="movimiento_costo_unitario">

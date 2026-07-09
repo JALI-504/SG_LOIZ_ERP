@@ -62,4 +62,16 @@ class Insumo extends Model
             $this->costo_unitario_real = $this->costo_unitario_base;
         }
     }
+    
+    public function lotes()
+    {
+        return $this->hasMany(LoteInsumo::class);
+    }
+
+    public function lotesDisponibles()
+    {
+        return $this->hasMany(LoteInsumo::class)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0);
+    }
 }
