@@ -17,6 +17,8 @@ class ClienteIndex extends Component
     public $search = '';
     public $perPage = 10;
 
+    public $filtroEstado = 'activos';
+
     public $cliente_id;
 
     public $primer_nombre;
@@ -83,6 +85,11 @@ class ClienteIndex extends Component
     }
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFiltroEstado()
     {
         $this->resetPage();
     }
@@ -284,6 +291,12 @@ class ClienteIndex extends Component
                     ->orWhere('dni', 'like', '%' . $this->search . '%')
                     ->orWhere('rtn', 'like', '%' . $this->search . '%')
                     ->orWhere('correo', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->filtroEstado === 'activos', function ($query) {
+                $query->where('activo', true);
+            })
+            ->when($this->filtroEstado === 'inactivos', function ($query) {
+                $query->where('activo', false);
             })
             ->orderBy('id', 'desc')
             ->paginate($this->perPage);

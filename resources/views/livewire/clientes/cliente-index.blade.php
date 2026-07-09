@@ -21,11 +21,19 @@
 
         <div class="card-body">
             <div class="row mb-3">
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <input type="text"
-                           class="form-control"
-                           placeholder="Buscar por nombre, apellido, teléfono, DNI, RTN o correo..."
-                           wire:model.debounce.500ms="search">
+                        class="form-control"
+                        placeholder="Buscar por nombre, apellido, teléfono, DNI, RTN o correo..."
+                        wire:model.debounce.500ms="search">
+                </div>
+
+                <div class="col-md-3">
+                    <select class="form-control" wire:model="filtroEstado">
+                        <option value="activos">Solo activos</option>
+                        <option value="inactivos">Solo inactivos</option>
+                        <option value="todos">Todos</option>
+                    </select>
                 </div>
 
                 <div class="col-md-2">
