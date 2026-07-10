@@ -198,15 +198,23 @@
                                     @endif
                                 </td>
 
-                                <td>
+                                <<td>
                                     <button class="btn btn-warning btn-xs"
                                             wire:click="edit({{ $producto->id }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
+
                                     @if ($producto->usa_receta)
                                         <a href="{{ route('productos.insumos', $producto->id) }}"
                                         class="btn btn-info btn-xs">
                                             Insumos
+                                        </a>
+                                    @endif
+
+                                    @if ($producto->maneja_inventario)
+                                        <a href="{{ route('productos.movimientos', $producto->id) }}"
+                                        class="btn btn-primary btn-xs">
+                                            Movimientos
                                         </a>
                                     @endif
 
@@ -419,21 +427,31 @@
                         <div class="alert alert-secondary">
                             Este producto no maneja inventario. El stock se guardará en cero.
                         </div>
+                    @else
+                        <div class="alert alert-info">
+                            El stock actual no se edita manualmente. Para aumentarlo o disminuirlo use el botón
+                            <strong>Movimientos</strong> en la lista de productos.
+                        </div>
                     @endif
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Stock actual</label>
                             <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   class="form-control"
-                                   wire:model.defer="stock_actual"
-                                   {{ !$maneja_inventario ? 'readonly' : '' }}>
+                                step="0.01"
+                                min="0"
+                                class="form-control"
+                                wire:model.defer="stock_actual"
+                                readonly>
 
                             @error('stock_actual')
                                 <small class="text-danger">{{ $message }}</small>
                             @enderror
+
+                            <small class="text-muted">
+                                El stock actual se modifica únicamente desde movimientos de productos.
+                            </small>
+
                         </div>
 
                         <div class="form-group col-md-6">

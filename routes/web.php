@@ -33,6 +33,8 @@ Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $serv
     return view('servicios.insumos', compact('servicio'));
 })->name('servicios.insumos');
 
+// Rutas Catalogos
+
 Route::get('/catalogos', function () {
     return view('catalogos.index');
 })->name('catalogos.index');
@@ -41,6 +43,8 @@ Route::get('/catalogos/tipos', function () {
     return view('catalogos.tipos');
 })->name('catalogos.tipos');
 
+// Rutas de productos
+
 Route::get('/productos', function () {
     return view('productos.index');
 })->name('productos.index');
@@ -48,3 +52,7 @@ Route::get('/productos', function () {
 Route::get('/productos/{producto}/insumos', function (\App\Models\Producto $producto) {
     return view('productos.insumos', compact('producto'));
 })->name('productos.insumos');
+
+Route::get('/productos/{producto}/movimientos', function (\App\Models\Producto $producto) {
+    return view('productos.movimientos', compact('producto'));
+})->name('productos.movimientos');

@@ -177,7 +177,7 @@ class ProductoIndex extends Component
             'largo_cm' => $this->largo_cm,
             'espesor_mm' => $this->espesor_mm,
 
-            'stock_actual' => $this->stock_actual,
+            // 'stock_actual' => $this->stock_actual,
             'stock_minimo' => $this->stock_minimo,
 
             'costo_compra' => $this->costo_compra,
@@ -255,7 +255,7 @@ class ProductoIndex extends Component
             'largo_cm' => $this->largo_cm,
             'espesor_mm' => $this->espesor_mm,
 
-            'stock_actual' => $this->stock_actual,
+            'stock_actual' => 0,
             'stock_minimo' => $this->stock_minimo,
 
             'costo_compra' => $this->costo_compra,

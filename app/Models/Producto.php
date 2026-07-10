@@ -62,4 +62,21 @@ class Producto extends Model
     {
         return $this->maneja_inventario && $this->stock_actual <= $this->stock_minimo;
     }
+
+    public function movimientos()
+    {
+        return $this->hasMany(MovimientoProducto::class);
+    }
+
+    public function lotes()
+    {
+        return $this->hasMany(LoteProducto::class);
+    }
+
+    public function lotesDisponibles()
+    {
+        return $this->hasMany(LoteProducto::class)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0);
+    }
 }
