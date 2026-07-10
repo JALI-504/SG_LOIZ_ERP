@@ -19,21 +19,7 @@ class CreateInsumosTable extends Migration
             $table->string('codigo', 30)->unique();
             $table->string('nombre', 150);
 
-            $table->enum('categoria', [
-                'Papel',
-                'Tinta',
-                'Toner',
-                'Madera',
-                'Acrilico',
-                'Cuero',
-                'Metal',
-                'Herraje',
-                'Empaque',
-                'Adhesivo',
-                'Laser',
-                'Herramienta',
-                'Otro'
-            ])->default('Otro');
+            $table->string('categoria', 50)->default('Otro');
 
             // Forma en que compras el insumo
             $table->string('unidad_compra', 50);

@@ -19,48 +19,11 @@ class CreateServiciosTable extends Migration
             $table->string('codigo', 20)->unique();
             $table->string('nombre', 150);
 
-            $table->enum('tipo_servicio', [
-                'Impresion',
-                'Fotocopia',
-                'Escaneo',
-                'Plastificado',
-                'Laminado',
-                'Diseno',
-                'Otro'
-            ])->default('Impresion');
-
-            $table->enum('tamano_papel', [
-                'Carta',
-                'Oficio',
-                'Legal',
-                'A4',
-                'Tabloide',
-                'Personalizado',
-                'fotografia 4x6"',
-                'fotografia carta',
-                'No aplica'
-            ])->default('Carta');
-
-            $table->enum('color', [
-                'Blanco y negro',
-                'Color',
-                'No aplica'
-            ])->default('Blanco y negro');
-
-            $table->enum('caras', [
-                'Una cara',
-                'Doble cara',
-                'No aplica'
-            ])->default('Una cara');
-
-            $table->enum('unidad_cobro', [
-                'Pagina',
-                'Hoja',
-                'Unidad',
-                'Minuto',
-                'Hora',
-                'Trabajo'
-            ])->default('Pagina');
+            $table->string('tipo_servicio', 50)->default('Impresion');
+            $table->string('tamano_papel', 50)->default('Carta');
+            $table->string('color', 50)->default('Blanco y negro');
+            $table->string('caras', 50)->default('Una cara');
+            $table->string('unidad_cobro', 50)->default('Pagina');
 
             $table->decimal('costo_unitario', 10, 2)->default(0);
             $table->decimal('precio_unitario', 10, 2)->default(0);

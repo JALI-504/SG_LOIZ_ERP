@@ -74,4 +74,16 @@ class Insumo extends Model
             ->where('activo', true)
             ->where('cantidad_disponible', '>', 0);
     }
+
+    public function productos()
+    {
+        return $this->belongsToMany(Producto::class, 'producto_insumos')
+            ->withPivot('cantidad_por_unidad')
+            ->withTimestamps();
+    }
+
+    public function productoRecetas()
+    {
+        return $this->hasMany(ProductoInsumo::class);
+    }
 }
