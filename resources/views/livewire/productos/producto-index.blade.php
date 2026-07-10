@@ -203,6 +203,12 @@
                                             wire:click="edit({{ $producto->id }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    @if ($producto->usa_receta)
+                                        <a href="{{ route('productos.insumos', $producto->id) }}"
+                                        class="btn btn-info btn-xs">
+                                            Insumos
+                                        </a>
+                                    @endif
 
                                     <button class="btn btn-{{ $producto->activo ? 'secondary' : 'success' }} btn-xs"
                                             wire:click="cambiarEstado({{ $producto->id }})">

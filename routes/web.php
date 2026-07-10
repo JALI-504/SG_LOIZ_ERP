@@ -44,3 +44,7 @@ Route::get('/catalogos/tipos', function () {
 Route::get('/productos', function () {
     return view('productos.index');
 })->name('productos.index');
+
+Route::get('/productos/{producto}/insumos', function (\App\Models\Producto $producto) {
+    return view('productos.insumos', compact('producto'));
+})->name('productos.insumos');
