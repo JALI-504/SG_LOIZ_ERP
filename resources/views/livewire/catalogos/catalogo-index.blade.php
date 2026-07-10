@@ -63,7 +63,6 @@
                             <th>Tipo</th>
                             <th>Nombre</th>
                             <th>Descripción</th>
-                            <th>Orden</th>
                             <th>Estado</th>
                             <th width="170">Acciones</th>
                         </tr>
@@ -85,8 +84,6 @@
                                 <td>
                                     {{ $catalogo->descripcion ?? 'Sin descripción' }}
                                 </td>
-
-                                <td>{{ $catalogo->orden }}</td>
 
                                 <td>
                                     @if ($catalogo->activo)
@@ -114,7 +111,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="5" class="text-center">
                                     No hay catálogos registrados.
                                 </td>
                             </tr>
@@ -169,18 +166,6 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label>Orden</label>
-                            <input type="number"
-                                   min="0"
-                                   class="form-control"
-                                   wire:model.defer="orden">
-
-                            @error('orden')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
                         <div class="form-group col-md-4">
                             <label>Estado</label>
                             <select class="form-control" wire:model.defer="activo">

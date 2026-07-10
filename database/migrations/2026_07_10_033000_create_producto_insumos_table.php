@@ -19,7 +19,6 @@ class CreateProductoInsumosTable extends Migration
             $table->unsignedBigInteger('producto_id');
             $table->unsignedBigInteger('insumo_id');
 
-            // Cantidad del insumo que consume 1 producto terminado
             $table->decimal('cantidad_por_unidad', 12, 2)->default(1);
 
             $table->timestamps();

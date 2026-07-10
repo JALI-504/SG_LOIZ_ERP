@@ -40,3 +40,7 @@ Route::get('/catalogos', function () {
 Route::get('/catalogos/tipos', function () {
     return view('catalogos.tipos');
 })->name('catalogos.tipos');
+
+Route::get('/productos', function () {
+    return view('productos.index');
+})->name('productos.index');

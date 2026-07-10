@@ -97,14 +97,20 @@ class CatalogoSeeder extends Seeder
                 'Reconocimiento',
                 'Adorno',
                 'Souvenir',
+                'Accesorio',
+                'Papeleria',
+                'Tecnologia',
+                'Taza',
+                'Camisa',
                 'Personalizado',
                 'Otro',
             ],
 
             'tipo_producto' => [
-                'Laser',
-                'Impresion',
+                'Fabricado',
+                'Reventa',
                 'Mixto',
+                'Personalizado',
                 'Otro',
             ],
 

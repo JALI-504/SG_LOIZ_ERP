@@ -13,13 +13,19 @@ class Producto extends Model
 
     protected $fillable = [
         'codigo',
+        'codigo_barra',
         'nombre',
         'categoria',
         'tipo_producto',
         'unidad_venta',
+        'maneja_inventario',
+        'usa_receta',
         'ancho_cm',
         'largo_cm',
         'espesor_mm',
+        'stock_actual',
+        'stock_minimo',
+        'costo_compra',
         'costo_unitario',
         'precio_venta',
         'descripcion',
@@ -50,5 +56,10 @@ class Producto extends Model
         }
 
         return (($this->precio_venta - $this->costo_unitario) / $this->precio_venta) * 100;
+    }
+
+    public function getStockBajoAttribute()
+    {
+        return $this->maneja_inventario && $this->stock_actual <= $this->stock_minimo;
     }
 }

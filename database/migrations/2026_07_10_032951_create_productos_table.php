@@ -17,39 +17,30 @@ class CreateProductosTable extends Migration
             $table->id();
 
             $table->string('codigo', 30)->unique();
+            $table->string('codigo_barra', 100)->nullable()->unique();
+
             $table->string('nombre', 150);
 
-            $table->enum('categoria', [
-                'Llavero',
-                'Placa',
-                'Dije',
-                'Reconocimiento',
-                'Adorno',
-                'Souvenir',
-                'Personalizado',
-                'Otro'
-            ])->default('Personalizado');
+            // Estos valores vendrán desde catálogos
+            $table->string('categoria', 50)->default('Personalizado');
+            $table->string('tipo_producto', 50)->default('Fabricado');
+            $table->string('unidad_venta', 50)->default('Unidad');
 
-            $table->enum('tipo_producto', [
-                'Laser',
-                'Impresion',
-                'Mixto',
-                'Otro'
-            ])->default('Laser');
-
-            $table->enum('unidad_venta', [
-                'Unidad',
-                'Paquete',
-                'Docena',
-                'Trabajo'
-            ])->default('Unidad');
+            // Control del comportamiento del producto
+            $table->boolean('maneja_inventario')->default(true);
+            $table->boolean('usa_receta')->default(false);
 
             // Medidas opcionales del producto terminado
             $table->decimal('ancho_cm', 10, 2)->nullable();
             $table->decimal('largo_cm', 10, 2)->nullable();
             $table->decimal('espesor_mm', 10, 2)->nullable();
 
+            // Inventario de producto terminado
+            $table->decimal('stock_actual', 12, 2)->default(0);
+            $table->decimal('stock_minimo', 12, 2)->default(0);
+
             // Costos y precio
+            $table->decimal('costo_compra', 12, 2)->default(0);
             $table->decimal('costo_unitario', 12, 2)->default(0);
             $table->decimal('precio_venta', 12, 2)->default(0);
 

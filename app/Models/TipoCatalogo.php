@@ -23,7 +23,6 @@ class TipoCatalogo extends Model
     public static function opciones()
     {
         return self::where('activo', true)
-            ->orderBy('orden')
             ->orderBy('nombre')
             ->get();
     }

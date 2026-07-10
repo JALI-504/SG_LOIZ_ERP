@@ -23,7 +23,6 @@ class Catalogo extends Model
     {
         return self::where('tipo', $tipo)
             ->where('activo', true)
-            ->orderBy('orden')
             ->orderBy('nombre')
             ->get();
     }

@@ -54,7 +54,6 @@
                             <th>Código</th>
                             <th>Nombre visible</th>
                             <th>Descripción</th>
-                            <th>Orden</th>
                             <th>Opciones</th>
                             <th>Estado</th>
                             <th width="170">Acciones</th>
@@ -74,10 +73,6 @@
 
                                 <td>
                                     {{ $tipoCatalogo->descripcion ?? 'Sin descripción' }}
-                                </td>
-
-                                <td>
-                                    {{ $tipoCatalogo->orden }}
                                 </td>
 
                                 <td>
@@ -112,7 +107,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="6" class="text-center">
                                     No hay tipos de catálogo registrados.
                                 </td>
                             </tr>
@@ -185,19 +180,6 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label>Orden</label>
-
-                            <input type="number"
-                                   min="0"
-                                   class="form-control"
-                                   wire:model.defer="orden">
-
-                            @error('orden')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
-
                         <div class="form-group col-md-4">
                             <label>Estado</label>
 
