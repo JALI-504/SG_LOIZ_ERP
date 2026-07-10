@@ -352,12 +352,24 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Stock actual <span class="text-danger">*</span></label>
-                            <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   class="form-control"
-                                   wire:model.defer="stock_actual">
+                            <<input type="number"
+                                step="0.01"
+                                min="0"
+                                class="form-control"
+                                wire:model.defer="stock_actual"
+                                {{ $insumo_id ? 'readonly' : '' }}>
+                                
                             @error('stock_actual') <small class="text-danger">{{ $message }}</small> @enderror
+
+                            @if ($insumo_id)
+                                    <small class="text-muted">
+                                        El stock se modifica únicamente mediante movimientos de inventario.
+                                    </small>
+                            @else
+                                <small class="text-muted">
+                                    Este será el inventario inicial y creará el primer lote PEPS.
+                                </small>
+                            @endif
                         </div>
 
                         <div class="form-group col-md-6">

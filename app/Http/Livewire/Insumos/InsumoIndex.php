@@ -165,30 +165,47 @@ class InsumoIndex extends Component
 
         $this->validate();
 
-        Insumo::create([
-            'codigo' => strtoupper(trim($this->codigo)),
-            'nombre' => trim($this->nombre),
-            'categoria' => $this->categoria,
+        DB::transaction(function () {
+            $stockInicial = (float) $this->stock_actual;
 
-            'unidad_compra' => trim($this->unidad_compra),
-            'cantidad_por_compra' => $this->cantidad_por_compra,
-            'unidad_consumo' => trim($this->unidad_consumo),
+            $insumo = Insumo::create([
+                'codigo' => strtoupper(trim($this->codigo)),
+                'nombre' => trim($this->nombre),
+                'categoria' => $this->categoria,
 
-            'ancho_cm' => $this->ancho_cm,
-            'largo_cm' => $this->largo_cm,
-            'espesor_mm' => $this->espesor_mm,
+                'unidad_compra' => trim($this->unidad_compra),
+                'cantidad_por_compra' => $this->cantidad_por_compra,
+                'unidad_consumo' => trim($this->unidad_consumo),
 
-            'costo_compra' => $this->costo_compra,
-            'costo_unitario_base' => $this->costo_unitario_base,
-            'porcentaje_merma' => $this->porcentaje_merma,
-            'costo_unitario_real' => $this->costo_unitario_real,
+                'ancho_cm' => $this->ancho_cm,
+                'largo_cm' => $this->largo_cm,
+                'espesor_mm' => $this->espesor_mm,
 
-            'stock_actual' => $this->stock_actual,
-            'stock_minimo' => $this->stock_minimo,
+                'costo_compra' => $this->costo_compra,
+                'costo_unitario_base' => $this->costo_unitario_base,
+                'porcentaje_merma' => $this->porcentaje_merma,
+                'costo_unitario_real' => $this->costo_unitario_real,
 
-            'descripcion' => $this->descripcion,
-            'activo' => $this->activo,
-        ]);
+                // En PEPS el stock se controla por lotes.
+                // Por eso primero se crea en 0.
+                'stock_actual' => 0,
+                'stock_minimo' => $this->stock_minimo,
+
+                'descripcion' => $this->descripcion,
+                'activo' => $this->activo,
+            ]);
+
+            if ($stockInicial > 0) {
+                $this->registrarEntradaLote(
+                    $insumo,
+                    'Entrada ajuste',
+                    $stockInicial,
+                    $this->costo_unitario_base,
+                    'Inventario inicial',
+                    'Registro inicial del insumo'
+                );
+            }
+        });
 
         $this->resetInput();
 
@@ -257,7 +274,8 @@ class InsumoIndex extends Component
             'porcentaje_merma' => $this->porcentaje_merma,
             'costo_unitario_real' => $this->costo_unitario_real,
 
-            'stock_actual' => $this->stock_actual,
+            // No actualizamos stock_actual aquí.
+            // El stock se modifica por movimientos PEPS.
             'stock_minimo' => $this->stock_minimo,
 
             'descripcion' => $this->descripcion,

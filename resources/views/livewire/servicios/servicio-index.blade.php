@@ -128,11 +128,16 @@
                                     @endif
                                 </td>
 
-                                <td>
+                               <td>
                                     <button class="btn btn-warning btn-xs"
                                             wire:click="edit({{ $servicio->id }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
+
+                                    <a href="{{ route('servicios.insumos', $servicio->id) }}"
+                                    class="btn btn-info btn-xs">
+                                        Insumos
+                                    </a>
 
                                     <button class="btn btn-{{ $servicio->activo ? 'secondary' : 'success' }} btn-xs"
                                             wire:click="cambiarEstado({{ $servicio->id }})">

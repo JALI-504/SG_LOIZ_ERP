@@ -28,3 +28,7 @@ Route::get('/servicios', function () {
 Route::get('/insumos', function () {
     return view('insumos.index');
 })->name('insumos.index');
+
+Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $servicio) {
+    return view('servicios.insumos', compact('servicio'));
+})->name('servicios.insumos');
