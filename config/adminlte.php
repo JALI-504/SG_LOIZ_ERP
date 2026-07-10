@@ -316,6 +316,11 @@ return [
             'icon' => 'fas fa-receipt',
         ],
         [
+            'text' => 'Reporte de ventas',
+            'url'  => 'reportes/ventas',
+            'icon' => 'fas fa-chart-line',
+        ],
+        [
             'text' => 'Tipos de catálogo',
             'url'  => 'catalogos/tipos',
             'icon' => 'fas fa-layer-group',

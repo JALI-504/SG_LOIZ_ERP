@@ -138,7 +138,7 @@
                             <th>Subtotal</th>
                             <th>Descuento</th>
                             <th>Total</th>
-                            <th width="150">Acción</th>
+                            <th width="180">Acción</th>
                         </tr>
                     </thead>
 
@@ -221,6 +221,14 @@
                                     class="btn btn-success btn-xs">
                                         Recibo
                                     </a>
+
+                                    @if ($venta->estado !== 'Anulada')
+                                        <button class="btn btn-danger btn-xs"
+                                                onclick="confirm('¿Seguro que desea anular esta venta? Se restaurará el inventario.') || event.stopImmediatePropagation()"
+                                                wire:click="anularVenta({{ $venta->id }})">
+                                            Anular
+                                        </button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

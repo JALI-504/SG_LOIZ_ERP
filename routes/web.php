@@ -91,3 +91,8 @@ Route::get('/ventas/{venta}/recibo', function (\App\Models\Venta $venta) {
 Route::get('/configuracion/empresa', function () {
     return view('configuracion.empresa');
 })->name('configuracion.empresa');
+
+// Reportes
+Route::get('/reportes/ventas', function () {
+    return view('reportes.ventas');
+})->name('reportes.ventas');
