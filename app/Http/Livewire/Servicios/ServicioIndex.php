@@ -6,6 +6,7 @@ use App\Models\Servicio;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Catalogo;
 
 class ServicioIndex extends Component
 {
@@ -34,48 +35,26 @@ class ServicioIndex extends Component
 
     public $modalTitle = 'Nuevo servicio';
 
-    public $tiposServicio = [
-        'Impresion',
-        'Fotocopia',
-        'Escaneo',
-        'Plastificado',
-        'Laminado',
-        'Diseno',
-        'Otro',
-    ];
+    public $tiposServicio = [];
+    public $tamanosPapel = [];
+    public $colores = [];
+    public $carasOpciones = [];
+    public $unidadesCobro = [];
 
-    public $tamanosPapel = [
-        'Carta',
-        'Oficio',
-        'Legal',
-        'A4',
-        'Tabloide',
-        'Personalizado',
-        'Fotografia 4x6"',
-        'Fotografia carta',
-        'No aplica',
-    ];
+    public function mount()
+    {
+        $this->tiposServicio = Catalogo::opciones('tipo_servicio')->pluck('nombre')->toArray();
+        $this->tamanosPapel = Catalogo::opciones('tamano_papel')->pluck('nombre')->toArray();
+        $this->colores = Catalogo::opciones('color_servicio')->pluck('nombre')->toArray();
+        $this->carasOpciones = Catalogo::opciones('caras_servicio')->pluck('nombre')->toArray();
+        $this->unidadesCobro = Catalogo::opciones('unidad_cobro')->pluck('nombre')->toArray();
 
-    public $colores = [
-        'Blanco y negro',
-        'Color',
-        'No aplica',
-    ];
-
-    public $carasOpciones = [
-        'Una cara',
-        'Doble cara',
-        'No aplica',
-    ];
-
-    public $unidadesCobro = [
-        'Pagina',
-        'Hoja',
-        'Unidad',
-        'Minuto',
-        'Hora',
-        'Trabajo',
-    ];
+        $this->tipo_servicio = $this->tiposServicio[0] ?? 'Impresion';
+        $this->tamano_papel = $this->tamanosPapel[0] ?? 'Carta';
+        $this->color = $this->colores[0] ?? 'Blanco y negro';
+        $this->caras = $this->carasOpciones[0] ?? 'Una cara';
+        $this->unidad_cobro = $this->unidadesCobro[0] ?? 'Pagina';
+    }
 
     protected function rules()
     {
@@ -86,12 +65,11 @@ class ServicioIndex extends Component
                 Rule::unique('servicios', 'codigo')->ignore($this->servicio_id),
             ],
             'nombre' => 'required|min:3|max:150',
-            'tipo_servicio' => 'required|in:Impresion,Fotocopia,Escaneo,Plastificado,Laminado,Diseno,Otro',
-            'tamano_papel' => 'required|in:Carta,Oficio,Legal,A4,Tabloide,Personalizado, Fotografia 4x6", 
-            Fotografia carta,No aplica',
-            'color' => 'required|in:Blanco y negro,Color,No aplica',
-            'caras' => 'required|in:Una cara,Doble cara,No aplica',
-            'unidad_cobro' => 'required|in:Pagina,Hoja,Unidad,Minuto,Hora,Trabajo',
+            'tipo_servicio' => 'required|max:50',
+            'tamano_papel' => 'required|max:50',
+            'color' => 'required|max:50',
+            'caras' => 'required|max:50',
+            'unidad_cobro' => 'required|max:50',
             'costo_unitario' => 'required|numeric|min:0',
             'precio_unitario' => 'required|numeric|min:0',
             'descripcion' => 'nullable|max:500',
@@ -226,11 +204,11 @@ class ServicioIndex extends Component
 
         $this->codigo = '';
         $this->nombre = '';
-        $this->tipo_servicio = 'Impresion';
-        $this->tamano_papel = 'Carta';
-        $this->color = 'Blanco y negro';
-        $this->caras = 'Una cara';
-        $this->unidad_cobro = 'Pagina';
+        $this->tipo_servicio = $this->tiposServicio[0] ?? 'Impresion';
+        $this->tamano_papel = $this->tamanosPapel[0] ?? 'Carta';
+        $this->color = $this->colores[0] ?? 'Blanco y negro';
+        $this->caras = $this->carasOpciones[0] ?? 'Una cara';
+        $this->unidad_cobro = $this->unidadesCobro[0] ?? 'Pagina';
         $this->costo_unitario = 0;
         $this->precio_unitario = 0;
         $this->descripcion = '';

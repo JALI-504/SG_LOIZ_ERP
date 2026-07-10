@@ -15,8 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             HondurasUbicacionSeeder::class,
+            TipoCatalogoSeeder::class,
             CatalogoSeeder::class,
-
         ]);
     }
 }

@@ -301,6 +301,16 @@ return [
     'menu' => [
         // Navbar items:
         [
+            'text' => 'Catálogos',
+            'url'  => 'catalogos',
+            'icon' => 'fas fa-list',
+        ],
+        [
+            'text' => 'Tipos de catálogo',
+            'url'  => 'catalogos/tipos',
+            'icon' => 'fas fa-layer-group',
+        ],
+        [
             'text' => 'Insumos',
             'url'  => 'insumos',
             'icon' => 'fas fa-boxes',

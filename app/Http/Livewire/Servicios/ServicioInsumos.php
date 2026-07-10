@@ -7,6 +7,7 @@ use App\Models\Servicio;
 use App\Models\ServicioInsumo;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use App\Models\Catalogo;
 
 class ServicioInsumos extends Component
 {
@@ -22,26 +23,14 @@ class ServicioInsumos extends Component
 
     public $modalTitle = 'Agregar insumo al servicio';
 
-    public $categorias = [
-        'Papel',
-        'Tinta',
-        'Toner',
-        'Madera',
-        'Acrilico',
-        'Cuero',
-        'Metal',
-        'Herraje',
-        'Empaque',
-        'Adhesivo',
-        'Laser',
-        'Herramienta',
-        'Otro',
-    ];
+    public $categorias = [];
 
     public function mount($servicioId)
     {
         $this->servicio = Servicio::findOrFail($servicioId);
         $this->servicio_id = $this->servicio->id;
+
+        $this->categorias = Catalogo::opciones('categoria_insumo')->pluck('nombre')->toArray();
     }
 
     protected function rules()

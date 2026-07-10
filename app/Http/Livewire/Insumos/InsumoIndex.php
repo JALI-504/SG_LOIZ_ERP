@@ -10,6 +10,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\LoteInsumo;
 use App\Models\MovimientoInventarioLote;
+use App\Models\Catalogo;
 
 class InsumoIndex extends Component
 {
@@ -57,21 +58,9 @@ class InsumoIndex extends Component
     public $movimiento_referencia;
     public $movimiento_observacion;
 
-    public $categorias = [
-        'Papel',
-        'Tinta',
-        'Toner',
-        'Madera',
-        'Acrilico',
-        'Cuero',
-        'Metal',
-        'Herraje',
-        'Empaque',
-        'Adhesivo',
-        'Laser',
-        'Herramienta',
-        'Otro',
-    ];
+    public $categorias = [];
+    public $unidadesCompra = [];
+    public $unidadesConsumo = [];
 
     public $tiposMovimiento = [
         'Entrada compra',
@@ -83,6 +72,17 @@ class InsumoIndex extends Component
         'Devolucion',
     ];
 
+    public function mount()
+    {
+        $this->categorias = Catalogo::opciones('categoria_insumo')->pluck('nombre')->toArray();
+        $this->unidadesCompra = Catalogo::opciones('unidad_compra')->pluck('nombre')->toArray();
+        $this->unidadesConsumo = Catalogo::opciones('unidad_consumo')->pluck('nombre')->toArray();
+
+        $this->categoria = $this->categorias[0] ?? 'Papel';
+        $this->unidad_compra = $this->unidadesCompra[0] ?? 'Resma';
+        $this->unidad_consumo = $this->unidadesConsumo[0] ?? 'Hoja';
+    }
+
     protected function rules()
     {
         return [
@@ -92,7 +92,7 @@ class InsumoIndex extends Component
                 Rule::unique('insumos', 'codigo')->ignore($this->insumo_id),
             ],
             'nombre' => 'required|min:3|max:150',
-            'categoria' => 'required',
+            'categoria' => 'required|max:50',
             'unidad_compra' => 'required|max:50',
             'cantidad_por_compra' => 'required|numeric|min:0.0001',
             'unidad_consumo' => 'required|max:50',
@@ -588,11 +588,11 @@ class InsumoIndex extends Component
 
         $this->codigo = '';
         $this->nombre = '';
-        $this->categoria = 'Papel';
+        $this->categoria = $this->categorias[0] ?? 'Papel';
 
-        $this->unidad_compra = 'Resma';
+        $this->unidad_compra = $this->unidadesCompra[0] ?? 'Resma';
         $this->cantidad_por_compra = 0;
-        $this->unidad_consumo = 'Hoja';
+        $this->unidad_consumo = $this->unidadesConsumo[0] ?? 'Hoja';
 
         $this->ancho_cm = null;
         $this->largo_cm = null;

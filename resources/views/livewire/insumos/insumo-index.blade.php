@@ -234,10 +234,11 @@
                     <div class="form-row">
                         <div class="form-group col-md-3">
                             <label>Unidad de compra <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Resma, Pliego, Paquete..."
-                                   wire:model.defer="unidad_compra">
+                            <select class="form-control" wire:model.defer="unidad_compra">
+                                @foreach ($unidadesCompra as $unidad)
+                                    <option value="{{ $unidad }}">{{ $unidad }}</option>
+                                @endforeach
+                            </select>
                             @error('unidad_compra') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 
@@ -253,10 +254,11 @@
 
                         <div class="form-group col-md-3">
                             <label>Unidad de consumo <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Hoja, cm2, unidad, ml..."
-                                   wire:model.defer="unidad_consumo">
+                            <select class="form-control" wire:model.defer="unidad_consumo">
+                                @foreach ($unidadesConsumo as $unidad)
+                                    <option value="{{ $unidad }}">{{ $unidad }}</option>
+                                @endforeach
+                            </select>
                             @error('unidad_consumo') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 

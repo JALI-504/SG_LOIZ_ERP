@@ -32,3 +32,11 @@ Route::get('/insumos', function () {
 Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $servicio) {
     return view('servicios.insumos', compact('servicio'));
 })->name('servicios.insumos');
+
+Route::get('/catalogos', function () {
+    return view('catalogos.index');
+})->name('catalogos.index');
+
+Route::get('/catalogos/tipos', function () {
+    return view('catalogos.tipos');
+})->name('catalogos.tipos');
