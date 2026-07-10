@@ -17,6 +17,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Dashboard
+
+Route::get('/', function () {
+    return redirect()->route('dashboard.index');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard.index');
+})->name('dashboard.index');
+
+
 // Clientes
 
 Route::get('/clientes', function () {

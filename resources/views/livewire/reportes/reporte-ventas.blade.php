@@ -1,4 +1,19 @@
-<div>
+<div class="reporte-ventas-print">
+    {{-- Exportar --}}
+    <div class="mb-3 no-print">
+    <button type="button"
+            class="btn btn-secondary"
+            onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir reporte
+    </button>
+
+    <button type="button"
+        class="btn btn-success"
+        wire:click="exportarExcel">
+    <i class="fas fa-file-excel"></i> Exportar Excel
+</button>
+</div>
+
     {{-- Filtros --}}
     <div class="card">
         <div class="card-header">

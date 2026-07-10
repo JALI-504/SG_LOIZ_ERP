@@ -301,6 +301,11 @@ return [
     'menu' => [
         // Navbar items:
         [
+            'text' => 'Dashboard',
+            'url'  => 'dashboard',
+            'icon' => 'fas fa-tachometer-alt',
+        ],
+        [
             'text' => 'Productos',
             'url'  => 'productos',
             'icon' => 'fas fa-cube',
