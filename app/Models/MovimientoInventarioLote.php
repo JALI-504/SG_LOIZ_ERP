@@ -29,8 +29,4 @@ class MovimientoInventarioLote extends Model
         return $this->belongsTo(LoteInsumo::class, 'lote_insumo_id');
     }
 
-    public function detalleLotes()
-    {
-        return $this->hasMany(MovimientoInventarioLote::class, 'movimiento_inventario_id');
-    }
 }

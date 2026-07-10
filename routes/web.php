@@ -17,17 +17,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Clientes
+
 Route::get('/clientes', function () {
     return view('clientes.index');
 })->name('clientes.index');
 
+// Servicios
+
 Route::get('/servicios', function () {
     return view('servicios.index');
 })->name('servicios.index');
-
-Route::get('/insumos', function () {
-    return view('insumos.index');
-})->name('insumos.index');
 
 Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $servicio) {
     return view('servicios.insumos', compact('servicio'));
@@ -56,3 +56,13 @@ Route::get('/productos/{producto}/insumos', function (\App\Models\Producto $prod
 Route::get('/productos/{producto}/movimientos', function (\App\Models\Producto $producto) {
     return view('productos.movimientos', compact('producto'));
 })->name('productos.movimientos');
+
+// Insumos
+
+Route::get('/insumos', function () {
+    return view('insumos.index');
+})->name('insumos.index');
+
+Route::get('/insumos/{insumo}/movimientos', function (\App\Models\Insumo $insumo) {
+    return view('insumos.movimientos', compact('insumo'));
+})->name('insumos.movimientos');

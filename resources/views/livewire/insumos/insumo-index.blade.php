@@ -155,6 +155,11 @@
                                             wire:click="abrirMovimiento({{ $insumo->id }})">
                                         Movimiento
                                     </button>
+                                    
+                                    <a href="{{ route('insumos.movimientos', $insumo->id) }}"
+                                    class="btn btn-primary btn-xs">
+                                        Historial
+                                    </a>
 
                                     <button class="btn btn-{{ $insumo->activo ? 'secondary' : 'success' }} btn-xs"
                                             wire:click="cambiarEstado({{ $insumo->id }})">
@@ -354,7 +359,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Stock actual <span class="text-danger">*</span></label>
-                            <<input type="number"
+                            <input type="number"
                                 step="0.01"
                                 min="0"
                                 class="form-control"
@@ -423,7 +428,9 @@
                 <div class="modal-body">
 
                     <div class="alert alert-info">
-                        Use este formulario para registrar entradas de compra, salidas por daño, pruebas o ajustes de inventario.
+                        Use este formulario para registrar entradas de compra, ajustes, salidas por daño,
+                        pruebas o movimientos de inventario. Las salidas por producción se generan
+                        automáticamente al producir productos con receta.
                     </div>
 
                     <div class="form-row">

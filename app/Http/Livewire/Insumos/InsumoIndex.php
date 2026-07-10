@@ -66,6 +66,7 @@ class InsumoIndex extends Component
         'Entrada compra',
         'Entrada ajuste',
         'Salida venta',
+        'Salida produccion',
         'Salida daño',
         'Salida prueba',
         'Salida ajuste',
@@ -545,10 +546,11 @@ class InsumoIndex extends Component
         ]);
     }
 
-    private function esSalida($tipo)
+    private function esSalida($tipoMovimiento)
     {
-        return in_array($tipo, [
+        return in_array($tipoMovimiento, [
             'Salida venta',
+            'Salida produccion',
             'Salida daño',
             'Salida prueba',
             'Salida ajuste',
