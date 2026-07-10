@@ -306,6 +306,16 @@ return [
             'icon' => 'fas fa-cube',
         ],
         [
+            'text' => 'Ventas / POS',
+            'url'  => 'ventas',
+            'icon' => 'fas fa-cash-register',
+        ],
+        [
+            'text' => 'Historial ventas',
+            'url'  => 'ventas/historial',
+            'icon' => 'fas fa-receipt',
+        ],
+        [
             'text' => 'Tipos de catálogo',
             'url'  => 'catalogos/tipos',
             'icon' => 'fas fa-layer-group',
@@ -329,6 +339,11 @@ return [
             'text' => 'Clientes',
             'url'  => 'clientes',
             'icon' => 'fas fa-users',
+        ],
+        [
+            'text' => 'Configuración negocio',
+            'url'  => 'configuracion/empresa',
+            'icon' => 'fas fa-store',
         ],
         [
             'type' => 'navbar-search',

@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
             HondurasUbicacionSeeder::class,
             TipoCatalogoSeeder::class,
             CatalogoSeeder::class,
+            CatalogoVentasSeeder::class,
+            ProductosPruebaSeeder::class,
+            InsumosRecetasPruebaSeeder::class,
+            ConfiguracionEmpresaSeeder::class,
         ]);
     }
 }

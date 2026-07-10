@@ -66,3 +66,28 @@ Route::get('/insumos', function () {
 Route::get('/insumos/{insumo}/movimientos', function (\App\Models\Insumo $insumo) {
     return view('insumos.movimientos', compact('insumo'));
 })->name('insumos.movimientos');
+
+// Ventas
+Route::get('/ventas', function () {
+    return view('ventas.index');
+})->name('ventas.index');
+
+Route::get('/ventas/historial', function () {
+    return view('ventas.historial');
+})->name('ventas.historial');
+
+// Recibo Venta:
+
+Route::get('/ventas/{venta}/recibo', function (\App\Models\Venta $venta) {
+    $venta->load(['cliente', 'detalles']);
+
+    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+    return view('ventas.recibo', compact('venta', 'configuracion'));
+})->name('ventas.recibo');
+
+// Configuracion
+
+Route::get('/configuracion/empresa', function () {
+    return view('configuracion.empresa');
+})->name('configuracion.empresa');

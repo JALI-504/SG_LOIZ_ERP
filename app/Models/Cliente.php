@@ -89,4 +89,9 @@ class Cliente extends Model
     {
         $this->attributes['rtn'] = $value ? preg_replace('/\D/', '', $value) : null;
     }
+
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class);
+    }
 }
