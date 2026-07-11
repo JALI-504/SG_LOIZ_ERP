@@ -321,6 +321,11 @@ return [
             'icon' => 'fas fa-receipt',
         ],
         [
+            'text' => 'Cuentas por cobrar',
+            'url'  => 'ventas/cuentas-por-cobrar',
+            'icon' => 'fas fa-hand-holding-usd',
+        ],
+        [
             'text' => 'Reporte de ventas',
             'url'  => 'reportes/ventas',
             'icon' => 'fas fa-chart-line',

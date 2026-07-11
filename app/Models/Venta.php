@@ -24,6 +24,8 @@ class Venta extends Model
         'total',
         'estado',
         'observacion',
+        'monto_pagado',
+        'saldo_pendiente',
     ];
 
     protected static function booted()
@@ -90,5 +92,20 @@ class Venta extends Model
     public function getEsAnuladaAttribute()
     {
         return $this->estado === 'Anulada';
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(PagoVenta::class);
+    }
+
+    public function getEstaPagadaAttribute()
+    {
+        return $this->saldo_pendiente <= 0 && $this->estado !== 'Anulada';
+    }
+
+    public function getEstaPendienteAttribute()
+    {
+        return $this->saldo_pendiente > 0 && $this->estado !== 'Anulada';
     }
 }

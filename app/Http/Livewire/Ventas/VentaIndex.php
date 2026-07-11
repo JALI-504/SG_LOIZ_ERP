@@ -15,6 +15,7 @@ use App\Models\Producto;
 use App\Models\Servicio;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\PagoVenta;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -29,6 +30,9 @@ class VentaIndex extends Component
     public $metodo_pago = 'Efectivo';
     public $estado = 'Pagada';
     public $observacion;
+
+    public $monto_inicial = 0;
+    public $referencia_pago_inicial;
 
     public $metodosPago = [];
     public $estadosVenta = [];
@@ -262,6 +266,8 @@ class VentaIndex extends Component
             'metodo_pago' => 'required|max:50',
             'estado' => 'required|max:30',
             'descuento_general' => 'nullable|numeric|min:0',
+            'monto_inicial' => 'nullable|numeric|min:0',
+            'referencia_pago_inicial' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
         ]);
 
@@ -274,16 +280,50 @@ class VentaIndex extends Component
             DB::transaction(function () {
                 $this->validarDisponibilidadCarrito();
 
+                $montoInicial = (float) $this->monto_inicial;
+
+                if ($montoInicial < 0) {
+                    $montoInicial = 0;
+                }
+
+                if ($montoInicial > $this->total) {
+                    $montoInicial = $this->total;
+                }
+
+                if ($this->estado === 'Pagada') {
+                    $montoPagado = $this->total;
+                    $saldoPendiente = 0;
+                    $estadoFinal = 'Pagada';
+                } else {
+                    $montoPagado = $montoInicial;
+                    $saldoPendiente = $this->total - $montoInicial;
+                    $estadoFinal = $saldoPendiente <= 0 ? 'Pagada' : 'Pendiente';
+                }
+
                 $venta = Venta::create([
                     'cliente_id' => $this->cliente_id ?: null,
                     'metodo_pago' => $this->metodo_pago,
-                    'estado' => $this->estado,
+                    'estado' => $estadoFinal,
                     'subtotal' => $this->subtotal,
                     'descuento' => $this->descuento_total,
                     'impuesto' => $this->impuesto,
                     'total' => $this->total,
+                    'monto_pagado' => $montoPagado,
+                    'saldo_pendiente' => $saldoPendiente,
                     'observacion' => $this->observacion,
                 ]);
+
+                if ($montoPagado > 0) {
+                    PagoVenta::create([
+                        'venta_id' => $venta->id,
+                        'monto' => $montoPagado,
+                        'metodo_pago' => $this->metodo_pago,
+                        'referencia' => $this->referencia_pago_inicial,
+                        'observacion' => $estadoFinal === 'Pagada'
+                            ? 'Pago completo registrado al momento de la venta.'
+                            : 'Abono inicial registrado al momento de la venta.',
+                    ]);
+                }
 
                 foreach ($this->carrito as $item) {
                     $costoUnitarioReal = 0;
@@ -564,6 +604,8 @@ class VentaIndex extends Component
         $this->metodo_pago = $this->metodosPago[0] ?? 'Efectivo';
         $this->estado = 'Pagada';
         $this->observacion = null;
+        $this->monto_inicial = 0;
+        $this->referencia_pago_inicial = null;
 
         $this->limpiarCarrito();
     }

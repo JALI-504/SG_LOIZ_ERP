@@ -138,6 +138,8 @@
                             <th>Subtotal</th>
                             <th>Descuento</th>
                             <th>Total</th>
+                            <th>Pagado</th>
+                            <th>Saldo</th>
                             <th width="180">Acción</th>
                         </tr>
                     </thead>
@@ -207,6 +209,22 @@
                                 </td>
 
                                 <td>
+                                    L {{ number_format($venta->monto_pagado, 2) }}
+                                </td>
+
+                                <td>
+                                    @if ($venta->saldo_pendiente > 0)
+                                        <strong class="text-danger">
+                                            L {{ number_format($venta->saldo_pendiente, 2) }}
+                                        </strong>
+                                    @else
+                                        <strong class="text-success">
+                                            L 0.00
+                                        </strong>
+                                    @endif
+                                </td>
+
+                                <td>
                                     <button class="btn btn-primary btn-xs"
                                             wire:click="verDetalle({{ $venta->id }})">
                                         @if ($ventaSeleccionadaId == $venta->id)
@@ -233,7 +251,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">
+                                <td colspan="11" class="text-center">
                                     No hay ventas registradas con los filtros seleccionados.
                                 </td>
                             </tr>
@@ -363,7 +381,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center">
+                                    <td colspan="11" class="text-center">
                                         Esta venta no tiene detalle registrado.
                                     </td>
                                 </tr>
@@ -371,6 +389,54 @@
                         </tbody>
                     </table>
                 </div>
+
+                <hr>
+                @if ($ventaSeleccionada->pagos->count() > 0)
+    <div class="mt-4">
+        <h5>Abonos registrados</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Método</th>
+                        <th>Referencia</th>
+                        <th>Observación</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($ventaSeleccionada->pagos as $pago)
+                                        <tr>
+                                            <td>
+                                                {{ $pago->fecha }}
+                                                {{ $pago->hora }}
+                                            </td>
+
+                                            <td>
+                                                <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                            </td>
+
+                                            <td>
+                                                {{ $pago->metodo_pago }}
+                                            </td>
+
+                                            <td>
+                                                {{ $pago->referencia ?? 'Sin referencia' }}
+                                            </td>
+
+                                            <td>
+                                                {{ $pago->observacion ?? 'Sin observación' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
 
                 <hr>
 
@@ -389,6 +455,18 @@
                         <div class="d-flex justify-content-between">
                             <span>Impuesto:</span>
                             <strong>L {{ number_format($ventaSeleccionada->impuesto, 2) }}</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <span>Pagado:</span>
+                            <strong>L {{ number_format($ventaSeleccionada->monto_pagado, 2) }}</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <span>Saldo pendiente:</span>
+                            <strong class="{{ $ventaSeleccionada->saldo_pendiente > 0 ? 'text-danger' : 'text-success' }}">
+                                L {{ number_format($ventaSeleccionada->saldo_pendiente, 2) }}
+                            </strong>
                         </div>
 
                         <div class="d-flex justify-content-between mt-2">

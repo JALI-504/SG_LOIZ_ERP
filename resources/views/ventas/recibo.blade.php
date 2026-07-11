@@ -376,6 +376,26 @@
                 </td>
             </tr>
 
+            <tr>
+                <td>
+                    Pagado:
+                </td>
+
+                <td class="text-right">
+                    L {{ number_format($venta->monto_pagado, 2) }}
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    Saldo pendiente:
+                </td>
+
+                <td class="text-right">
+                    L {{ number_format($venta->saldo_pendiente, 2) }}
+                </td>
+            </tr>
+
             <tr class="total-final">
                 <td>
                     Total:

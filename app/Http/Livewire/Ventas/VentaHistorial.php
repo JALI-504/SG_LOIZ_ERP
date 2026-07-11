@@ -294,7 +294,7 @@ class VentaHistorial extends Component
         $ventaSeleccionada = null;
 
         if ($this->ventaSeleccionadaId) {
-            $ventaSeleccionada = Venta::with(['cliente', 'detalles'])
+            $ventaSeleccionada = Venta::with(['cliente', 'detalles', 'pagos'])
                 ->find($this->ventaSeleccionadaId);
         }
 

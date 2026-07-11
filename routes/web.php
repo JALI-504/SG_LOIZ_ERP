@@ -87,15 +87,28 @@ Route::get('/ventas/historial', function () {
     return view('ventas.historial');
 })->name('ventas.historial');
 
+Route::get('/ventas/cuentas-por-cobrar', function () {
+    return view('ventas.cuentas-por-cobrar');
+})->name('ventas.cuentas-por-cobrar');
+
+Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
+    $pago->load(['venta.cliente']);
+
+    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+    return view('ventas.recibo-abono', compact('pago', 'configuracion'));
+})->name('ventas.pagos.recibo');
+
 // Recibo Venta:
 
 Route::get('/ventas/{venta}/recibo', function (\App\Models\Venta $venta) {
-    $venta->load(['cliente', 'detalles']);
+    $venta->load(['cliente', 'detalles', 'pagos']);
 
     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
     return view('ventas.recibo', compact('venta', 'configuracion'));
 })->name('ventas.recibo');
+
 
 // Configuracion
 

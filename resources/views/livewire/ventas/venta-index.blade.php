@@ -270,13 +270,50 @@
 
                         <div class="form-group col-md-6">
                             <label>Estado</label>
-                            <select class="form-control" wire:model.defer="estado">
-                                @foreach ($estadosVenta as $estadoOpcion)
+                            <select class="form-control" wire:model="estado">                                @foreach ($estadosVenta as $estadoOpcion)
                                     @if ($estadoOpcion !== 'Anulada')
                                         <option value="{{ $estadoOpcion }}">{{ $estadoOpcion }}</option>
                                     @endif
                                 @endforeach
                             </select>
+
+                            @if ($estado === 'Pendiente')
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Abono inicial</label>
+                                        <input type="number"
+                                            step="0.01"
+                                            min="0"
+                                            class="form-control"
+                                            wire:model.lazy="monto_inicial">
+
+                                        @error('monto_inicial')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+
+                                        <small class="text-muted">
+                                            Si el cliente deja un anticipo, escríbalo aquí.
+                                        </small>
+                                    </div>
+
+                                    <div class="form-group col-md-6">
+                                        <label>Referencia del pago inicial</label>
+                                        <input type="text"
+                                            class="form-control"
+                                            placeholder="Ej: transferencia, efectivo, nota..."
+                                            wire:model.defer="referencia_pago_inicial">
+
+                                        @error('referencia_pago_inicial')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <strong>Saldo estimado:</strong>
+                                    L {{ number_format(max($total - (float) $monto_inicial, 0), 2) }}
+                                </div>
+                            @endif
 
                             @error('estado')
                                 <small class="text-danger">{{ $message }}</small>
