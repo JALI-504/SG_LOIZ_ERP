@@ -84,4 +84,9 @@ class Compra extends Model
     {
         return $this->saldo_pendiente <= 0 && $this->estado !== 'Anulada';
     }
+
+    public function pagos()
+    {
+        return $this->hasMany(PagoCompra::class);
+    }
 }

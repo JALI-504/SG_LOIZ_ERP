@@ -366,6 +366,11 @@ return [
             'icon' => 'fas fa-shopping-cart',
         ],
         [
+            'text' => 'Cuentas por pagar',
+            'url'  => 'compras/cuentas-por-pagar',
+            'icon' => 'fas fa-file-invoice-dollar',
+        ],
+        [
             'text' => 'Gastos',
             'url'  => 'gastos',
             'icon' => 'fas fa-money-bill-wave',

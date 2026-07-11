@@ -202,6 +202,66 @@
                                 @endforelse
                             </tbody>
                         </table>
+
+                        @if ($compra->pagos->count() > 0)
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Pagos registrados</h3>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover table-sm">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Monto</th>
+                                                    <th>Método</th>
+                                                    <th>Referencia</th>
+                                                    <th>Observación</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                @foreach ($compra->pagos as $pago)
+                                                    <tr>
+                                                        <td>
+                                                            {{ $pago->fecha }}
+                                                            {{ $pago->hora }}
+                                                        </td>
+
+                                                        <td>
+                                                            <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                                        </td>
+
+                                                        <td>
+                                                            {{ $pago->metodo_pago }}
+                                                        </td>
+
+                                                        <td>
+                                                            {{ $pago->referencia ?? 'Sin referencia' }}
+                                                        </td>
+
+                                                        <td>
+                                                            {{ $pago->observacion ?? 'Sin observación' }}
+                                                        </td>
+
+                                                        <td>
+                                                            <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
+                                                            target="_blank"
+                                                            class="btn btn-success btn-xs">
+                                                                Recibo pago
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="alert alert-warning">

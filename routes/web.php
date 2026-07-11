@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\CuentaPorPagarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -160,7 +161,14 @@ Route::put('/proveedores/{proveedor}', [ProveedorController::class, 'update'])
 Route::patch('/proveedores/{proveedor}/estado', [ProveedorController::class, 'cambiarEstado'])
     ->name('proveedores.estado');
 
-// Proveedores
+// Cuentas por pagar
+Route::get('/compras/cuentas-por-pagar', [CuentaPorPagarController::class, 'index'])
+    ->name('compras.cuentas-por-pagar');
+
+Route::post('/compras/{compra}/registrar-pago', [CuentaPorPagarController::class, 'pagar'])
+    ->name('compras.registrar-pago');
+
+// Proveedores / COmpras 
 Route::get('/compras', [CompraController::class, 'index'])
     ->name('compras.index');
 
@@ -169,6 +177,17 @@ Route::get('/compras/crear', [CompraController::class, 'create'])
 
 Route::post('/compras', [CompraController::class, 'store'])
     ->name('compras.store');
+
+    // Recibo de pago
+
+Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
+    $pago->load(['compra.proveedor']);
+
+    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+    return view('compras.recibo-pago', compact('pago', 'configuracion'));
+})->name('compras.pagos.recibo');
+// compras  proveedores
 
 Route::get('/compras/{compra}', [CompraController::class, 'show'])
     ->name('compras.show');

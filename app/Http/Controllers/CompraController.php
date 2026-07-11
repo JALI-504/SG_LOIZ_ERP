@@ -14,6 +14,7 @@ use App\Models\MovimientoInventario;
 use App\Models\MovimientoInventarioLote;
 use App\Models\MovimientoProducto;
 use App\Models\MovimientoProductoLote;
+use App\Models\PagoCompra;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -257,6 +258,18 @@ class CompraController extends Controller
                     'observacion' => $request->observacion,
                 ]);
 
+                if ($montoPagado > 0) {
+                    PagoCompra::create([
+                        'compra_id' => $compra->id,
+                        'monto' => $montoPagado,
+                        'metodo_pago' => $request->metodo_pago,
+                        'referencia' => $request->numero_comprobante,
+                        'observacion' => $request->tipo_pago === 'Contado'
+                            ? 'Pago completo registrado al momento de la compra.'
+                            : 'Abono inicial registrado al momento de la compra.',
+                    ]);
+                }
+
                 foreach ($detallesPreparados as $detalle) {
                     $detalle['compra_id'] = $compra->id;
 
@@ -278,7 +291,7 @@ class CompraController extends Controller
 
     public function show(Compra $compra)
     {
-        $compra->load(['proveedor', 'detalles']);
+        $compra->load(['proveedor', 'detalles', 'pagos']);
 
         return view('compras.show', compact('compra'));
     }
