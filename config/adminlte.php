@@ -336,6 +336,11 @@ return [
             'icon' => 'fas fa-chart-pie',
         ],
         [
+            'text' => 'Reporte inventario',
+            'url'  => 'reportes/inventario',
+            'icon' => 'fas fa-boxes',
+        ],
+        [
             'text' => 'Tipos de catálogo',
             'url'  => 'catalogos/tipos',
             'icon' => 'fas fa-layer-group',

@@ -6,6 +6,7 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\CuentaPorPagarController;
 use App\Http\Controllers\ReporteFinancieroController;
+use App\Http\Controllers\ReporteInventarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -128,6 +129,9 @@ Route::get('/reportes/ventas', function () {
 
 Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index'])
     ->name('reportes.financiero');
+
+Route::get('/reportes/inventario', [ReporteInventarioController::class, 'index'])
+    ->name('reportes.inventario');
 
 // Gastos
 Route::get('/gastos', function () {
