@@ -276,7 +276,6 @@ class CompraController extends Controller
         }
     }
 
-
     public function show(Compra $compra)
     {
         $compra->load(['proveedor', 'detalles']);
