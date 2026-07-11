@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GastoController;
+use App\Http\Controllers\ProveedorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -138,3 +139,22 @@ Route::get('/gastos/{gasto}/editar', [GastoController::class, 'edit'])
 
 Route::put('/gastos/{gasto}', [GastoController::class, 'update'])
     ->name('gastos.update');
+
+// Proveedores
+Route::get('/proveedores', [ProveedorController::class, 'index'])
+    ->name('proveedores.index');
+
+Route::get('/proveedores/crear', [ProveedorController::class, 'create'])
+    ->name('proveedores.create');
+
+Route::post('/proveedores', [ProveedorController::class, 'store'])
+    ->name('proveedores.store');
+
+Route::get('/proveedores/{proveedor}/editar', [ProveedorController::class, 'edit'])
+    ->name('proveedores.edit');
+
+Route::put('/proveedores/{proveedor}', [ProveedorController::class, 'update'])
+    ->name('proveedores.update');
+
+Route::patch('/proveedores/{proveedor}/estado', [ProveedorController::class, 'cambiarEstado'])
+    ->name('proveedores.estado');

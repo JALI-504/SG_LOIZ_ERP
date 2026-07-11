@@ -356,6 +356,11 @@ return [
             'icon' => 'fas fa-users',
         ],
         [
+            'text' => 'Proveedores',
+            'url'  => 'proveedores',
+            'icon' => 'fas fa-truck',
+        ],
+        [
             'text' => 'Gastos',
             'url'  => 'gastos',
             'icon' => 'fas fa-money-bill-wave',
