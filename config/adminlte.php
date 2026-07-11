@@ -331,6 +331,11 @@ return [
             'icon' => 'fas fa-chart-line',
         ],
         [
+            'text' => 'Reporte financiero',
+            'url'  => 'reportes/financiero',
+            'icon' => 'fas fa-chart-pie',
+        ],
+        [
             'text' => 'Tipos de catálogo',
             'url'  => 'catalogos/tipos',
             'icon' => 'fas fa-layer-group',

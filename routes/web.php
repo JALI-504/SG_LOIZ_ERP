@@ -5,6 +5,7 @@ use App\Http\Controllers\GastoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\CuentaPorPagarController;
+use App\Http\Controllers\ReporteFinancieroController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,6 +125,9 @@ Route::get('/configuracion/empresa', function () {
 Route::get('/reportes/ventas', function () {
     return view('reportes.ventas');
 })->name('reportes.ventas');
+
+Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index'])
+    ->name('reportes.financiero');
 
 // Gastos
 Route::get('/gastos', function () {
