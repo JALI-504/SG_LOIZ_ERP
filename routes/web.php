@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GastoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -120,3 +121,20 @@ Route::get('/configuracion/empresa', function () {
 Route::get('/reportes/ventas', function () {
     return view('reportes.ventas');
 })->name('reportes.ventas');
+
+// Gastos
+Route::get('/gastos', function () {
+    return view('gastos.index');
+})->name('gastos.index');
+
+Route::get('/gastos/crear', [GastoController::class, 'create'])
+    ->name('gastos.create');
+
+Route::post('/gastos', [GastoController::class, 'store'])
+    ->name('gastos.store');
+
+Route::get('/gastos/{gasto}/editar', [GastoController::class, 'edit'])
+    ->name('gastos.edit');
+
+Route::put('/gastos/{gasto}', [GastoController::class, 'update'])
+    ->name('gastos.update');

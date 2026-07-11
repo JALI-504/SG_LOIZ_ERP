@@ -356,6 +356,11 @@ return [
             'icon' => 'fas fa-users',
         ],
         [
+            'text' => 'Gastos',
+            'url'  => 'gastos',
+            'icon' => 'fas fa-money-bill-wave',
+        ],
+        [
             'text' => 'Configuración negocio',
             'url'  => 'configuracion/empresa',
             'icon' => 'fas fa-store',
