@@ -7,6 +7,7 @@ use App\Http\Controllers\CompraController;
 use App\Http\Controllers\CuentaPorPagarController;
 use App\Http\Controllers\ReporteFinancieroController;
 use App\Http\Controllers\ReporteInventarioController;
+use App\Http\Controllers\ReporteCuentasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -132,6 +133,9 @@ Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index']
 
 Route::get('/reportes/inventario', [ReporteInventarioController::class, 'index'])
     ->name('reportes.inventario');
+
+Route::get('/reportes/cuentas', [ReporteCuentasController::class, 'index'])
+    ->name('reportes.cuentas');
 
 // Gastos
 Route::get('/gastos', function () {

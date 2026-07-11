@@ -341,6 +341,11 @@ return [
             'icon' => 'fas fa-boxes',
         ],
         [
+            'text' => 'Reporte cuentas',
+            'url'  => 'reportes/cuentas',
+            'icon' => 'fas fa-file-invoice-dollar',
+        ],
+        [
             'text' => 'Tipos de catálogo',
             'url'  => 'catalogos/tipos',
             'icon' => 'fas fa-layer-group',
