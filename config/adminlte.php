@@ -361,6 +361,11 @@ return [
             'icon' => 'fas fa-truck',
         ],
         [
+            'text' => 'Compras',
+            'url'  => 'compras',
+            'icon' => 'fas fa-shopping-cart',
+        ],
+        [
             'text' => 'Gastos',
             'url'  => 'gastos',
             'icon' => 'fas fa-money-bill-wave',

@@ -50,4 +50,9 @@ class Proveedor extends Model
     {
         return $this->activo ? 'Activo' : 'Inactivo';
     }
+
+    public function compras()
+    {
+        return $this->hasMany(Compra::class);
+    }
 }

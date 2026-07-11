@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\CompraController;
 
 /*
 |--------------------------------------------------------------------------
@@ -158,3 +159,19 @@ Route::put('/proveedores/{proveedor}', [ProveedorController::class, 'update'])
 
 Route::patch('/proveedores/{proveedor}/estado', [ProveedorController::class, 'cambiarEstado'])
     ->name('proveedores.estado');
+
+// Proveedores
+Route::get('/compras', [CompraController::class, 'index'])
+    ->name('compras.index');
+
+Route::get('/compras/crear', [CompraController::class, 'create'])
+    ->name('compras.create');
+
+Route::post('/compras', [CompraController::class, 'store'])
+    ->name('compras.store');
+
+Route::get('/compras/{compra}', [CompraController::class, 'show'])
+    ->name('compras.show');
+
+Route::patch('/compras/{compra}/anular', [CompraController::class, 'anular'])
+    ->name('compras.anular');

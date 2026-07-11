@@ -198,7 +198,7 @@
                                     @endif
                                 </td>
 
-                                <<td>
+                                <td>
                                     <button class="btn btn-warning btn-xs"
                                             wire:click="edit({{ $producto->id }})">
                                         <i class="fas fa-edit"></i>
