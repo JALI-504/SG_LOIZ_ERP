@@ -6,11 +6,21 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Reporte financiero</h1>
 
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="window.print()">
-            <i class="fas fa-print"></i> Imprimir
-        </button>
+       <div>
+            <a href="{{ route('reportes.financiero.excel', [
+                    'fecha_desde' => $fechaDesde,
+                    'fecha_hasta' => $fechaHasta
+                ]) }}"
+            class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
     </div>
 @stop
 

@@ -131,6 +131,9 @@ Route::get('/reportes/ventas', function () {
 Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index'])
     ->name('reportes.financiero');
 
+Route::get('/reportes/financiero/exportar-excel', [ReporteFinancieroController::class, 'exportarExcel'])
+    ->name('reportes.financiero.excel');
+
 Route::get('/reportes/inventario', [ReporteInventarioController::class, 'index'])
     ->name('reportes.inventario');
 
