@@ -31,6 +31,81 @@ class Insumo extends Model
         'activo',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($insumo) {
+            if (empty($insumo->codigo)) {
+                $insumo->codigo = self::generarCodigoPorCategoria($insumo->categoria);
+            } else {
+                $insumo->codigo = strtoupper(trim($insumo->codigo));
+            }
+        });
+
+        static::updating(function ($insumo) {
+            if (empty($insumo->codigo)) {
+                $insumo->codigo = self::generarCodigoPorCategoria($insumo->categoria);
+            } else {
+                $insumo->codigo = strtoupper(trim($insumo->codigo));
+            }
+        });
+    }
+
+    public static function generarCodigoPorCategoria($categoria)
+    {
+        $prefijo = self::prefijoCategoria($categoria);
+
+        $ultimo = self::where('codigo', 'like', $prefijo . '-%')
+            ->orderByDesc('id')
+            ->first();
+
+        $numero = 1;
+
+        if ($ultimo) {
+            $partes = explode('-', $ultimo->codigo);
+            $ultimoNumero = end($partes);
+
+            if (is_numeric($ultimoNumero)) {
+                $numero = (int) $ultimoNumero + 1;
+            } else {
+                $numero = $ultimo->id + 1;
+            }
+        }
+
+        return $prefijo . '-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+
+    public static function prefijoCategoria($categoria)
+    {
+        $categoria = strtolower(trim($categoria));
+
+        $mapa = [
+            'papel' => 'PAP',
+            'tinta' => 'TIN',
+            'toner' => 'TON',
+            'tóner' => 'TON',
+            'madera' => 'MAD',
+            'mdf' => 'MDF',
+            'acrilico' => 'ACR',
+            'acrílico' => 'ACR',
+            'vinil' => 'VIN',
+            'vinilo' => 'VIN',
+            'sublimacion' => 'SUB',
+            'sublimación' => 'SUB',
+            'herrajes' => 'HER',
+            'bolsas' => 'BOL',
+            'empaque' => 'EMP',
+            'limpieza' => 'LIM',
+        ];
+
+        foreach ($mapa as $clave => $prefijo) {
+            if (strpos($categoria, $clave) !== false) {
+                return $prefijo;
+            }
+        }
+
+        return 'INS';
+    }
+
     public function movimientos()
     {
         return $this->hasMany(MovimientoInventario::class);

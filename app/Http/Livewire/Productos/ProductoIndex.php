@@ -68,7 +68,7 @@ class ProductoIndex extends Component
     {
         return [
             'codigo' => [
-                'required',
+                'nullable',
                 'max:30',
                 Rule::unique('productos', 'codigo')->ignore($this->producto_id),
             ],
@@ -105,7 +105,7 @@ class ProductoIndex extends Component
     }
 
     protected $messages = [
-        'codigo.required' => 'El código del producto es obligatorio.',
+        // 'codigo.required' => 'El código del producto es obligatorio.',
         'codigo.unique' => 'Este código ya está registrado.',
         'codigo_barra.unique' => 'Este código de barra ya está registrado.',
         'nombre.required' => 'El nombre del producto es obligatorio.',
@@ -162,7 +162,7 @@ class ProductoIndex extends Component
         $this->validate();
 
         Producto::create([
-            'codigo' => strtoupper(trim($this->codigo)),
+            'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'codigo_barra' => $this->codigo_barra ? trim($this->codigo_barra) : null,
             'nombre' => trim($this->nombre),
 
@@ -240,7 +240,7 @@ class ProductoIndex extends Component
         $producto = Producto::findOrFail($this->producto_id);
 
         $producto->update([
-            'codigo' => strtoupper(trim($this->codigo)),
+            'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : $producto->codigo,
             'codigo_barra' => $this->codigo_barra ? trim($this->codigo_barra) : null,
             'nombre' => trim($this->nombre),
 
@@ -255,7 +255,10 @@ class ProductoIndex extends Component
             'largo_cm' => $this->largo_cm,
             'espesor_mm' => $this->espesor_mm,
 
-            'stock_actual' => 0,
+            // No actualizar stock_actual desde edición.
+            // El stock se modifica únicamente desde movimientos.
+            // 'stock_actual' => 0,
+            // 'stock_actual' => $this->stock_actual,
             'stock_minimo' => $this->stock_minimo,
 
             'costo_compra' => $this->costo_compra,

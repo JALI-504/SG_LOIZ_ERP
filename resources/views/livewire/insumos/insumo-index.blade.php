@@ -205,12 +205,19 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-3">
-                            <label>Código <span class="text-danger">*</span></label>
+                            <label>Código</label>
                             <input type="text"
-                                   class="form-control"
-                                   placeholder="Ej: PAP-CAR-BOND"
-                                   wire:model.defer="codigo">
-                            @error('codigo') <small class="text-danger">{{ $message }}</small> @enderror
+                                class="form-control"
+                                placeholder="Dejar vacío para generar automáticamente"
+                                wire:model.defer="codigo">
+
+                            @error('codigo')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+
+                            <small class="text-muted">
+                                Si lo deja vacío, se generará según la categoría. Ej: PAP-000001.
+                            </small>
                         </div>
 
                         <div class="form-group col-md-6">

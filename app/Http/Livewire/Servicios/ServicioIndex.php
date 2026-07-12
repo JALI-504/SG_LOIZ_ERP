@@ -60,7 +60,7 @@ class ServicioIndex extends Component
     {
         return [
             'codigo' => [
-                'required',
+                'nullable',
                 'max:20',
                 Rule::unique('servicios', 'codigo')->ignore($this->servicio_id),
             ],
@@ -78,7 +78,7 @@ class ServicioIndex extends Component
     }
 
     protected $messages = [
-        'codigo.required' => 'El código del servicio es obligatorio.',
+        // 'codigo.required' => 'El código del servicio es obligatorio.',
         'codigo.unique' => 'Este código ya está registrado.',
         'nombre.required' => 'El nombre del servicio es obligatorio.',
         'nombre.min' => 'El nombre debe tener al menos 3 caracteres.',
@@ -117,7 +117,8 @@ class ServicioIndex extends Component
         $this->validate();
 
         Servicio::create([
-            'codigo' => strtoupper(trim($this->codigo)),
+            // 'codigo' => strtoupper(trim($this->codigo)),
+            'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'nombre' => trim($this->nombre),
             'tipo_servicio' => $this->tipo_servicio,
             'tamano_papel' => $this->tamano_papel,
@@ -167,7 +168,8 @@ class ServicioIndex extends Component
         $servicio = Servicio::findOrFail($this->servicio_id);
 
         $servicio->update([
-            'codigo' => strtoupper(trim($this->codigo)),
+            // 'codigo' => strtoupper(trim($this->codigo)),
+            'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : $servicio->codigo,
             'nombre' => trim($this->nombre),
             'tipo_servicio' => $this->tipo_servicio,
             'tamano_papel' => $this->tamano_papel,

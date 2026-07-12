@@ -262,11 +262,15 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-3">
-                            <label>Código <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Ej: USB-32GB"
-                                   wire:model.defer="codigo">
+                            <label>Código</label>
+                                <input type="text"
+                                    class="form-control"
+                                    placeholder="Dejar vacío para generar automáticamente"
+                                    wire:model.defer="codigo">
+
+                                <small class="text-muted">
+                                    Si lo deja vacío, el sistema generará un código interno. Ej: PROD-000001.
+                                </small>
 
                             @error('codigo')
                                 <small class="text-danger">{{ $message }}</small>
@@ -275,10 +279,14 @@
 
                         <div class="form-group col-md-3">
                             <label>Código de barra</label>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Opcional"
-                                   wire:model.defer="codigo_barra">
+                                <input type="text"
+                                    class="form-control"
+                                    placeholder="Escanear, escribir o dejar vacío para generar"
+                                    wire:model.defer="codigo_barra">
+
+                                <small class="text-muted">
+                                    Puede escanearse con lector, escribirse manualmente o dejarse vacío.
+                                </small>
 
                             @error('codigo_barra')
                                 <small class="text-danger">{{ $message }}</small>

@@ -32,6 +32,45 @@ class Producto extends Model
         'activo',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($producto) {
+            if (empty($producto->codigo)) {
+                $producto->codigo = self::generarCodigoProducto();
+            }
+
+            if (empty($producto->codigo_barra)) {
+                $producto->codigo_barra = self::generarCodigoBarraInterno();
+            } else {
+                $producto->codigo_barra = trim($producto->codigo_barra);
+            }
+        });
+
+        static::updating(function ($producto) {
+            if (!empty($producto->codigo_barra)) {
+                $producto->codigo_barra = trim($producto->codigo_barra);
+            }
+        });
+    }
+
+    public static function generarCodigoProducto()
+    {
+        $ultimo = self::orderByDesc('id')->first();
+
+        $numero = $ultimo ? $ultimo->id + 1 : 1;
+
+        return 'PROD-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+
+    public static function generarCodigoBarraInterno()
+    {
+        $ultimo = self::orderByDesc('id')->first();
+
+        $numero = $ultimo ? $ultimo->id + 1 : 1;
+
+        return 'LOIZ-P-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+
     public function insumos()
     {
         return $this->belongsToMany(Insumo::class, 'producto_insumos')

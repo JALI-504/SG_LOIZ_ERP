@@ -88,7 +88,7 @@ class InsumoIndex extends Component
     {
         return [
             'codigo' => [
-                'required',
+                'nullable',
                 'max:30',
                 Rule::unique('insumos', 'codigo')->ignore($this->insumo_id),
             ],
@@ -114,7 +114,6 @@ class InsumoIndex extends Component
     }
 
     protected $messages = [
-        'codigo.required' => 'El código del insumo es obligatorio.',
         'codigo.unique' => 'Este código ya está registrado.',
         'nombre.required' => 'El nombre del insumo es obligatorio.',
         'cantidad_por_compra.min' => 'La cantidad por compra debe ser mayor que cero.',
@@ -170,7 +169,7 @@ class InsumoIndex extends Component
             $stockInicial = (float) $this->stock_actual;
 
             $insumo = Insumo::create([
-                'codigo' => strtoupper(trim($this->codigo)),
+                'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
                 'nombre' => trim($this->nombre),
                 'categoria' => $this->categoria,
 
@@ -258,7 +257,7 @@ class InsumoIndex extends Component
         $insumo = Insumo::findOrFail($this->insumo_id);
 
         $insumo->update([
-            'codigo' => strtoupper(trim($this->codigo)),
+            'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'nombre' => trim($this->nombre),
             'categoria' => $this->categoria,
 

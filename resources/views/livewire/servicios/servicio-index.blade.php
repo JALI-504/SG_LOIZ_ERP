@@ -182,11 +182,16 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>Código <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Ej: IMP-CAR-BN"
-                                   wire:model.defer="codigo">
+                            <label>Código</label>
+                                <input type="text"
+                                    class="form-control"
+                                    placeholder="Dejar vacío para generar automáticamente"
+                                    wire:model.defer="codigo">
+
+                                <small class="text-muted">
+                                    Si lo deja vacío, se generará según tipo, tamaño y color. Ej: IMP-CAR-BN-000001.
+                                </small>
+                                
                             @error('codigo') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 
