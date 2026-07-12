@@ -24,6 +24,8 @@ class Servicio extends Model
         'precio_unitario',
         'descripcion',
         'activo',
+        'tipo_impuesto',
+        'porcentaje_isv',
     ];
 
     protected static function booted()
@@ -175,5 +177,20 @@ class Servicio extends Model
         }
 
         return (($this->precio_unitario - $this->costo_unitario) / $this->costo_unitario) * 100;
+    }
+
+    public function getEsGravadoAttribute()
+    {
+        return $this->tipo_impuesto === 'Gravado 15%';
+    }
+
+    public function getEsExentoAttribute()
+    {
+        return $this->tipo_impuesto === 'Exento';
+    }
+
+    public function getEsNoSujetoAttribute()
+    {
+        return $this->tipo_impuesto === 'No sujeto';
     }
 }

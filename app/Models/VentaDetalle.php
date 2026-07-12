@@ -23,6 +23,12 @@ class VentaDetalle extends Model
         'descuento',
         'subtotal',
         'total',
+        'tipo_impuesto',
+        'porcentaje_isv',
+        'subtotal_gravado',
+        'subtotal_exento',
+        'subtotal_no_sujeto',
+        'impuesto',
     ];
 
     public function venta()
@@ -43,5 +49,20 @@ class VentaDetalle extends Model
     public function getUtilidadAttribute()
     {
         return $this->total - ($this->costo_unitario * $this->cantidad);
+    }
+
+    public function getEsGravadoAttribute()
+    {
+        return $this->tipo_impuesto === 'Gravado 15%';
+    }
+
+    public function getEsExentoAttribute()
+    {
+        return $this->tipo_impuesto === 'Exento';
+    }
+
+    public function getEsNoSujetoAttribute()
+    {
+        return $this->tipo_impuesto === 'No sujeto';
     }
 }

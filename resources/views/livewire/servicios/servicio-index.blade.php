@@ -191,7 +191,7 @@
                                 <small class="text-muted">
                                     Si lo deja vacío, se generará según tipo, tamaño y color. Ej: IMP-CAR-BN-000001.
                                 </small>
-                                
+
                             @error('codigo') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 
@@ -291,6 +291,36 @@
                                    wire:model.defer="precio_unitario">
                             @error('precio_unitario') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
+
+                        <div class="form-group col-md-4">
+                            <label>Tipo de impuesto</label>
+                            <select class="form-control"
+                                    wire:model="tipo_impuesto">
+                                @foreach ($tiposImpuesto as $tipo)
+                                    <option value="{{ $tipo }}">
+                                        {{ $tipo }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('tipo_impuesto')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <label>% ISV</label>
+                            <input type="number"
+                                step="0.01"
+                                class="form-control"
+                                wire:model.defer="porcentaje_isv"
+                                readonly>
+
+                            <small class="text-muted">
+                                Automático.
+                            </small>
+                        </div>
+
                     </div>
 
                     <div class="form-group">

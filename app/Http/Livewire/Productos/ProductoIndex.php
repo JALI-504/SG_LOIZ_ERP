@@ -53,6 +53,10 @@ class ProductoIndex extends Component
     public $tiposProducto = [];
     public $unidadesVenta = [];
 
+    public $tipo_impuesto = 'Gravado 15%';
+    public $porcentaje_isv = 15;
+    public $tiposImpuesto = [];
+
     public function mount()
     {
         $this->categorias = Catalogo::opciones('categoria_producto')->pluck('nombre')->toArray();
@@ -62,6 +66,14 @@ class ProductoIndex extends Component
         $this->categoria = $this->categorias[0] ?? 'Personalizado';
         $this->tipo_producto = $this->tiposProducto[0] ?? 'Fabricado';
         $this->unidad_venta = $this->unidadesVenta[0] ?? 'Unidad';
+
+        $this->tiposImpuesto = Catalogo::opciones('tipo_impuesto')->pluck('nombre')->toArray();
+
+        $this->tipo_impuesto = in_array('Gravado 15%', $this->tiposImpuesto)
+            ? 'Gravado 15%'
+            : ($this->tiposImpuesto[0] ?? 'Gravado 15%');
+
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
     }
 
     protected function rules()
@@ -101,6 +113,9 @@ class ProductoIndex extends Component
 
             'descripcion' => 'nullable|max:500',
             'activo' => 'boolean',
+
+            'tipo_impuesto' => 'required|max:50',
+            'porcentaje_isv' => 'required|numeric|min:0|max:100',
         ];
     }
 
@@ -186,6 +201,9 @@ class ProductoIndex extends Component
 
             'descripcion' => $this->descripcion,
             'activo' => $this->activo,
+
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
         $this->resetInput();
@@ -228,6 +246,9 @@ class ProductoIndex extends Component
 
         $this->modalTitle = 'Editar producto';
 
+        $this->tipo_impuesto = $producto->tipo_impuesto ?? 'Gravado 15%';
+        $this->porcentaje_isv = $producto->porcentaje_isv ?? 15;
+
         $this->dispatchBrowserEvent('open-producto-modal');
     }
 
@@ -267,6 +288,9 @@ class ProductoIndex extends Component
 
             'descripcion' => $this->descripcion,
             'activo' => $this->activo,
+
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
         $this->resetInput();
@@ -328,8 +352,28 @@ class ProductoIndex extends Component
         $this->descripcion = '';
         $this->activo = true;
 
+        $this->tipo_impuesto = in_array('Gravado 15%', $this->tiposImpuesto)
+            ? 'Gravado 15%'
+            : ($this->tiposImpuesto[0] ?? 'Gravado 15%');
+
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
+
         $this->resetErrorBag();
         $this->resetValidation();
+    }
+
+    public function updatedTipoImpuesto()
+    {
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
+    }
+
+    private function obtenerPorcentajeIsv()
+    {
+        if ($this->tipo_impuesto === 'Gravado 15%') {
+            return 15;
+        }
+
+        return 0;
     }
 
     public function render()
@@ -361,5 +405,6 @@ class ProductoIndex extends Component
         return view('livewire.productos.producto-index', [
             'productos' => $productos,
         ]);
+
     }
 }

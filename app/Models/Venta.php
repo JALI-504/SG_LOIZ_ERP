@@ -26,6 +26,12 @@ class Venta extends Model
         'observacion',
         'monto_pagado',
         'saldo_pendiente',
+        'subtotal_gravado',
+        'subtotal_exento',
+        'subtotal_no_sujeto',
+        'isv_15',
+        'retencion',
+        'neto_recibido',
     ];
 
     protected static function booted()

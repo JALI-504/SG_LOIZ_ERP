@@ -30,6 +30,8 @@ class Producto extends Model
         'precio_venta',
         'descripcion',
         'activo',
+        'tipo_impuesto',
+        'porcentaje_isv',
     ];
 
     protected static function booted()
@@ -117,5 +119,20 @@ class Producto extends Model
         return $this->hasMany(LoteProducto::class)
             ->where('activo', true)
             ->where('cantidad_disponible', '>', 0);
+    }
+
+    public function getEsGravadoAttribute()
+    {
+        return $this->tipo_impuesto === 'Gravado 15%';
+    }
+
+    public function getEsExentoAttribute()
+    {
+        return $this->tipo_impuesto === 'Exento';
+    }
+
+    public function getEsNoSujetoAttribute()
+    {
+        return $this->tipo_impuesto === 'No sujeto';
     }
 }

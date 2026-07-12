@@ -41,6 +41,10 @@ class ServicioIndex extends Component
     public $carasOpciones = [];
     public $unidadesCobro = [];
 
+    public $tipo_impuesto = 'Gravado 15%';
+    public $porcentaje_isv = 15;
+    public $tiposImpuesto = [];
+
     public function mount()
     {
         $this->tiposServicio = Catalogo::opciones('tipo_servicio')->pluck('nombre')->toArray();
@@ -54,6 +58,14 @@ class ServicioIndex extends Component
         $this->color = $this->colores[0] ?? 'Blanco y negro';
         $this->caras = $this->carasOpciones[0] ?? 'Una cara';
         $this->unidad_cobro = $this->unidadesCobro[0] ?? 'Pagina';
+
+        $this->tiposImpuesto = Catalogo::opciones('tipo_impuesto')->pluck('nombre')->toArray();
+
+        $this->tipo_impuesto = in_array('Gravado 15%', $this->tiposImpuesto)
+            ? 'Gravado 15%'
+            : ($this->tiposImpuesto[0] ?? 'Gravado 15%');
+
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
     }
 
     protected function rules()
@@ -74,6 +86,8 @@ class ServicioIndex extends Component
             'precio_unitario' => 'required|numeric|min:0',
             'descripcion' => 'nullable|max:500',
             'activo' => 'boolean',
+            'tipo_impuesto' => 'required|max:50',
+            'porcentaje_isv' => 'required|numeric|min:0|max:100',
         ];
     }
 
@@ -129,7 +143,11 @@ class ServicioIndex extends Component
             'precio_unitario' => $this->precio_unitario,
             'descripcion' => $this->descripcion,
             'activo' => $this->activo,
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
+
+       
 
         $this->resetInput();
 
@@ -156,6 +174,9 @@ class ServicioIndex extends Component
         $this->descripcion = $servicio->descripcion;
         $this->activo = $servicio->activo;
 
+        $this->tipo_impuesto = $servicio->tipo_impuesto ?? 'Gravado 15%';
+        $this->porcentaje_isv = $servicio->porcentaje_isv ?? 15;
+
         $this->modalTitle = 'Editar servicio';
 
         $this->dispatchBrowserEvent('open-servicio-modal');
@@ -180,6 +201,8 @@ class ServicioIndex extends Component
             'precio_unitario' => $this->precio_unitario,
             'descripcion' => $this->descripcion,
             'activo' => $this->activo,
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
         $this->resetInput();
@@ -216,8 +239,28 @@ class ServicioIndex extends Component
         $this->descripcion = '';
         $this->activo = true;
 
+        $this->tipo_impuesto = in_array('Gravado 15%', $this->tiposImpuesto)
+            ? 'Gravado 15%'
+            : ($this->tiposImpuesto[0] ?? 'Gravado 15%');
+
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
+
         $this->resetErrorBag();
         $this->resetValidation();
+    }
+
+    public function updatedTipoImpuesto()
+    {
+        $this->porcentaje_isv = $this->obtenerPorcentajeIsv();
+    }
+
+    private function obtenerPorcentajeIsv()
+    {
+        if ($this->tipo_impuesto === 'Gravado 15%') {
+            return 15;
+        }
+
+        return 0;
     }
 
     public function render()

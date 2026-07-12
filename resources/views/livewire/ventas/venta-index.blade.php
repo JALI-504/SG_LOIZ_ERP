@@ -311,7 +311,7 @@
 
                                 <div class="alert alert-info">
                                     <strong>Saldo estimado:</strong>
-                                    L {{ number_format(max($total - (float) $monto_inicial, 0), 2) }}
+                                    L {{ number_format(max($total - ((float) $monto_inicial + (float) $retencion), 0), 2) }}
                                 </div>
                             @endif
 
@@ -344,13 +344,42 @@
 
                                             <br>
 
-                                            <strong>{{ $item['descripcion'] }}</strong>
+                                           <strong>{{ $item['descripcion'] }}</strong>
 
                                             <br>
 
                                             <small>
                                                 {{ $item['codigo'] }}
                                             </small>
+
+                                            <br>
+
+                                            <small class="text-muted">
+                                                {{ $item['tipo_impuesto'] ?? 'Gravado 15%' }}
+                                                |
+                                                ISV: L {{ number_format($item['impuesto'] ?? 0, 2) }}
+                                            </small>
+
+                                            @if (($item['subtotal_gravado'] ?? 0) > 0)
+                                                <br>
+                                                <small class="text-muted">
+                                                    Gravado: L {{ number_format($item['subtotal_gravado'] ?? 0, 2) }}
+                                                </small>
+                                            @endif
+
+                                            @if (($item['subtotal_exento'] ?? 0) > 0)
+                                                <br>
+                                                <small class="text-muted">
+                                                    Exento: L {{ number_format($item['subtotal_exento'] ?? 0, 2) }}
+                                                </small>
+                                            @endif
+
+                                            @if (($item['subtotal_no_sujeto'] ?? 0) > 0)
+                                                <br>
+                                                <small class="text-muted">
+                                                    No sujeto: L {{ number_format($item['subtotal_no_sujeto'] ?? 0, 2) }}
+                                                </small>
+                                            @endif
                                         </td>
 
                                         <td>
@@ -443,26 +472,84 @@
 
                     <hr>
 
-                    <div class="d-flex justify-content-between">
-                        <span>Subtotal:</span>
-                        <strong>L {{ number_format($subtotal, 2) }}</strong>
-                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Subtotal bruto:</td>
+                                <td class="text-right">
+                                    L {{ number_format($subtotal, 2) }}
+                                </td>
+                            </tr>
 
-                    <div class="d-flex justify-content-between">
-                        <span>Descuento:</span>
-                        <strong>L {{ number_format($descuento_total, 2) }}</strong>
-                    </div>
+                            <tr>
+                                <td>Descuento total:</td>
+                                <td class="text-right">
+                                    L {{ number_format($descuento_total, 2) }}
+                                </td>
+                            </tr>
 
-                    <div class="d-flex justify-content-between">
-                        <span>Impuesto:</span>
-                        <strong>L {{ number_format($impuesto, 2) }}</strong>
-                    </div>
+                            <tr>
+                                <td>Subtotal gravado:</td>
+                                <td class="text-right">
+                                    L {{ number_format($subtotal_gravado, 2) }}
+                                </td>
+                            </tr>
 
-                    <div class="d-flex justify-content-between mt-2">
-                        <h4>Total:</h4>
-                        <h4>
-                            <strong>L {{ number_format($total, 2) }}</strong>
-                        </h4>
+                            <tr>
+                                <td>Subtotal exento:</td>
+                                <td class="text-right">
+                                    L {{ number_format($subtotal_exento, 2) }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Subtotal no sujeto:</td>
+                                <td class="text-right">
+                                    L {{ number_format($subtotal_no_sujeto, 2) }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>ISV 15%:</td>
+                                <td class="text-right">
+                                    L {{ number_format($isv_15, 2) }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <label class="mb-0">Retención:</label>
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        step="0.01"
+                                        min="0"
+                                        class="form-control form-control-sm text-right"
+                                        wire:model="retencion">
+                                    @error('retencion')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>Total venta:</strong>
+                                </td>
+                                <td class="text-right">
+                                    <strong>L {{ number_format($total, 2) }}</strong>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>Neto recibido:</strong>
+                                </td>
+                                <td class="text-right">
+                                    <strong>L {{ number_format($neto_recibido, 2) }}</strong>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
 
                     <hr>

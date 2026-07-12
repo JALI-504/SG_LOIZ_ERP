@@ -42,7 +42,15 @@ class VentaIndex extends Component
     public $subtotal = 0;
     public $descuento_general = 0;
     public $descuento_total = 0;
+
+    public $subtotal_gravado = 0;
+    public $subtotal_exento = 0;
+    public $subtotal_no_sujeto = 0;
+    public $isv_15 = 0;
+
     public $impuesto = 0;
+    public $retencion = 0;
+    public $neto_recibido = 0;
     public $total = 0;
 
     public function mount()
@@ -58,6 +66,7 @@ class VentaIndex extends Component
     {
         if (
             $propertyName === 'descuento_general' ||
+            $propertyName === 'retencion' ||
             strpos($propertyName, 'carrito.') === 0
         ) {
             $this->recalcularCarrito();
@@ -94,7 +103,18 @@ class VentaIndex extends Component
             'cantidad' => 1,
             'precio_unitario' => (float) $producto->precio_venta,
             'costo_unitario' => (float) $producto->costo_unitario,
+
+            'tipo_impuesto' => $producto->tipo_impuesto ?? 'Gravado 15%',
+            'porcentaje_isv' => (float) ($producto->porcentaje_isv ?? 15),
+
             'descuento' => 0,
+            'descuento_total_linea' => 0,
+
+            'subtotal_gravado' => 0,
+            'subtotal_exento' => 0,
+            'subtotal_no_sujeto' => 0,
+            'impuesto' => 0,
+
             'subtotal' => (float) $producto->precio_venta,
             'total' => (float) $producto->precio_venta,
         ];
@@ -127,7 +147,18 @@ class VentaIndex extends Component
             'cantidad' => 1,
             'precio_unitario' => (float) $servicio->precio_unitario,
             'costo_unitario' => (float) $servicio->costo_unitario,
+
+            'tipo_impuesto' => $servicio->tipo_impuesto ?? 'Gravado 15%',
+            'porcentaje_isv' => (float) ($servicio->porcentaje_isv ?? 15),
+
             'descuento' => 0,
+            'descuento_total_linea' => 0,
+
+            'subtotal_gravado' => 0,
+            'subtotal_exento' => 0,
+            'subtotal_no_sujeto' => 0,
+            'impuesto' => 0,
+
             'subtotal' => (float) $servicio->precio_unitario,
             'total' => (float) $servicio->precio_unitario,
         ];
@@ -188,10 +219,19 @@ class VentaIndex extends Component
     public function limpiarCarrito()
     {
         $this->carrito = [];
+
         $this->subtotal = 0;
         $this->descuento_general = 0;
         $this->descuento_total = 0;
+
+        $this->subtotal_gravado = 0;
+        $this->subtotal_exento = 0;
+        $this->subtotal_no_sujeto = 0;
+        $this->isv_15 = 0;
+
         $this->impuesto = 0;
+        $this->retencion = 0;
+        $this->neto_recibido = 0;
         $this->total = 0;
     }
 
@@ -200,10 +240,15 @@ class VentaIndex extends Component
         $subtotal = 0;
         $descuentosLinea = 0;
 
+        /*
+    |--------------------------------------------------------------------------
+    | Primera pasada: calcular subtotal bruto y descuentos de línea
+    |--------------------------------------------------------------------------
+    */
         foreach ($this->carrito as $index => $item) {
             $cantidad = (float) ($item['cantidad'] ?? 0);
             $precioUnitario = (float) ($item['precio_unitario'] ?? 0);
-            $descuento = (float) ($item['descuento'] ?? 0);
+            $descuentoLinea = (float) ($item['descuento'] ?? 0);
 
             if ($cantidad < 0) {
                 $cantidad = 0;
@@ -215,41 +260,155 @@ class VentaIndex extends Component
 
             $subtotalItem = $cantidad * $precioUnitario;
 
-            if ($descuento < 0) {
-                $descuento = 0;
+            if ($descuentoLinea < 0) {
+                $descuentoLinea = 0;
             }
 
-            if ($descuento > $subtotalItem) {
-                $descuento = $subtotalItem;
+            if ($descuentoLinea > $subtotalItem) {
+                $descuentoLinea = $subtotalItem;
             }
 
-            $totalItem = $subtotalItem - $descuento;
+            $totalAntesDescuentoGeneral = $subtotalItem - $descuentoLinea;
 
             $this->carrito[$index]['cantidad'] = $cantidad;
             $this->carrito[$index]['precio_unitario'] = $precioUnitario;
-            $this->carrito[$index]['descuento'] = $descuento;
-            $this->carrito[$index]['subtotal'] = $subtotalItem;
-            $this->carrito[$index]['total'] = $totalItem;
+            $this->carrito[$index]['descuento'] = $descuentoLinea;
+            $this->carrito[$index]['subtotal'] = round($subtotalItem, 2);
+            $this->carrito[$index]['total_antes_descuento_general'] = round($totalAntesDescuentoGeneral, 2);
 
             $subtotal += $subtotalItem;
-            $descuentosLinea += $descuento;
+            $descuentosLinea += $descuentoLinea;
         }
 
+        /*
+    |--------------------------------------------------------------------------
+    | Validar descuento general
+    |--------------------------------------------------------------------------
+    */
         $descuentoGeneral = (float) $this->descuento_general;
 
         if ($descuentoGeneral < 0) {
             $descuentoGeneral = 0;
         }
 
-        if ($descuentoGeneral > ($subtotal - $descuentosLinea)) {
-            $descuentoGeneral = $subtotal - $descuentosLinea;
+        $baseParaDescuentoGeneral = $subtotal - $descuentosLinea;
+
+        if ($descuentoGeneral > $baseParaDescuentoGeneral) {
+            $descuentoGeneral = $baseParaDescuentoGeneral;
         }
 
-        $this->descuento_general = $descuentoGeneral;
-        $this->subtotal = $subtotal;
-        $this->descuento_total = $descuentosLinea + $descuentoGeneral;
-        $this->impuesto = 0;
-        $this->total = $this->subtotal - $this->descuento_total + $this->impuesto;
+        /*
+    |--------------------------------------------------------------------------
+    | Segunda pasada: distribuir descuento general y calcular impuestos
+    |--------------------------------------------------------------------------
+    */
+        $subtotalGravado = 0;
+        $subtotalExento = 0;
+        $subtotalNoSujeto = 0;
+        $isv15 = 0;
+        $totalVenta = 0;
+        $descuentoGeneralAsignado = 0;
+
+        $indices = array_keys($this->carrito);
+        $ultimoIndice = end($indices);
+
+        foreach ($this->carrito as $index => $item) {
+            $totalAntesDescuentoGeneral = (float) ($item['total_antes_descuento_general'] ?? 0);
+
+            if ($baseParaDescuentoGeneral > 0) {
+                $proporcion = $totalAntesDescuentoGeneral / $baseParaDescuentoGeneral;
+                $descuentoGeneralLinea = round($descuentoGeneral * $proporcion, 2);
+            } else {
+                $descuentoGeneralLinea = 0;
+            }
+
+            /*
+        | Ajuste de centavos en la última línea
+        */
+            if ($index === $ultimoIndice) {
+                $descuentoGeneralLinea = round($descuentoGeneral - $descuentoGeneralAsignado, 2);
+            }
+
+            $descuentoGeneralAsignado += $descuentoGeneralLinea;
+
+            $totalItem = $totalAntesDescuentoGeneral - $descuentoGeneralLinea;
+
+            if ($totalItem < 0) {
+                $totalItem = 0;
+            }
+
+            $tipoImpuesto = $item['tipo_impuesto'] ?? 'Gravado 15%';
+            $porcentajeIsv = (float) ($item['porcentaje_isv'] ?? 15);
+
+            $subtotalGravadoItem = 0;
+            $subtotalExentoItem = 0;
+            $subtotalNoSujetoItem = 0;
+            $impuestoItem = 0;
+
+            /*
+        |--------------------------------------------------------------------------
+        | Precio final con ISV incluido
+        |--------------------------------------------------------------------------
+        | Si el producto vale L 115 y es gravado 15%:
+        | Base gravada = 115 / 1.15 = 100
+        | ISV = 15
+        */
+            if ($tipoImpuesto === 'Gravado 15%' && $porcentajeIsv > 0) {
+                $factor = 1 + ($porcentajeIsv / 100);
+
+                $subtotalGravadoItem = round($totalItem / $factor, 2);
+                $impuestoItem = round($totalItem - $subtotalGravadoItem, 2);
+            } elseif ($tipoImpuesto === 'Exento') {
+                $subtotalExentoItem = round($totalItem, 2);
+            } else {
+                $subtotalNoSujetoItem = round($totalItem, 2);
+            }
+
+            $descuentoTotalLinea = (float) ($item['descuento'] ?? 0) + $descuentoGeneralLinea;
+
+            $this->carrito[$index]['descuento_general_linea'] = round($descuentoGeneralLinea, 2);
+            $this->carrito[$index]['descuento_total_linea'] = round($descuentoTotalLinea, 2);
+
+            $this->carrito[$index]['tipo_impuesto'] = $tipoImpuesto;
+            $this->carrito[$index]['porcentaje_isv'] = $porcentajeIsv;
+
+            $this->carrito[$index]['subtotal_gravado'] = $subtotalGravadoItem;
+            $this->carrito[$index]['subtotal_exento'] = $subtotalExentoItem;
+            $this->carrito[$index]['subtotal_no_sujeto'] = $subtotalNoSujetoItem;
+            $this->carrito[$index]['impuesto'] = $impuestoItem;
+
+            $this->carrito[$index]['total'] = round($totalItem, 2);
+
+            $subtotalGravado += $subtotalGravadoItem;
+            $subtotalExento += $subtotalExentoItem;
+            $subtotalNoSujeto += $subtotalNoSujetoItem;
+            $isv15 += $impuestoItem;
+            $totalVenta += $totalItem;
+        }
+
+        $this->descuento_general = round($descuentoGeneral, 2);
+        $this->subtotal = round($subtotal, 2);
+        $this->descuento_total = round($descuentosLinea + $descuentoGeneral, 2);
+
+        $this->subtotal_gravado = round($subtotalGravado, 2);
+        $this->subtotal_exento = round($subtotalExento, 2);
+        $this->subtotal_no_sujeto = round($subtotalNoSujeto, 2);
+        $this->isv_15 = round($isv15, 2);
+
+        $this->impuesto = $this->isv_15;
+        $this->total = round($totalVenta, 2);
+
+        $this->retencion = (float) $this->retencion;
+
+        if ($this->retencion < 0) {
+            $this->retencion = 0;
+        }
+
+        if ($this->retencion > $this->total) {
+            $this->retencion = $this->total;
+        }
+
+        $this->neto_recibido = round($this->total - $this->retencion, 2);
     }
 
     public function guardarVenta()
@@ -266,6 +425,7 @@ class VentaIndex extends Component
             'metodo_pago' => 'required|max:50',
             'estado' => 'required|max:30',
             'descuento_general' => 'nullable|numeric|min:0',
+            'retencion' => 'nullable|numeric|min:0',
             'monto_inicial' => 'nullable|numeric|min:0',
             'referencia_pago_inicial' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
@@ -281,47 +441,92 @@ class VentaIndex extends Component
                 $this->validarDisponibilidadCarrito();
 
                 $montoInicial = (float) $this->monto_inicial;
+                $retencion = (float) $this->retencion;
+                $netoRecibido = (float) $this->neto_recibido;
 
                 if ($montoInicial < 0) {
                     $montoInicial = 0;
                 }
 
-                if ($montoInicial > $this->total) {
-                    $montoInicial = $this->total;
+                if ($retencion < 0) {
+                    $retencion = 0;
                 }
 
+                if ($retencion > $this->total) {
+                    $retencion = $this->total;
+                }
+
+                if ($netoRecibido < 0) {
+                    $netoRecibido = 0;
+                }
+
+                /*
+|--------------------------------------------------------------------------
+| Si la venta está pagada:
+| La venta se considera cancelada por:
+| efectivo/banco recibido + retención aplicada.
+|--------------------------------------------------------------------------
+*/
                 if ($this->estado === 'Pagada') {
                     $montoPagado = $this->total;
                     $saldoPendiente = 0;
                     $estadoFinal = 'Pagada';
+                    $montoParaPago = $netoRecibido;
                 } else {
-                    $montoPagado = $montoInicial;
-                    $saldoPendiente = $this->total - $montoInicial;
+                    if ($montoInicial > $netoRecibido) {
+                        $montoInicial = $netoRecibido;
+                    }
+
+                    $montoPagado = $montoInicial + $retencion;
+                    $saldoPendiente = $this->total - $montoPagado;
+
+                    if ($saldoPendiente < 0) {
+                        $saldoPendiente = 0;
+                    }
+
                     $estadoFinal = $saldoPendiente <= 0 ? 'Pagada' : 'Pendiente';
+                    $montoParaPago = $montoInicial;
                 }
 
                 $venta = Venta::create([
                     'cliente_id' => $this->cliente_id ?: null,
                     'metodo_pago' => $this->metodo_pago,
                     'estado' => $estadoFinal,
+
                     'subtotal' => $this->subtotal,
                     'descuento' => $this->descuento_total,
+
+                    'subtotal_gravado' => $this->subtotal_gravado,
+                    'subtotal_exento' => $this->subtotal_exento,
+                    'subtotal_no_sujeto' => $this->subtotal_no_sujeto,
+
                     'impuesto' => $this->impuesto,
+                    'isv_15' => $this->isv_15,
+
                     'total' => $this->total,
+                    'retencion' => $this->retencion,
+                    'neto_recibido' => $this->neto_recibido,
+
                     'monto_pagado' => $montoPagado,
                     'saldo_pendiente' => $saldoPendiente,
                     'observacion' => $this->observacion,
                 ]);
 
-                if ($montoPagado > 0) {
+                if ($montoParaPago > 0) {
+                    $observacionPago = $estadoFinal === 'Pagada'
+                        ? 'Pago completo registrado al momento de la venta.'
+                        : 'Abono inicial registrado al momento de la venta.';
+
+                    if ($retencion > 0) {
+                        $observacionPago .= ' Retención aplicada: L ' . number_format($retencion, 2);
+                    }
+
                     PagoVenta::create([
                         'venta_id' => $venta->id,
-                        'monto' => $montoPagado,
+                        'monto' => $montoParaPago,
                         'metodo_pago' => $this->metodo_pago,
                         'referencia' => $this->referencia_pago_inicial,
-                        'observacion' => $estadoFinal === 'Pagada'
-                            ? 'Pago completo registrado al momento de la venta.'
-                            : 'Abono inicial registrado al momento de la venta.',
+                        'observacion' => $observacionPago,
                     ]);
                 }
 
@@ -347,7 +552,17 @@ class VentaIndex extends Component
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $item['precio_unitario'],
                         'costo_unitario' => $costoUnitarioReal,
-                        'descuento' => $item['descuento'],
+
+                        'tipo_impuesto' => $item['tipo_impuesto'] ?? 'Gravado 15%',
+                        'porcentaje_isv' => $item['porcentaje_isv'] ?? 15,
+
+                        'descuento' => $item['descuento_total_linea'] ?? $item['descuento'],
+
+                        'subtotal_gravado' => $item['subtotal_gravado'] ?? 0,
+                        'subtotal_exento' => $item['subtotal_exento'] ?? 0,
+                        'subtotal_no_sujeto' => $item['subtotal_no_sujeto'] ?? 0,
+                        'impuesto' => $item['impuesto'] ?? 0,
+
                         'subtotal' => $item['subtotal'],
                         'total' => $item['total'],
                     ]);
