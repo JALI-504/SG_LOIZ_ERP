@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ConfiguracionEmpresa;
 
 class Venta extends Model
 {
@@ -32,13 +33,35 @@ class Venta extends Model
         'isv_15',
         'retencion',
         'neto_recibido',
+        'es_fiscal',
+        'cai',
+        'rango_autorizado_desde',
+        'rango_autorizado_hasta',
+        'fecha_limite_emision',
     ];
 
     protected static function booted()
     {
         static::creating(function ($venta) {
+            $configuracion = ConfiguracionEmpresa::actual();
+
+            if (empty($venta->tipo_comprobante)) {
+                $venta->tipo_comprobante = $configuracion->esta_en_modo_fiscal
+                    ? 'Factura'
+                    : 'Recibo interno';
+            }
+
+            $venta->es_fiscal = $configuracion->esta_en_modo_fiscal;
+
+            if ($venta->es_fiscal) {
+                $venta->cai = $configuracion->cai;
+                $venta->rango_autorizado_desde = $configuracion->rango_desde;
+                $venta->rango_autorizado_hasta = $configuracion->rango_hasta;
+                $venta->fecha_limite_emision = $configuracion->fecha_limite_emision;
+            }
+
             if (empty($venta->numero)) {
-                $venta->numero = self::generarNumero();
+                $venta->numero = self::generarNumero($configuracion);
             }
 
             if (empty($venta->fecha)) {
@@ -49,20 +72,33 @@ class Venta extends Model
                 $venta->hora = now()->format('H:i:s');
             }
 
-            if (empty($venta->tipo_comprobante)) {
-                $venta->tipo_comprobante = 'Recibo interno';
-            }
-
             if (empty($venta->estado)) {
                 $venta->estado = 'Pagada';
+            }
+
+            if (empty($venta->metodo_pago)) {
+                $venta->metodo_pago = 'Efectivo';
+            }
+
+            if (empty($venta->neto_recibido)) {
+                $venta->neto_recibido = $venta->total - $venta->retencion;
             }
         });
     }
 
-    public static function generarNumero()
+    public static function generarNumero($configuracion = null)
     {
-        $configuracion = ConfiguracionEmpresa::actual();
+        $configuracion = $configuracion ?: ConfiguracionEmpresa::actual();
 
+        if ($configuracion->esta_en_modo_fiscal) {
+            return self::generarNumeroFactura($configuracion);
+        }
+
+        return self::generarNumeroRecibo($configuracion);
+    }
+
+    private static function generarNumeroRecibo($configuracion)
+    {
         $prefijo = $configuracion->prefijo_recibo ?: 'REC';
 
         $ultimaVenta = self::where('numero', 'like', $prefijo . '-%')
@@ -83,6 +119,79 @@ class Venta extends Model
         $configuracion->save();
 
         return $prefijo . '-' . str_pad($nuevoNumero, 6, '0', STR_PAD_LEFT);
+    }
+
+    private static function generarNumeroFactura($configuracion)
+    {
+        self::validarConfiguracionFiscal($configuracion);
+
+        $desde = self::extraerNumeroFinal($configuracion->rango_desde);
+        $hasta = self::extraerNumeroFinal($configuracion->rango_hasta);
+
+        $numeroActual = (int) $configuracion->numero_actual_factura;
+
+        if ($numeroActual <= 0 && $desde > 0) {
+            $nuevoNumero = $desde;
+        } else {
+            $nuevoNumero = $numeroActual + 1;
+        }
+
+        if ($hasta > 0 && $nuevoNumero > $hasta) {
+            throw new \Exception('No se puede emitir la factura. El rango autorizado ya fue agotado.');
+        }
+
+        $configuracion->numero_actual_factura = $nuevoNumero;
+        $configuracion->save();
+
+        return self::formatearNumeroFactura($configuracion, $nuevoNumero);
+    }
+
+    private static function validarConfiguracionFiscal($configuracion)
+    {
+        if (!$configuracion->cai) {
+            throw new \Exception('No se puede emitir factura fiscal. Falta configurar el CAI.');
+        }
+
+        if (!$configuracion->rango_desde || !$configuracion->rango_hasta) {
+            throw new \Exception('No se puede emitir factura fiscal. Falta configurar el rango autorizado.');
+        }
+
+        if (!$configuracion->fecha_limite_emision) {
+            throw new \Exception('No se puede emitir factura fiscal. Falta configurar la fecha límite de emisión.');
+        }
+
+        if (now()->format('Y-m-d') > $configuracion->fecha_limite_emision) {
+            throw new \Exception('No se puede emitir factura fiscal. La fecha límite de emisión ya venció.');
+        }
+
+        if (!$configuracion->rtn) {
+            throw new \Exception('No se puede emitir factura fiscal. Falta configurar el RTN del negocio.');
+        }
+
+        if (!$configuracion->nombre_legal && !$configuracion->nombre_comercial) {
+            throw new \Exception('No se puede emitir factura fiscal. Falta configurar el nombre legal o comercial del negocio.');
+        }
+    }
+
+    private static function formatearNumeroFactura($configuracion, $numero)
+    {
+        $establecimiento = str_pad($configuracion->establecimiento ?: '000', 3, '0', STR_PAD_LEFT);
+        $puntoEmision = str_pad($configuracion->punto_emision ?: '001', 3, '0', STR_PAD_LEFT);
+        $tipoDocumento = str_pad($configuracion->tipo_documento_fiscal ?: '01', 2, '0', STR_PAD_LEFT);
+        $correlativo = str_pad($numero, 8, '0', STR_PAD_LEFT);
+
+        return $establecimiento . '-' . $puntoEmision . '-' . $tipoDocumento . '-' . $correlativo;
+    }
+
+    private static function extraerNumeroFinal($numeroDocumento)
+    {
+        $limpio = preg_replace('/[^0-9]/', '', $numeroDocumento);
+
+        if (!$limpio) {
+            return 0;
+        }
+
+        return (int) substr($limpio, -8);
     }
 
     public function cliente()

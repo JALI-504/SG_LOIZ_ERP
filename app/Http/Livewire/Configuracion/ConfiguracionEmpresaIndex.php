@@ -11,6 +11,8 @@ class ConfiguracionEmpresaIndex extends Component
 {
     use WithFileUploads;
 
+    public $configuracion;
+
     public $configuracion_id;
 
     public $nombre_comercial;
@@ -38,9 +40,35 @@ class ConfiguracionEmpresaIndex extends Component
 
     public $mensaje_recibo;
 
+    public $modo_fiscal = 'Interno';
+    public $documento_venta_activo = 'Recibo interno';
+
+    public $usa_impuestos = false;
+    public $usa_retenciones = false;
+    public $precios_incluyen_isv = true;
+    public $porcentaje_isv_general = 15;
+
+    public $establecimiento = '000';
+    public $punto_emision = '001';
+    public $tipo_documento_fiscal = '01';
+    public $numero_actual_factura = 0;
+
+    public $modosFiscales = [
+        'Interno',
+        'Fiscal',
+    ];
+
+    public $documentosVenta = [
+        'Recibo interno',
+        'Factura',
+    ];
+    
+
     public function mount()
     {
         $configuracion = ConfiguracionEmpresa::actual();
+
+        $this->configuracion = $configuracion;
 
         $this->configuracion_id = $configuracion->id;
 
@@ -67,6 +95,19 @@ class ConfiguracionEmpresaIndex extends Component
         $this->numero_actual_recibo = $configuracion->numero_actual_recibo ?? 0;
 
         $this->mensaje_recibo = $configuracion->mensaje_recibo;
+
+        $this->modo_fiscal = $this->configuracion->modo_fiscal ?? 'Interno';
+        $this->documento_venta_activo = $this->configuracion->documento_venta_activo ?? 'Recibo interno';
+
+        $this->usa_impuestos = (bool) $this->configuracion->usa_impuestos;
+        $this->usa_retenciones = (bool) $this->configuracion->usa_retenciones;
+        $this->precios_incluyen_isv = (bool) $this->configuracion->precios_incluyen_isv;
+        $this->porcentaje_isv_general = $this->configuracion->porcentaje_isv_general ?? 15;
+
+        $this->establecimiento = $this->configuracion->establecimiento ?? '000';
+        $this->punto_emision = $this->configuracion->punto_emision ?? '001';
+        $this->tipo_documento_fiscal = $this->configuracion->tipo_documento_fiscal ?? '01';
+        $this->numero_actual_factura = $this->configuracion->numero_actual_factura ?? 0;
     }
 
     protected function rules()
@@ -95,6 +136,19 @@ class ConfiguracionEmpresaIndex extends Component
             'numero_actual_recibo' => 'required|integer|min:0',
 
             'mensaje_recibo' => 'nullable|max:1000',
+
+            'modo_fiscal' => 'required|max:30',
+            'documento_venta_activo' => 'required|max:50',
+
+            'usa_impuestos' => 'boolean',
+            'usa_retenciones' => 'boolean',
+            'precios_incluyen_isv' => 'boolean',
+            'porcentaje_isv_general' => 'required|numeric|min:0|max:100',
+
+            'establecimiento' => 'required|max:3',
+            'punto_emision' => 'required|max:3',
+            'tipo_documento_fiscal' => 'required|max:2',
+            'numero_actual_factura' => 'required|numeric|min:0',
         ];
     }
 
@@ -112,6 +166,18 @@ class ConfiguracionEmpresaIndex extends Component
             }
 
             $rutaLogo = $this->logoNuevo->store('logos', 'public');
+        }
+
+        if ($this->modo_fiscal === 'Interno') {
+            $this->usa_facturacion_fiscal = false;
+            $this->documento_venta_activo = 'Recibo interno';
+            $this->usa_retenciones = false;
+        }
+
+        if ($this->modo_fiscal === 'Fiscal') {
+            $this->usa_facturacion_fiscal = true;
+            $this->documento_venta_activo = 'Factura';
+            $this->usa_impuestos = true;
         }
 
         $configuracion->update([
@@ -139,11 +205,26 @@ class ConfiguracionEmpresaIndex extends Component
 
             'mensaje_recibo' => $this->mensaje_recibo,
             'activo' => true,
+
+            'modo_fiscal' => $this->modo_fiscal,
+            'documento_venta_activo' => $this->documento_venta_activo,
+
+            'usa_impuestos' => $this->usa_impuestos,
+            'usa_retenciones' => $this->usa_retenciones,
+            'precios_incluyen_isv' => $this->precios_incluyen_isv,
+            'porcentaje_isv_general' => $this->porcentaje_isv_general,
+
+            'establecimiento' => str_pad($this->establecimiento ?: '000', 3, '0', STR_PAD_LEFT),
+            'punto_emision' => str_pad($this->punto_emision ?: '001', 3, '0', STR_PAD_LEFT),
+            'tipo_documento_fiscal' => str_pad($this->tipo_documento_fiscal ?: '01', 2, '0', STR_PAD_LEFT),
+            'numero_actual_factura' => $this->numero_actual_factura ?: 0,
         ]);
 
         $this->logo = $rutaLogo;
         $this->logoNuevo = null;
         $this->prefijo_recibo = strtoupper($this->prefijo_recibo);
+
+        $this->configuracion = $configuracion->fresh();
 
         session()->flash('message', 'Configuración del negocio actualizada correctamente.');
     }
@@ -170,4 +251,18 @@ class ConfiguracionEmpresaIndex extends Component
     {
         return view('livewire.configuracion.configuracion-empresa-index');
     }
+
+    public function updatedModoFiscal()
+    {
+        if ($this->modo_fiscal === 'Fiscal') {
+            $this->usa_facturacion_fiscal = true;
+            $this->documento_venta_activo = 'Factura';
+            $this->usa_impuestos = true;
+        } else {
+            $this->usa_facturacion_fiscal = false;
+            $this->documento_venta_activo = 'Recibo interno';
+            $this->usa_retenciones = false;
+        }
+    }
+
 }

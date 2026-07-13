@@ -16,8 +16,10 @@ use App\Models\Servicio;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\PagoVenta;
+use App\Models\ConfiguracionEmpresa;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+
 
 class VentaIndex extends Component
 {
@@ -37,6 +39,13 @@ class VentaIndex extends Component
     public $metodosPago = [];
     public $estadosVenta = [];
 
+    public $configuracionEmpresa;
+
+    public $usa_impuestos_config = false;
+    public $usa_retenciones_config = false;
+    public $precios_incluyen_isv_config = true;
+    public $modo_fiscal_config = 'Interno';
+
     public $carrito = [];
 
     public $subtotal = 0;
@@ -55,6 +64,13 @@ class VentaIndex extends Component
 
     public function mount()
     {
+        $this->configuracionEmpresa = ConfiguracionEmpresa::actual();
+
+        $this->usa_impuestos_config = (bool) $this->configuracionEmpresa->usa_impuestos;
+        $this->usa_retenciones_config = (bool) $this->configuracionEmpresa->usa_retenciones;
+        $this->precios_incluyen_isv_config = (bool) $this->configuracionEmpresa->precios_incluyen_isv;
+        $this->modo_fiscal_config = $this->configuracionEmpresa->modo_fiscal ?? 'Interno';
+
         $this->metodosPago = Catalogo::opciones('metodo_pago')->pluck('nombre')->toArray();
         $this->estadosVenta = Catalogo::opciones('estado_venta')->pluck('nombre')->toArray();
 
@@ -309,6 +325,9 @@ class VentaIndex extends Component
         $totalVenta = 0;
         $descuentoGeneralAsignado = 0;
 
+        $usaImpuestos = (bool) $this->usa_impuestos_config;
+        $preciosIncluyenIsv = (bool) $this->precios_incluyen_isv_config;
+
         $indices = array_keys($this->carrito);
         $ultimoIndice = end($indices);
 
@@ -353,15 +372,44 @@ class VentaIndex extends Component
         | Base gravada = 115 / 1.15 = 100
         | ISV = 15
         */
-            if ($tipoImpuesto === 'Gravado 15%' && $porcentajeIsv > 0) {
-                $factor = 1 + ($porcentajeIsv / 100);
-
-                $subtotalGravadoItem = round($totalItem / $factor, 2);
-                $impuestoItem = round($totalItem - $subtotalGravadoItem, 2);
-            } elseif ($tipoImpuesto === 'Exento') {
-                $subtotalExentoItem = round($totalItem, 2);
+            if (!$usaImpuestos) {
+                /*
+    |--------------------------------------------------------------------------
+    | Modo sin impuestos
+    |--------------------------------------------------------------------------
+    | Para negocios informales o recibos internos simples:
+    | - No se calcula ISV.
+    | - No se clasifica como gravado/exento/no sujeto.
+    | - El total de la línea queda igual.
+    */
+                $tipoImpuesto = 'No aplica';
+                $porcentajeIsv = 0;
+                $impuestoItem = 0;
             } else {
-                $subtotalNoSujetoItem = round($totalItem, 2);
+                if ($tipoImpuesto === 'Gravado 15%' && $porcentajeIsv > 0) {
+                    $factor = 1 + ($porcentajeIsv / 100);
+
+                    if ($preciosIncluyenIsv) {
+                        /*
+            | Precio final ya incluye ISV.
+            | Ejemplo: L 115 = L 100 base + L 15 ISV.
+            */
+                        $subtotalGravadoItem = round($totalItem / $factor, 2);
+                        $impuestoItem = round($totalItem - $subtotalGravadoItem, 2);
+                    } else {
+                        /*
+            | Precio no incluye ISV.
+            | Ejemplo: L 100 base + L 15 ISV = L 115 total.
+            */
+                        $subtotalGravadoItem = round($totalItem, 2);
+                        $impuestoItem = round($subtotalGravadoItem * ($porcentajeIsv / 100), 2);
+                        $totalItem = round($subtotalGravadoItem + $impuestoItem, 2);
+                    }
+                } elseif ($tipoImpuesto === 'Exento') {
+                    $subtotalExentoItem = round($totalItem, 2);
+                } else {
+                    $subtotalNoSujetoItem = round($totalItem, 2);
+                }
             }
 
             $descuentoTotalLinea = (float) ($item['descuento'] ?? 0) + $descuentoGeneralLinea;
@@ -398,6 +446,10 @@ class VentaIndex extends Component
         $this->impuesto = $this->isv_15;
         $this->total = round($totalVenta, 2);
 
+        if (!$this->usa_retenciones_config) {
+            $this->retencion = 0;
+        }
+
         $this->retencion = (float) $this->retencion;
 
         if ($this->retencion < 0) {
@@ -414,6 +466,11 @@ class VentaIndex extends Component
     public function guardarVenta()
     {
         $this->recalcularCarrito();
+
+        if (!$this->usa_retenciones_config) {
+            $this->retencion = 0;
+            $this->neto_recibido = $this->total;
+        }
 
         if (count($this->carrito) === 0) {
             session()->flash('error', 'Debe agregar al menos un producto o servicio a la venta.');

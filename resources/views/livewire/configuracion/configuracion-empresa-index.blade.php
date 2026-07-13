@@ -110,6 +110,219 @@
                     @enderror
                 </div>
             </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Modo fiscal y facturación</h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Modo interno:</strong> genera recibos internos no fiscales.<br>
+                        <strong>Modo fiscal:</strong> genera facturas con CAI, rango autorizado y fecha límite de emisión.
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <label>Modo fiscal</label>
+                            <select class="form-control" wire:model="modo_fiscal">
+                                @foreach ($modosFiscales as $modo)
+                                    <option value="{{ $modo }}">
+                                        {{ $modo }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('modo_fiscal')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>Documento de venta activo</label>
+                            <input type="text"
+                                class="form-control"
+                                wire:model.defer="documento_venta_activo"
+                                readonly>
+
+                            <small class="text-muted">
+                                Se asigna automáticamente según el modo fiscal.
+                            </small>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>Porcentaje ISV general</label>
+                            <input type="number"
+                                step="0.01"
+                                min="0"
+                                class="form-control"
+                                wire:model.defer="porcentaje_isv_general">
+
+                            @error('porcentaje_isv_general')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                    class="custom-control-input"
+                                    id="usa_impuestos"
+                                    wire:model="usa_impuestos">
+
+                                <label class="custom-control-label" for="usa_impuestos">
+                                    Usar impuestos
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                    class="custom-control-input"
+                                    id="usa_retenciones"
+                                    wire:model="usa_retenciones">
+
+                                <label class="custom-control-label" for="usa_retenciones">
+                                    Usar retenciones
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                    class="custom-control-input"
+                                    id="precios_incluyen_isv"
+                                    wire:model="precios_incluyen_isv">
+
+                                <label class="custom-control-label" for="precios_incluyen_isv">
+                                    Precios incluyen ISV
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($modo_fiscal === 'Fiscal')
+                        <hr>
+
+                        <h5>Datos de facturación fiscal</h5>
+
+                        <div class="alert alert-warning">
+                            Antes de activar facturación fiscal, asegúrate de tener CAI, rango autorizado y fecha límite emitidos por el SAR.
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <label>CAI</label>
+                                <input type="text"
+                                    class="form-control"
+                                    wire:model.defer="cai"
+                                    placeholder="Código de autorización de impresión">
+
+                                @error('cai')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label>Rango desde</label>
+                                <input type="text"
+                                    class="form-control"
+                                    wire:model.defer="rango_desde"
+                                    placeholder="000-001-01-00000001">
+
+                                @error('rango_desde')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label>Rango hasta</label>
+                                <input type="text"
+                                    class="form-control"
+                                    wire:model.defer="rango_hasta"
+                                    placeholder="000-001-01-00000100">
+
+                                @error('rango_hasta')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group col-md-4">
+                                <label>Fecha límite de emisión</label>
+                                <input type="date"
+                                    class="form-control"
+                                    wire:model.defer="fecha_limite_emision">
+
+                                @error('fecha_limite_emision')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-2">
+                                <label>Establecimiento</label>
+                                <input type="text"
+                                    maxlength="3"
+                                    class="form-control"
+                                    wire:model.defer="establecimiento"
+                                    placeholder="000">
+
+                                @error('establecimiento')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-2">
+                                <label>Punto emisión</label>
+                                <input type="text"
+                                    maxlength="3"
+                                    class="form-control"
+                                    wire:model.defer="punto_emision"
+                                    placeholder="001">
+
+                                @error('punto_emision')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-2">
+                                <label>Tipo doc.</label>
+                                <input type="text"
+                                    maxlength="2"
+                                    class="form-control"
+                                    wire:model.defer="tipo_documento_fiscal"
+                                    placeholder="01">
+
+                                @error('tipo_documento_fiscal')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group col-md-2">
+                                <label>No. actual factura</label>
+                                <input type="number"
+                                    min="0"
+                                    class="form-control"
+                                    wire:model.defer="numero_actual_factura">
+
+                                <small class="text-muted">
+                                    Usa 0 para iniciar en el rango desde.
+                                </small>
+
+                                @error('numero_actual_factura')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
         </div>
 
         {{-- Logo --}}

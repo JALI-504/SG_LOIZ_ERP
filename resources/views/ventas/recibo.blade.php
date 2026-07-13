@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Recibo {{ $venta->numero }}</title>
+   <title>{{ $venta->es_fiscal ? 'Factura' : 'Recibo' }} {{ $venta->numero }}</title>
 
     <style>
         body {
@@ -118,6 +118,77 @@
             font-size: 13px;
         }
 
+        .encabezado-documento {
+            display: table;
+            width: 100%;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 12px;
+        }
+
+        .empresa-columna {
+            display: table-cell;
+            width: 58%;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .documento-columna {
+            display: table-cell;
+            width: 42%;
+            vertical-align: top;
+            text-align: right;
+        }
+
+        .nombre-negocio {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .dato-negocio {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+
+        .caja-documento {
+            border: 2px solid #333;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .titulo-documento {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .leyenda-documento {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .numero-documento {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .dato-fiscal {
+            font-size: 12px;
+            margin: 3px 0;
+        }
+
+        .no-fiscal-box {
+            border: 2px solid #333;
+            padding: 8px;
+            margin-top: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+
         @media print {
             .botones {
                 display: none;
@@ -137,6 +208,14 @@
 
 <body>
 
+    @php
+    $esFiscal = (bool) $venta->es_fiscal;
+    $tituloDocumento = $esFiscal ? 'FACTURA' : 'RECIBO INTERNO';
+    $leyendaDocumento = $esFiscal
+        ? 'DOCUMENTO FISCAL'
+        : 'COMPROBANTE INTERNO NO FISCAL';
+    @endphp
+
     <div class="botones">
         <button onclick="window.print()" class="btn">
             Imprimir
@@ -148,105 +227,107 @@
     </div>
 
     <div class="recibo">
-        <div class="text-center">
+       <div class="encabezado-documento">
 
-            @if ($configuracion->logo)
-                <img src="{{ asset('storage/' . $configuracion->logo) }}"
-                     class="logo"
-                     alt="Logo">
-            @endif
+    <div class="empresa-columna">
+                @if ($configuracion->logo)
+                    <img src="{{ asset('storage/' . $configuracion->logo) }}"
+                        class="logo"
+                        alt="Logo">
+                @endif
 
-            <div class="titulo-negocio">
-                {{ $configuracion->nombre_comercial }}
+                <div class="nombre-negocio">
+                    {{ $configuracion->nombre_comercial }}
+                </div>
+
+                @if ($configuracion->nombre_legal)
+                    <div class="dato-negocio">
+                        {{ $configuracion->nombre_legal }}
+                    </div>
+                @endif
+
+                @if ($configuracion->rtn)
+                    <div class="dato-negocio">
+                        <strong>RTN:</strong> {{ $configuracion->rtn }}
+                    </div>
+                @endif
+
+                @if ($configuracion->direccion)
+                    <div class="dato-negocio">
+                        <strong>Dirección:</strong> {{ $configuracion->direccion }}
+                    </div>
+                @endif
+
+                @if ($configuracion->telefono || $configuracion->whatsapp)
+                    <div class="dato-negocio">
+                        @if ($configuracion->telefono)
+                            <strong>Tel:</strong> {{ $configuracion->telefono }}
+                        @endif
+
+                        @if ($configuracion->telefono && $configuracion->whatsapp)
+                            |
+                        @endif
+
+                        @if ($configuracion->whatsapp)
+                            <strong>WhatsApp:</strong> {{ $configuracion->whatsapp }}
+                        @endif
+                    </div>
+                @endif
+
+                @if ($configuracion->correo)
+                    <div class="dato-negocio">
+                        <strong>Correo:</strong> {{ $configuracion->correo }}
+                    </div>
+                @endif
+
+                @if ($configuracion->descripcion_negocio)
+                    <div class="dato-negocio text-muted">
+                        {{ $configuracion->descripcion_negocio }}
+                    </div>
+                @endif
             </div>
 
-            @if ($configuracion->descripcion_negocio)
-                <div class="subtitulo">
-                    {{ $configuracion->descripcion_negocio }}
-                </div>
-            @endif
+            <div class="documento-columna">
+                <div class="caja-documento">
+                    <div class="titulo-documento">
+                        {{ $tituloDocumento }}
+                    </div>
 
-            @if ($configuracion->telefono || $configuracion->whatsapp)
-                <div class="subtitulo">
-                    @if ($configuracion->telefono)
-                        Tel: {{ $configuracion->telefono }}
+                    <div class="leyenda-documento">
+                        {{ $leyendaDocumento }}
+                    </div>
+
+                    <div class="numero-documento">
+                        No.: {{ $venta->numero }}
+                    </div>
+
+                    @if ($esFiscal)
+                        <div class="dato-fiscal">
+                            <strong>CAI:</strong> {{ $venta->cai }}
+                        </div>
+
+                        <div class="dato-fiscal">
+                            <strong>Rango autorizado:</strong><br>
+                            {{ $venta->rango_autorizado_desde }}
+                            al
+                            {{ $venta->rango_autorizado_hasta }}
+                        </div>
+
+                        @if ($venta->fecha_limite_emision)
+                            <div class="dato-fiscal">
+                                <strong>Fecha límite:</strong>
+                                {{ \Carbon\Carbon::parse($venta->fecha_limite_emision)->format('d/m/Y') }}
+                            </div>
+                        @endif
+                    @else
+                        <div class="no-fiscal-box">
+                            COMPROBANTE INTERNO NO FISCAL
+                        </div>
                     @endif
-
-                    @if ($configuracion->telefono && $configuracion->whatsapp)
-                        |
-                    @endif
-
-                    @if ($configuracion->whatsapp)
-                        WhatsApp: {{ $configuracion->whatsapp }}
-                    @endif
                 </div>
-            @endif
-
-            @if ($configuracion->correo)
-                <div class="subtitulo">
-                    {{ $configuracion->correo }}
-                </div>
-            @endif
-
-            @if ($configuracion->direccion)
-                <div class="subtitulo">
-                    {{ $configuracion->direccion }}
-                </div>
-            @endif
-
-            @if ($configuracion->rtn)
-                <div class="subtitulo">
-                    RTN: {{ $configuracion->rtn }}
-                </div>
-            @endif
-
-            <div class="subtitulo text-muted">
-                {{ $venta->tipo_comprobante }}
             </div>
 
-            <div class="numero">
-                {{ $venta->numero }}
-            </div>
-
-            @if ($configuracion->usa_facturacion_fiscal && $configuracion->cai)
-                <div class="no-fiscal">
-                    DATOS FISCALES CONFIGURADOS
-                </div>
-            @else
-                <div class="no-fiscal">
-                    COMPROBANTE NO FISCAL
-                </div>
-            @endif
         </div>
-
-        @if ($configuracion->usa_facturacion_fiscal && $configuracion->cai)
-            <div class="seccion">
-                <table class="sin-borde">
-                    <tr>
-                        <td>
-                            <strong>CAI:</strong>
-                            {{ $configuracion->cai }}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            <strong>Rango autorizado:</strong>
-                            {{ $configuracion->rango_desde }}
-                            a
-                            {{ $configuracion->rango_hasta }}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            <strong>Fecha límite de emisión:</strong>
-                            {{ $configuracion->fecha_limite_emision }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        @endif
 
         <div class="seccion">
             <table class="sin-borde">
@@ -283,6 +364,10 @@
 
                             @if ($venta->cliente->dni)
                                 | DNI: {{ $venta->cliente->dni }}
+                            @endif
+
+                            @if ($venta->cliente->rtn)
+                                | RTN: {{ $venta->cliente->rtn }}
                             @endif
 
                             @if ($venta->cliente->telefono)
@@ -345,66 +430,91 @@
             </table>
         </div>
 
-        <table class="totales">
+        <table style="width: 100%; margin-top: 10px;">
             <tr>
-                <td>
-                    Subtotal:
-                </td>
-
+                <td class="text-right"><strong>Subtotal bruto:</strong></td>
                 <td class="text-right">
                     L {{ number_format($venta->subtotal, 2) }}
                 </td>
             </tr>
 
             <tr>
-                <td>
-                    Descuento:
-                </td>
-
+                <td class="text-right"><strong>Descuento:</strong></td>
                 <td class="text-right">
                     L {{ number_format($venta->descuento, 2) }}
                 </td>
             </tr>
 
+            @if ($venta->subtotal_gravado > 0 || $venta->subtotal_exento > 0 || $venta->subtotal_no_sujeto > 0 || $venta->isv_15 > 0)
+                <tr>
+                    <td class="text-right"><strong>Subtotal gravado:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->subtotal_gravado, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="text-right"><strong>Subtotal exento:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->subtotal_exento, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="text-right"><strong>Subtotal no sujeto:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->subtotal_no_sujeto, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="text-right"><strong>ISV 15%:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->isv_15, 2) }}
+                    </td>
+                </tr>
+            @endif
+
             <tr>
-                <td>
-                    Impuesto:
-                </td>
-
+                <td class="text-right"><strong>Total venta:</strong></td>
                 <td class="text-right">
-                    L {{ number_format($venta->impuesto, 2) }}
+                    <strong>L {{ number_format($venta->total, 2) }}</strong>
                 </td>
             </tr>
 
-            <tr>
-                <td>
-                    Pagado:
-                </td>
+            @if ($venta->retencion > 0)
+                <tr>
+                    <td class="text-right"><strong>Retención:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->retencion, 2) }}
+                    </td>
+                </tr>
 
-                <td class="text-right">
-                    L {{ number_format($venta->monto_pagado, 2) }}
-                </td>
-            </tr>
+                <tr>
+                    <td class="text-right"><strong>Neto recibido:</strong></td>
+                    <td class="text-right">
+                        <strong>L {{ number_format($venta->neto_recibido, 2) }}</strong>
+                    </td>
+                </tr>
+            @endif
 
-            <tr>
-                <td>
-                    Saldo pendiente:
-                </td>
+            @if ($venta->monto_pagado > 0)
+                <tr>
+                    <td class="text-right"><strong>Monto pagado:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->monto_pagado, 2) }}
+                    </td>
+                </tr>
+            @endif
 
-                <td class="text-right">
-                    L {{ number_format($venta->saldo_pendiente, 2) }}
-                </td>
-            </tr>
-
-            <tr class="total-final">
-                <td>
-                    Total:
-                </td>
-
-                <td class="text-right">
-                    L {{ number_format($venta->total, 2) }}
-                </td>
-            </tr>
+            @if ($venta->saldo_pendiente > 0)
+                <tr>
+                    <td class="text-right"><strong>Saldo pendiente:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($venta->saldo_pendiente, 2) }}
+                    </td>
+                </tr>
+            @endif
         </table>
 
         @if ($venta->observacion)
@@ -415,14 +525,20 @@
         @endif
 
         @if ($configuracion->mensaje_recibo)
-            <div class="seccion text-center">
+            <p class="text-center" style="margin-top: 15px;">
                 {{ $configuracion->mensaje_recibo }}
-            </div>
+            </p>
         @endif
 
-        <div class="seccion text-center text-muted">
-            @if ($configuracion->usa_facturacion_fiscal && $configuracion->cai)
-                Documento generado por el sistema.
+        @if (!$esFiscal)
+            <p class="text-center" style="font-size: 11px;">
+                Este documento es un comprobante interno y no constituye factura fiscal.
+            </p>
+        @endif
+
+       <div class="seccion text-center text-muted">
+            @if ($esFiscal)
+                Documento fiscal generado por el sistema.
             @else
                 Este documento es un comprobante interno no fiscal.
                 No sustituye factura fiscal autorizada.
