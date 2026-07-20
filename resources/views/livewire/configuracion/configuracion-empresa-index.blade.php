@@ -355,21 +355,22 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Subir logo</label>
+
                         <input type="file"
-                               class="form-control"
-                               wire:model="logoNuevo"
-                               accept="image/*">
+                            class="form-control-file"
+                            wire:model="logoNuevo"
+                            accept="image/png,image/jpeg,image/jpg">
 
                         @error('logoNuevo')
-                            <small class="text-danger">{{ $message }}</small>
+                            <small class="text-danger d-block">{{ $message }}</small>
                         @enderror
 
-                        <small class="text-muted">
-                            Formatos permitidos: JPG, JPEG, PNG. Tamaño máximo: 2 MB.
+                        <small class="text-muted d-block mt-1">
+                            Formatos permitidos: JPG, JPEG, PNG. Tamaño máximo: 4 MB.
                         </small>
 
                         <div wire:loading wire:target="logoNuevo" class="text-info mt-2">
-                            Cargando logo...
+                            <i class="fas fa-spinner fa-spin"></i> Cargando logo...
                         </div>
                     </div>
 
@@ -377,20 +378,28 @@
                         <label>Vista previa</label><br>
 
                         @if ($logoNuevo)
+                            <p class="mb-1"><strong>Nuevo logo seleccionado:</strong></p>
+
                             <img src="{{ $logoNuevo->temporaryUrl() }}"
-                                 style="max-height: 120px; max-width: 220px;"
-                                 class="img-thumbnail">
+                                alt="Vista previa"
+                                style="max-height: 120px; max-width: 220px;"
+                                class="img-thumbnail">
+
                         @elseif ($logo)
+                            <p class="mb-1"><strong>Logo actual:</strong></p>
+
                             <img src="{{ asset('storage/' . $logo) }}"
-                                 style="max-height: 120px; max-width: 220px;"
-                                 class="img-thumbnail">
+                                alt="Logo actual"
+                                style="max-height: 120px; max-width: 220px;"
+                                class="img-thumbnail">
 
                             <br>
 
                             <button type="button"
                                     class="btn btn-danger btn-sm mt-2"
-                                    wire:click="eliminarLogo">
-                                Eliminar logo
+                                    wire:click="eliminarLogo"
+                                    wire:loading.attr="disabled">
+                                <i class="fas fa-trash"></i> Eliminar logo
                             </button>
                         @else
                             <div class="alert alert-secondary mb-0">

@@ -96,19 +96,6 @@ class ConfiguracionEmpresaIndex extends Component
 
         $this->mensaje_recibo = $configuracion->mensaje_recibo;
 
-        // $this->modo_fiscal = $this->configuracion->modo_fiscal ?? 'Interno';
-        // $this->documento_venta_activo = $this->configuracion->documento_venta_activo ?? 'Recibo interno';
-
-        // $this->usa_impuestos = (bool) $this->configuracion->usa_impuestos;
-        // $this->usa_retenciones = (bool) $this->configuracion->usa_retenciones;
-        // $this->precios_incluyen_isv = (bool) $this->configuracion->precios_incluyen_isv;
-        // $this->porcentaje_isv_general = $this->configuracion->porcentaje_isv_general ?? 15;
-
-        // $this->establecimiento = $this->configuracion->establecimiento ?? '000';
-        // $this->punto_emision = $this->configuracion->punto_emision ?? '001';
-        // $this->tipo_documento_fiscal = $this->configuracion->tipo_documento_fiscal ?? '01';
-        // $this->numero_actual_factura = $this->configuracion->numero_actual_factura ?? 0;
-
         $this->modo_fiscal = $configuracion->modo_fiscal ?? 'Interno';
         $this->documento_venta_activo = $configuracion->documento_venta_activo ?? 'Recibo interno';
 
@@ -138,9 +125,8 @@ class ConfiguracionEmpresaIndex extends Component
             'direccion' => 'nullable|max:1000',
 
             'descripcion_negocio' => 'nullable|max:200',
-            'logoNuevo' => $this->logoNuevo
-                ? 'file|mimes:jpg,jpeg,png|max:4096'
-                : 'nullable',
+
+            'logoNuevo' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
 
             'usa_facturacion_fiscal' => 'boolean',
 
@@ -177,6 +163,8 @@ class ConfiguracionEmpresaIndex extends Component
             'punto_emision' => 'required|max:3',
             'tipo_documento_fiscal' => 'required|max:2',
             'numero_actual_factura' => 'required|numeric|min:0',
+
+            'logoNuevo' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ];
     }
 
@@ -214,20 +202,14 @@ class ConfiguracionEmpresaIndex extends Component
 
         $configuracion = ConfiguracionEmpresa::findOrFail($this->configuracion_id);
 
-        $rutaLogo = $this->logo;
+        $rutaLogo = $configuracion->logo;
 
-        if (
-            is_object($this->logoNuevo) &&
-            method_exists($this->logoNuevo, 'getRealPath') &&
-            $this->logoNuevo->getRealPath()
-        ) {
+        if ($this->logoNuevo) {
             if ($configuracion->logo && Storage::disk('public')->exists($configuracion->logo)) {
                 Storage::disk('public')->delete($configuracion->logo);
             }
 
             $rutaLogo = $this->logoNuevo->store('logos', 'public');
-        } else {
-            $this->logoNuevo = null;
         }
 
         if ($this->modo_fiscal === 'Interno') {
@@ -243,6 +225,8 @@ class ConfiguracionEmpresaIndex extends Component
         }
 
         $configuracion->update([
+
+        
             'nombre_comercial' => $this->nombre_comercial,
             'nombre_legal' => $this->nombre_legal,
             'rtn' => $this->rtn,
@@ -284,9 +268,8 @@ class ConfiguracionEmpresaIndex extends Component
 
         $this->logo = $rutaLogo;
         $this->logoNuevo = null;
+     
         $this->prefijo_recibo = strtoupper($this->prefijo_recibo);
-
-        // $this->configuracion = $configuracion->fresh();
 
         session()->flash('message', 'Configuración del negocio actualizada correctamente.');
     }
