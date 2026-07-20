@@ -299,105 +299,11 @@ return [
     */
 
     'menu' => [
-        // Navbar items:
-        [
-            'text' => 'Dashboard',
-            'url'  => 'dashboard',
-            'icon' => 'fas fa-tachometer-alt',
-        ],
-        [
-            'text' => 'Productos',
-            'url'  => 'productos',
-            'icon' => 'fas fa-cube',
-        ],
-        [
-            'text' => 'Ventas / POS',
-            'url'  => 'ventas',
-            'icon' => 'fas fa-cash-register',
-        ],
-        [
-            'text' => 'Historial ventas',
-            'url'  => 'ventas/historial',
-            'icon' => 'fas fa-receipt',
-        ],
-        [
-            'text' => 'Cuentas por cobrar',
-            'url'  => 'ventas/cuentas-por-cobrar',
-            'icon' => 'fas fa-hand-holding-usd',
-        ],
-        [
-            'text' => 'Reporte de ventas',
-            'url'  => 'reportes/ventas',
-            'icon' => 'fas fa-chart-line',
-        ],
-        [
-            'text' => 'Reporte financiero',
-            'url'  => 'reportes/financiero',
-            'icon' => 'fas fa-chart-pie',
-        ],
-        [
-            'text' => 'Reporte inventario',
-            'url'  => 'reportes/inventario',
-            'icon' => 'fas fa-boxes',
-        ],
-        [
-            'text' => 'Reporte cuentas',
-            'url'  => 'reportes/cuentas',
-            'icon' => 'fas fa-file-invoice-dollar',
-        ],
-        [
-            'text' => 'Tipos de catálogo',
-            'url'  => 'catalogos/tipos',
-            'icon' => 'fas fa-layer-group',
-        ],
-        [
-            'text' => 'Catálogos',
-            'url'  => 'catalogos',
-            'icon' => 'fas fa-list',
-        ],
-        [
-            'text' => 'Insumos',
-            'url'  => 'insumos',
-            'icon' => 'fas fa-boxes',
-        ],
-        [
-            'text' => 'Servicios',
-            'url'  => 'servicios',
-            'icon' => 'fas fa-print',
-        ],
-        [
-            'text' => 'Clientes',
-            'url'  => 'clientes',
-            'icon' => 'fas fa-users',
-        ],
-        [
-            'text' => 'Proveedores',
-            'url'  => 'proveedores',
-            'icon' => 'fas fa-truck',
-        ],
-        [
-            'text' => 'Compras',
-            'url'  => 'compras',
-            'icon' => 'fas fa-shopping-cart',
-        ],
-        [
-            'text' => 'Cuentas por pagar',
-            'url'  => 'compras/cuentas-por-pagar',
-            'icon' => 'fas fa-file-invoice-dollar',
-        ],
-        [
-            'text' => 'Gastos',
-            'url'  => 'gastos',
-            'icon' => 'fas fa-money-bill-wave',
-        ],
-        [
-            'text' => 'Configuración negocio',
-            'url'  => 'configuracion/empresa',
-            'icon' => 'fas fa-store',
-        ],
+ 
+        // Navbar superior
         [
             'type' => 'navbar-search',
-            'text' => 'search',
+            'text' => 'Buscar',
             'topnav_right' => true,
         ],
         [
@@ -405,88 +311,168 @@ return [
             'topnav_right' => true,
         ],
 
-        // Sidebar items:
+        // Menú lateral
+        ['header' => 'LOIZ ERP'],
+
         [
-            'type' => 'sidebar-menu-search',
-            'text' => 'search',
+            'text' => 'Dashboard',
+            'url' => 'dashboard',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
+        ],
+
+        ['header' => 'VENTAS'],
+
+        [
+            'text' => 'POS / Nueva venta',
+            'url' => 'ventas',
+            'icon' => 'fas fa-fw fa-cash-register',
         ],
         [
-            'text' => 'blog',
-            'url' => 'admin/blog',
-            'can' => 'manage-blog',
+            'text' => 'Historial de ventas',
+            'url' => 'ventas/historial',
+            'icon' => 'fas fa-fw fa-receipt',
         ],
         [
-            'text' => 'pages',
-            'url' => 'admin/pages',
-            'icon' => 'far fa-fw fa-file',
-            'label' => 4,
-            'label_color' => 'success',
+            'text' => 'Cuentas por cobrar',
+            'url' => 'ventas/cuentas-por-cobrar',
+            'icon' => 'fas fa-fw fa-hand-holding-usd',
         ],
-        ['header' => 'account_settings'],
+
+        ['header' => 'CLIENTES Y CATÁLOGOS'],
+
         [
-            'text' => 'profile',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'change_password',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
+            'text' => 'Clientes',
+            'url' => 'clientes',
+            'icon' => 'fas fa-fw fa-users',
         ],
         [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
-            'submenu' => [
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-            ],
-        ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
+            'text' => 'Servicios',
+            'url' => 'servicios',
+            'icon' => 'fas fa-fw fa-print',
         ],
         [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
+            'text' => 'Productos',
+            'url' => 'productos',
+            'icon' => 'fas fa-fw fa-box',
         ],
         [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
+            'text' => 'Catálogos',
+            'url' => 'catalogos',
+            'icon' => 'fas fa-fw fa-list',
         ],
+
+        ['header' => 'INVENTARIO Y PRODUCCIÓN'],
+
+        [
+            'text' => 'Insumos',
+            'url' => 'insumos',
+            'icon' => 'fas fa-fw fa-boxes',
+        ],
+        [
+            'text' => 'Producción',
+            'url' => 'produccion',
+            'icon' => 'fas fa-fw fa-industry',
+        ],
+
+        ['header' => 'COMPRAS Y PROVEEDORES'],
+
+        [
+            'text' => 'Proveedores',
+            'url' => 'proveedores',
+            'icon' => 'fas fa-fw fa-truck',
+        ],
+        [
+            'text' => 'Compras',
+            'url' => 'compras',
+            'icon' => 'fas fa-fw fa-shopping-cart',
+        ],
+        [
+            'text' => 'Cuentas por pagar',
+            'url' => 'compras/cuentas-por-pagar',
+            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+        ],
+
+        ['header' => 'FINANZAS'],
+
+        [
+            'text' => 'Gastos',
+            'url' => 'gastos',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
+        ],
+
+        ['header' => 'REPORTES'],
+
+        [
+            'text' => 'Reporte de ventas',
+            'url' => 'reportes/ventas',
+            'icon' => 'fas fa-fw fa-chart-line',
+        ],
+        [
+            'text' => 'Reporte financiero',
+            'url' => 'reportes/financiero',
+            'icon' => 'fas fa-fw fa-chart-pie',
+        ],
+        [
+            'text' => 'Reporte inventario',
+            'url' => 'reportes/inventario',
+            'icon' => 'fas fa-fw fa-warehouse',
+        ],
+        [
+            'text' => 'Reporte de cuentas',
+            'url' => 'reportes/cuentas',
+            'icon' => 'fas fa-fw fa-file-invoice',
+        ],
+
+        ['header' => 'CONFIGURACIÓN'],
+
+        [
+            'text' => 'Configuración del negocio',
+            'url' => 'configuracion/empresa',
+            'icon' => 'fas fa-fw fa-cogs',
+        ],
+        
+
+        // Menu no utilizado
+ 
+        // [
+        //     'text' => 'multilevel',
+        //     'icon' => 'fas fa-fw fa-share',
+        //     'submenu' => [
+        //         [
+        //             'text' => 'level_one',
+        //             'url' => '#',
+        //         ],
+        //         [
+        //             'text' => 'level_one',
+        //             'url' => '#',
+        //             'submenu' => [
+        //                 [
+        //                     'text' => 'level_two',
+        //                     'url' => '#',
+        //                 ],
+        //                 [
+        //                     'text' => 'level_two',
+        //                     'url' => '#',
+        //                     'submenu' => [
+        //                         [
+        //                             'text' => 'level_three',
+        //                             'url' => '#',
+        //                         ],
+        //                         [
+        //                             'text' => 'level_three',
+        //                             'url' => '#',
+        //                         ],
+        //                     ],
+        //                 ],
+        //             ],
+        //         ],
+        //         [
+        //             'text' => 'level_one',
+        //             'url' => '#',
+        //         ],
+        //     ],
+        // ],
+
     ],
 
     /*
@@ -524,6 +510,16 @@ return [
     */
 
     'plugins' => [
+        'FontAwesome' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'css',
+                    'asset' => false,
+                    'location' => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css',
+                ],
+            ],
+        ],
         'Datatables' => [
             'active' => false,
             'files' => [

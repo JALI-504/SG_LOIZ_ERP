@@ -7,13 +7,9 @@
 @stop
 
 @section('content')
-    @livewire('configuracion.configuracion-empresa-index')
-@stop
-
-@section('css')
     @livewireStyles
-@stop
 
-@section('js')
+    @livewire('configuracion.configuracion-empresa-index')
+
     @livewireScripts
 @stop

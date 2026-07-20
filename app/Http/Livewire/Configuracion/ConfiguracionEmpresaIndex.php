@@ -11,7 +11,7 @@ class ConfiguracionEmpresaIndex extends Component
 {
     use WithFileUploads;
 
-    public $configuracion;
+    // public $configuracion;
 
     public $configuracion_id;
 
@@ -68,7 +68,7 @@ class ConfiguracionEmpresaIndex extends Component
     {
         $configuracion = ConfiguracionEmpresa::actual();
 
-        $this->configuracion = $configuracion;
+        // $this->configuracion = $configuracion;
 
         $this->configuracion_id = $configuracion->id;
 
@@ -96,18 +96,31 @@ class ConfiguracionEmpresaIndex extends Component
 
         $this->mensaje_recibo = $configuracion->mensaje_recibo;
 
-        $this->modo_fiscal = $this->configuracion->modo_fiscal ?? 'Interno';
-        $this->documento_venta_activo = $this->configuracion->documento_venta_activo ?? 'Recibo interno';
+        // $this->modo_fiscal = $this->configuracion->modo_fiscal ?? 'Interno';
+        // $this->documento_venta_activo = $this->configuracion->documento_venta_activo ?? 'Recibo interno';
 
-        $this->usa_impuestos = (bool) $this->configuracion->usa_impuestos;
-        $this->usa_retenciones = (bool) $this->configuracion->usa_retenciones;
-        $this->precios_incluyen_isv = (bool) $this->configuracion->precios_incluyen_isv;
-        $this->porcentaje_isv_general = $this->configuracion->porcentaje_isv_general ?? 15;
+        // $this->usa_impuestos = (bool) $this->configuracion->usa_impuestos;
+        // $this->usa_retenciones = (bool) $this->configuracion->usa_retenciones;
+        // $this->precios_incluyen_isv = (bool) $this->configuracion->precios_incluyen_isv;
+        // $this->porcentaje_isv_general = $this->configuracion->porcentaje_isv_general ?? 15;
 
-        $this->establecimiento = $this->configuracion->establecimiento ?? '000';
-        $this->punto_emision = $this->configuracion->punto_emision ?? '001';
-        $this->tipo_documento_fiscal = $this->configuracion->tipo_documento_fiscal ?? '01';
-        $this->numero_actual_factura = $this->configuracion->numero_actual_factura ?? 0;
+        // $this->establecimiento = $this->configuracion->establecimiento ?? '000';
+        // $this->punto_emision = $this->configuracion->punto_emision ?? '001';
+        // $this->tipo_documento_fiscal = $this->configuracion->tipo_documento_fiscal ?? '01';
+        // $this->numero_actual_factura = $this->configuracion->numero_actual_factura ?? 0;
+
+        $this->modo_fiscal = $configuracion->modo_fiscal ?? 'Interno';
+        $this->documento_venta_activo = $configuracion->documento_venta_activo ?? 'Recibo interno';
+
+        $this->usa_impuestos = (bool) $configuracion->usa_impuestos;
+        $this->usa_retenciones = (bool) $configuracion->usa_retenciones;
+        $this->precios_incluyen_isv = (bool) $configuracion->precios_incluyen_isv;
+        $this->porcentaje_isv_general = $configuracion->porcentaje_isv_general ?? 15;
+
+        $this->establecimiento = $configuracion->establecimiento ?? '000';
+        $this->punto_emision = $configuracion->punto_emision ?? '001';
+        $this->tipo_documento_fiscal = $configuracion->tipo_documento_fiscal ?? '01';
+        $this->numero_actual_factura = $configuracion->numero_actual_factura ?? 0;
     }
 
     protected function rules()
@@ -115,7 +128,9 @@ class ConfiguracionEmpresaIndex extends Component
         return [
             'nombre_comercial' => 'required|max:150',
             'nombre_legal' => 'nullable|max:150',
-            'rtn' => 'nullable|max:30',
+            'rtn' => $this->modo_fiscal === 'Fiscal'
+                ? 'required|max:30'
+                : 'nullable|max:30',
 
             'telefono' => 'nullable|max:30',
             'whatsapp' => 'nullable|max:30',
@@ -123,14 +138,27 @@ class ConfiguracionEmpresaIndex extends Component
             'direccion' => 'nullable|max:1000',
 
             'descripcion_negocio' => 'nullable|max:200',
-            'logoNuevo' => 'nullable|file|mimes:jpg,jpeg,png|max:4096',
+            'logoNuevo' => $this->logoNuevo
+                ? 'file|mimes:jpg,jpeg,png|max:4096'
+                : 'nullable',
 
             'usa_facturacion_fiscal' => 'boolean',
 
-            'cai' => 'nullable|max:100',
-            'rango_desde' => 'nullable|max:50',
-            'rango_hasta' => 'nullable|max:50',
-            'fecha_limite_emision' => 'nullable|date',
+            'cai' => $this->modo_fiscal === 'Fiscal'
+                ? 'required|max:100'
+                : 'nullable|max:100',
+
+            'rango_desde' => $this->modo_fiscal === 'Fiscal'
+                ? 'required|max:50'
+                : 'nullable|max:50',
+
+            'rango_hasta' => $this->modo_fiscal === 'Fiscal'
+                ? 'required|max:50'
+                : 'nullable|max:50',
+
+            'fecha_limite_emision' => $this->modo_fiscal === 'Fiscal'
+                ? 'required|date|after_or_equal:today'
+                : 'nullable|date',
 
             'prefijo_recibo' => 'required|max:10',
             'numero_actual_recibo' => 'required|integer|min:0',
@@ -152,20 +180,54 @@ class ConfiguracionEmpresaIndex extends Component
         ];
     }
 
+    protected function messages()
+    {
+        return [
+            'nombre_comercial.required' => 'El nombre comercial es obligatorio.',
+
+            'rtn.required' => 'Para activar el modo fiscal debe ingresar el RTN del negocio.',
+
+            'cai.required' => 'Para activar el modo fiscal debe ingresar el CAI.',
+            'rango_desde.required' => 'Para activar el modo fiscal debe ingresar el rango autorizado desde.',
+            'rango_hasta.required' => 'Para activar el modo fiscal debe ingresar el rango autorizado hasta.',
+            'fecha_limite_emision.required' => 'Para activar el modo fiscal debe ingresar la fecha límite de emisión.',
+            'fecha_limite_emision.after_or_equal' => 'La fecha límite de emisión no puede estar vencida.',
+
+            'establecimiento.required' => 'El establecimiento es obligatorio.',
+            'punto_emision.required' => 'El punto de emisión es obligatorio.',
+            'tipo_documento_fiscal.required' => 'El tipo de documento fiscal es obligatorio.',
+            'numero_actual_factura.required' => 'El número actual de factura es obligatorio.',
+        ];
+    }
+
     public function guardar()
     {
+
         $this->validate();
+
+        try {
+            $this->validarConfiguracionFiscal();
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+            return;
+        }
 
         $configuracion = ConfiguracionEmpresa::findOrFail($this->configuracion_id);
 
         $rutaLogo = $this->logo;
 
-        if ($this->logoNuevo) {
+        if (
+            is_object($this->logoNuevo) &&
+            method_exists($this->logoNuevo, 'getRealPath') &&
+            $this->logoNuevo->getRealPath()
+        ) {
             if ($configuracion->logo && Storage::disk('public')->exists($configuracion->logo)) {
                 Storage::disk('public')->delete($configuracion->logo);
             }
 
             $rutaLogo = $this->logoNuevo->store('logos', 'public');
+        } else {
+            $this->logoNuevo = null;
         }
 
         if ($this->modo_fiscal === 'Interno') {
@@ -224,7 +286,7 @@ class ConfiguracionEmpresaIndex extends Component
         $this->logoNuevo = null;
         $this->prefijo_recibo = strtoupper($this->prefijo_recibo);
 
-        $this->configuracion = $configuracion->fresh();
+        // $this->configuracion = $configuracion->fresh();
 
         session()->flash('message', 'Configuración del negocio actualizada correctamente.');
     }
@@ -245,6 +307,59 @@ class ConfiguracionEmpresaIndex extends Component
         $this->logoNuevo = null;
 
         session()->flash('message', 'Logo eliminado correctamente.');
+    }
+
+    private function validarConfiguracionFiscal()
+    {
+        if ($this->modo_fiscal !== 'Fiscal') {
+            return;
+        }
+
+        $rangoDesde = $this->extraerNumeroFinal($this->rango_desde);
+        $rangoHasta = $this->extraerNumeroFinal($this->rango_hasta);
+        $numeroActual = (int) $this->numero_actual_factura;
+
+        if ($rangoDesde <= 0) {
+            throw new \Exception('El rango desde no tiene un correlativo válido. Ejemplo: 000-001-01-00000001');
+        }
+
+        if ($rangoHasta <= 0) {
+            throw new \Exception('El rango hasta no tiene un correlativo válido. Ejemplo: 000-001-01-00001000');
+        }
+
+        if ($rangoHasta < $rangoDesde) {
+            throw new \Exception('El rango hasta no puede ser menor que el rango desde.');
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Regla del número actual
+    |--------------------------------------------------------------------------
+    | Si numero_actual_factura = 0, la primera factura será rango_desde.
+    | Si ya existen facturas emitidas, el número actual debe estar dentro del rango.
+    */
+        if ($numeroActual > 0 && $numeroActual < $rangoDesde) {
+            throw new \Exception('El número actual de factura no puede ser menor que el rango desde. Use 0 para iniciar desde el primer número autorizado.');
+        }
+
+        if ($numeroActual > $rangoHasta) {
+            throw new \Exception('El número actual de factura no puede ser mayor que el rango autorizado hasta.');
+        }
+
+        if ($numeroActual === $rangoHasta) {
+            throw new \Exception('El rango autorizado ya está agotado. Debe configurar un nuevo rango antes de emitir facturas.');
+        }
+    }
+
+    private function extraerNumeroFinal($numeroDocumento)
+    {
+        $limpio = preg_replace('/[^0-9]/', '', $numeroDocumento);
+
+        if (!$limpio) {
+            return 0;
+        }
+
+        return (int) substr($limpio, -8);
     }
 
     public function render()

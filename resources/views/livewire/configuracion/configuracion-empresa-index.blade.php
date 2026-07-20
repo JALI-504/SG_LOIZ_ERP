@@ -8,7 +8,27 @@
         </div>
     @endif
 
-    <form wire:submit.prevent="guardar" enctype="multipart/form-data">
+    @if (session()->has('error'))
+    <div class="alert alert-danger alert-dismissible fade show">
+        {{ session('error') }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+    @endif
+
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <strong>No se pudo guardar la configuración.</strong>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <div>
         <div class="card">
             <div class="card-header bg-primary">
                 <h3 class="card-title">Datos generales del negocio</h3>
@@ -447,84 +467,17 @@
             </div>
         </div>
 
-        {{-- Facturación fiscal futura --}}
-        <div class="card">
-            <div class="card-header bg-secondary">
-                <h3 class="card-title">Datos fiscales futuros</h3>
-            </div>
-
-            <div class="card-body">
-                <div class="alert alert-info">
-                    Esta sección queda preparada para cuando el negocio esté registrado y cuente con autorización fiscal.
-                </div>
-
-                <div class="form-group">
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox"
-                               class="custom-control-input"
-                               id="usa_facturacion_fiscal"
-                               wire:model.defer="usa_facturacion_fiscal">
-
-                        <label class="custom-control-label" for="usa_facturacion_fiscal">
-                            Usar facturación fiscal
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label>CAI</label>
-                        <input type="text"
-                               class="form-control"
-                               wire:model.defer="cai">
-
-                        @error('cai')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label>Fecha límite de emisión</label>
-                        <input type="date"
-                               class="form-control"
-                               wire:model.defer="fecha_limite_emision">
-
-                        @error('fecha_limite_emision')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label>Rango desde</label>
-                        <input type="text"
-                               class="form-control"
-                               wire:model.defer="rango_desde">
-
-                        @error('rango_desde')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label>Rango hasta</label>
-                        <input type="text"
-                               class="form-control"
-                               wire:model.defer="rango_hasta">
-
-                        @error('rango_hasta')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="mb-4">
-            <button type="submit" class="btn btn-primary">
+            <button type="button"
+                    class="btn btn-primary"
+                    wire:click="guardar"
+                    wire:loading.attr="disabled">
                 <i class="fas fa-save"></i> Guardar configuración
             </button>
+
+            <span wire:loading wire:target="guardar" class="text-info ml-2">
+                Guardando...
+            </span>
         </div>
-    </form>
+    </div>
 </div>
