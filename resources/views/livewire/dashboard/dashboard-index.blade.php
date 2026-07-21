@@ -33,7 +33,7 @@
             <div class="small-box bg-info">
                 <div class="inner">
                     <h4>{{ number_format($totalVentasHoy, 0) }}</h4>
-                    <p>Ventas de hoy</p>
+                    <p>Ventas válidas hoy</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-receipt"></i>
@@ -129,6 +129,57 @@
         </div>
     </div>
 
+    {{-- Resumen fiscal del día --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>{{ number_format($totalFacturasFiscalesHoy, 0) }}</h4>
+                    <p>Facturas fiscales hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h4>{{ number_format($totalRecibosInternosHoy, 0) }}</h4>
+                    <p>Recibos internos hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h4>L {{ number_format($totalIsv15Hoy, 2) }}</h4>
+                    <p>ISV generado hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-percent"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h4>L {{ number_format($totalNetoRecibidoHoy, 2) }}</h4>
+                    <p>Neto recibido hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         {{-- Últimas ventas --}}
         <div class="col-md-7">
@@ -166,7 +217,17 @@
                                         </td>
 
                                         <td>
-                                            <strong>{{ $venta->numero }}</strong>
+                                            <strong>{{ $venta->numero }}</strong><br>
+
+                                            @if ($venta->es_fiscal)
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-file-invoice"></i> Factura fiscal
+                                                </span>
+                                            @else
+                                                <span class="badge badge-secondary">
+                                                    <i class="fas fa-receipt"></i> Recibo interno
+                                                </span>
+                                            @endif
                                         </td>
 
                                         <td>
@@ -197,10 +258,14 @@
 
                                         <td>
                                             <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                               target="_blank"
-                                               class="btn btn-success btn-xs">
-                                                Recibo
-                                            </a>
+                                        target="_blank"
+                                        class="btn btn-success btn-xs">
+                                            @if ($venta->es_fiscal)
+                                                <i class="fas fa-file-invoice"></i> Factura
+                                            @else
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            @endif
+                                        </a>
                                         </td>
                                     </tr>
                                 @empty

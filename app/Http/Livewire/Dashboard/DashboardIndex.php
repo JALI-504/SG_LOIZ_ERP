@@ -26,6 +26,24 @@ class DashboardIndex extends Component
 
         $totalDescuentosHoy = (clone $ventasValidasHoyQuery)->sum('descuento');
 
+        $totalSubtotalGravadoHoy = (clone $ventasValidasHoyQuery)->sum('subtotal_gravado');
+        $totalSubtotalExentoHoy = (clone $ventasValidasHoyQuery)->sum('subtotal_exento');
+        $totalSubtotalNoSujetoHoy = (clone $ventasValidasHoyQuery)->sum('subtotal_no_sujeto');
+        $totalIsv15Hoy = (clone $ventasValidasHoyQuery)->sum('isv_15');
+        $totalRetencionHoy = (clone $ventasValidasHoyQuery)->sum('retencion');
+
+        $totalNetoRecibidoHoy = (clone $ventasValidasHoyQuery)
+            ->select(DB::raw('SUM(CASE WHEN neto_recibido > 0 THEN neto_recibido ELSE total - IFNULL(retencion, 0) END) as total'))
+            ->value('total') ?? 0;
+
+        $totalFacturasFiscalesHoy = (clone $ventasValidasHoyQuery)
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternosHoy = (clone $ventasValidasHoyQuery)
+            ->where('es_fiscal', 0)
+            ->count();
+
         $ventasPendientesHoy = (clone $ventasHoyQuery)
             ->where('estado', 'Pendiente')
             ->count();
@@ -104,6 +122,16 @@ class DashboardIndex extends Component
             'totalVentasHoy' => $totalVentasHoy,
             'totalVendidoHoy' => $totalVendidoHoy,
             'totalDescuentosHoy' => $totalDescuentosHoy,
+
+            'totalSubtotalGravadoHoy' => $totalSubtotalGravadoHoy,
+            'totalSubtotalExentoHoy' => $totalSubtotalExentoHoy,
+            'totalSubtotalNoSujetoHoy' => $totalSubtotalNoSujetoHoy,
+            'totalIsv15Hoy' => $totalIsv15Hoy,
+            'totalRetencionHoy' => $totalRetencionHoy,
+            'totalNetoRecibidoHoy' => $totalNetoRecibidoHoy,
+            'totalFacturasFiscalesHoy' => $totalFacturasFiscalesHoy,
+            'totalRecibosInternosHoy' => $totalRecibosInternosHoy,
+
             'ventasPendientesHoy' => $ventasPendientesHoy,
             'ventasAnuladasHoy' => $ventasAnuladasHoy,
             'utilidadEstimadaHoy' => $utilidadEstimadaHoy,
