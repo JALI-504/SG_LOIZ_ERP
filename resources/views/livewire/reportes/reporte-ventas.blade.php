@@ -8,11 +8,11 @@
     </button>
 
     <button type="button"
-        class="btn btn-success"
-        wire:click="exportarExcel">
-    <i class="fas fa-file-excel"></i> Exportar Excel
-</button>
-</div>
+            class="btn btn-success"
+            wire:click="exportarExcel">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+    </button>
+    </div>
 
     {{-- Filtros --}}
     <div class="card">
@@ -57,14 +57,32 @@
                         <option value="Servicio">Solo servicios</option>
                     </select>
                 </div>
+
+                <div class="col-md-3">
+                    <label>Comprobante</label>
+                    <select class="form-control" wire:model="filtroComprobante">
+                        <option value="todos">Todos</option>
+                        <option value="interno">Recibos internos</option>
+                        <option value="fiscal">Facturas fiscales</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            wire:click="limpiarFiltros">
+                        <i class="fas fa-broom"></i> Limpiar filtros
+                    </button>
+                </div>
+                
             </div>
 
-            <div class="mt-3">
+            {{-- <div class="mt-3">
                 <button class="btn btn-secondary btn-sm"
                         wire:click="limpiarFiltros">
                     Limpiar filtros
                 </button>
-            </div>
+            </div> --}}
         </div>
     </div>
 
@@ -165,6 +183,164 @@
                 </div>
                 <div class="icon">
                     <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+
+    
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>{{ number_format($totalFacturasFiscales, 0) }}</h4>
+                    <p>Facturas fiscales</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h4>{{ number_format($totalRecibosInternos, 0) }}</h4>
+                    <p>Recibos internos</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h4>L {{ number_format($totalIsv15, 2) }}</h4>
+                    <p>ISV 15%</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-percent"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h4>L {{ number_format($totalRetencion, 2) }}</h4>
+                    <p>Retenciones</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+            </div>
+        </div>
+            
+    </div>
+        {{-- Desglose fiscal --}}
+    <div class="row justify-content-center my-4">
+        <div class="col-12 col-md-7 col-lg-5">
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header bg-white">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-invoice-dollar text-primary mr-2"></i>
+                        Desglose fiscal del período
+                    </h3>
+
+                    <div class="card-tools">
+                        <span class="badge badge-light">
+                            Solo ventas válidas
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="pl-3">
+                                        <i class="fas fa-receipt text-secondary mr-2"></i>
+                                        Subtotal gravado
+                                    </th>
+                                    <td class="text-right pr-3 font-weight-bold">
+                                        L {{ number_format($totalSubtotalGravado, 2) }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th class="pl-3">
+                                        <i class="fas fa-file-alt text-secondary mr-2"></i>
+                                        Subtotal exento
+                                    </th>
+                                    <td class="text-right pr-3 font-weight-bold">
+                                        L {{ number_format($totalSubtotalExento, 2) }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th class="pl-3">
+                                        <i class="fas fa-ban text-secondary mr-2"></i>
+                                        Subtotal no sujeto
+                                    </th>
+                                    <td class="text-right pr-3 font-weight-bold">
+                                        L {{ number_format($totalSubtotalNoSujeto, 2) }}
+                                    </td>
+                                </tr>
+
+                                <tr class="table-info">
+                                    <th class="pl-3">
+                                        <i class="fas fa-percent text-info mr-2"></i>
+                                        ISV 15%
+                                    </th>
+                                    <td class="text-right pr-3 font-weight-bold text-info">
+                                        L {{ number_format($totalIsv15, 2) }}
+                                    </td>
+                                </tr>
+
+                                <tr class="table-warning">
+                                    <th class="pl-3">
+                                        <i class="fas fa-hand-holding-usd text-warning mr-2"></i>
+                                        Retenciones
+                                    </th>
+                                    <td class="text-right pr-3 font-weight-bold text-warning">
+                                        L {{ number_format($totalRetencion, 2) }}
+                                    </td>
+                                </tr>
+
+                                <tr class="table-success">
+                                    <th class="pl-3">
+                                        <i class="fas fa-money-bill-wave text-success mr-2"></i>
+                                        Neto recibido
+                                    </th>
+                                    <td class="text-right pr-3">
+                                        <span class="h5 font-weight-bold text-success mb-0">
+                                            L {{ number_format($totalNetoRecibido, 2) }}
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr class="bg-dark text-white">
+                                    <th class="pl-3">
+                                        <i class="fas fa-coins mr-2"></i>
+                                        Total vendido
+                                    </th>
+                                    <td class="text-right pr-3">
+                                        <span class="h5 font-weight-bold mb-0">
+                                            L {{ number_format($totalVendido, 2) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Este desglose excluye ventas anuladas y resume únicamente las ventas válidas del período filtrado.
+                    </small>
                 </div>
             </div>
         </div>
@@ -330,7 +506,17 @@
                                 </td>
 
                                 <td>
-                                    <strong>{{ $venta->numero }}</strong>
+                                    <strong>{{ $venta->numero }}</strong><br>
+
+                                    @if ($venta->es_fiscal)
+                                        <span class="badge badge-success">
+                                            Factura fiscal
+                                        </span>
+                                    @else
+                                        <span class="badge badge-secondary">
+                                            Recibo interno
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
@@ -363,9 +549,13 @@
 
                                 <td>
                                     <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                       target="_blank"
-                                       class="btn btn-success btn-xs">
-                                        Recibo
+                                    target="_blank"
+                                    class="btn btn-success btn-xs">
+                                        @if ($venta->es_fiscal)
+                                            <i class="fas fa-file-invoice"></i> Factura
+                                        @else
+                                            <i class="fas fa-receipt"></i> Recibo
+                                        @endif
                                     </a>
                                 </td>
                             </tr>

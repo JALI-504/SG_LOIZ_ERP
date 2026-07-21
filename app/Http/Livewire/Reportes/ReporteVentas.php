@@ -15,6 +15,7 @@ class ReporteVentas extends Component
 
     public $filtroMetodoPago = 'todos';
     public $filtroTipoItem = 'todos';
+    public $filtroComprobante = 'todos';
 
     public $metodosPago = [];
 
@@ -34,6 +35,7 @@ class ReporteVentas extends Component
         $this->fechaHasta = now()->format('Y-m-d');
         $this->filtroMetodoPago = 'todos';
         $this->filtroTipoItem = 'todos';
+        $this->filtroComprobante = 'todos';
     }
 
     public function exportarCsv()
@@ -160,6 +162,12 @@ class ReporteVentas extends Component
             })
             ->when($this->filtroMetodoPago !== 'todos', function ($query) {
                 $query->where('metodo_pago', $this->filtroMetodoPago);
+            })
+            ->when($this->filtroComprobante === 'fiscal', function ($query) {
+                $query->where('es_fiscal', 1);
+            })
+            ->when($this->filtroComprobante === 'interno', function ($query) {
+                $query->where('es_fiscal', 0);
             });
     }
 
@@ -179,6 +187,12 @@ class ReporteVentas extends Component
             })
             ->when($this->filtroTipoItem !== 'todos', function ($query) {
                 $query->where('venta_detalles.tipo_item', $this->filtroTipoItem);
+            })
+            ->when($this->filtroComprobante === 'fiscal', function ($query) {
+                $query->where('ventas.es_fiscal', 1);
+            })
+            ->when($this->filtroComprobante === 'interno', function ($query) {
+                $query->where('ventas.es_fiscal', 0);
             });
     }
 
@@ -197,6 +211,21 @@ class ReporteVentas extends Component
         $totalVendido = (clone $ventasValidasQuery)->sum('total');
 
         $totalDescuentos = (clone $ventasValidasQuery)->sum('descuento');
+
+        $totalSubtotalGravado = (clone $ventasValidasQuery)->sum('subtotal_gravado');
+        $totalSubtotalExento = (clone $ventasValidasQuery)->sum('subtotal_exento');
+        $totalSubtotalNoSujeto = (clone $ventasValidasQuery)->sum('subtotal_no_sujeto');
+        $totalIsv15 = (clone $ventasValidasQuery)->sum('isv_15');
+        $totalRetencion = (clone $ventasValidasQuery)->sum('retencion');
+        $totalNetoRecibido = (clone $ventasValidasQuery)->sum('neto_recibido');
+
+        $totalFacturasFiscales = (clone $ventasValidasQuery)
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternos = (clone $ventasValidasQuery)
+            ->where('es_fiscal', 0)
+            ->count();
 
         $totalAnuladas = (clone $ventasAnuladasQuery)->count();
 
@@ -254,6 +283,14 @@ class ReporteVentas extends Component
             'totalVentas' => $totalVentas,
             'totalVendido' => $totalVendido,
             'totalDescuentos' => $totalDescuentos,
+            'totalSubtotalGravado' => $totalSubtotalGravado,
+            'totalSubtotalExento' => $totalSubtotalExento,
+            'totalSubtotalNoSujeto' => $totalSubtotalNoSujeto,
+            'totalIsv15' => $totalIsv15,
+            'totalRetencion' => $totalRetencion,
+            'totalNetoRecibido' => $totalNetoRecibido,
+            'totalFacturasFiscales' => $totalFacturasFiscales,
+            'totalRecibosInternos' => $totalRecibosInternos,
             'totalAnuladas' => $totalAnuladas,
             'montoAnulado' => $montoAnulado,
             'ticketPromedio' => $ticketPromedio,
@@ -283,21 +320,49 @@ class ReporteVentas extends Component
             ->when($this->filtroTipoItem !== 'todos', function ($query) {
                 $query->where('venta_detalles.tipo_item', $this->filtroTipoItem);
             })
+            ->when($this->filtroComprobante === 'fiscal', function ($query) {
+                $query->where('ventas.es_fiscal', 1);
+            })
+            ->when($this->filtroComprobante === 'interno', function ($query) {
+                $query->where('ventas.es_fiscal', 0);
+            })
             ->select(
                 'ventas.fecha',
                 'ventas.hora',
                 'ventas.numero',
+                'ventas.tipo_comprobante',
+                'ventas.es_fiscal',
+                'ventas.cai',
+                'ventas.rango_autorizado_desde',
+                'ventas.rango_autorizado_hasta',
+                'ventas.fecha_limite_emision',
                 'ventas.metodo_pago',
                 'ventas.estado',
+
+                'ventas.subtotal_gravado',
+                'ventas.subtotal_exento',
+                'ventas.subtotal_no_sujeto',
+                'ventas.isv_15',
+                'ventas.retencion',
+                'ventas.neto_recibido',
+
                 DB::raw("IFNULL(TRIM(CONCAT_WS(' ', clientes.primer_nombre, clientes.segundo_nombre, clientes.primer_apellido, clientes.segundo_apellido)), 'Consumidor final') as cliente"),
+
                 'venta_detalles.tipo_item',
                 'venta_detalles.codigo',
                 'venta_detalles.descripcion',
                 'venta_detalles.cantidad',
                 'venta_detalles.precio_unitario',
                 'venta_detalles.costo_unitario',
+                'venta_detalles.tipo_impuesto',
+                'venta_detalles.porcentaje_isv',
+                'venta_detalles.subtotal_gravado as detalle_subtotal_gravado',
+                'venta_detalles.subtotal_exento as detalle_subtotal_exento',
+                'venta_detalles.subtotal_no_sujeto as detalle_subtotal_no_sujeto',
+                'venta_detalles.impuesto as detalle_impuesto',
                 'venta_detalles.descuento',
                 'venta_detalles.total',
+
                 DB::raw('(venta_detalles.total - (venta_detalles.costo_unitario * venta_detalles.cantidad)) as utilidad')
             )
             ->orderBy('ventas.fecha')
