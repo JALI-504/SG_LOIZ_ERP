@@ -77,12 +77,6 @@
                 
             </div>
 
-            {{-- <div class="mt-3">
-                <button class="btn btn-secondary btn-sm"
-                        wire:click="limpiarFiltros">
-                    Limpiar filtros
-                </button>
-            </div> --}}
         </div>
     </div>
 

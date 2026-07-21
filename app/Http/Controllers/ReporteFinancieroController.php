@@ -25,6 +25,21 @@ class ReporteFinancieroController extends Controller
         $totalDescuentosVentas = (clone $ventasQuery)->sum('descuento');
         $cantidadVentas = (clone $ventasQuery)->count();
 
+        $totalSubtotalGravado = (clone $ventasQuery)->sum('subtotal_gravado');
+        $totalSubtotalExento = (clone $ventasQuery)->sum('subtotal_exento');
+        $totalSubtotalNoSujeto = (clone $ventasQuery)->sum('subtotal_no_sujeto');
+        $totalIsv15 = (clone $ventasQuery)->sum('isv_15');
+        $totalRetencion = (clone $ventasQuery)->sum('retencion');
+        $totalNetoRecibido = (clone $ventasQuery)->sum('neto_recibido');
+
+        $totalFacturasFiscales = (clone $ventasQuery)
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternos = (clone $ventasQuery)
+            ->where('es_fiscal', 0)
+            ->count();
+
         $costoVentas = VentaDetalle::join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
             ->where('ventas.estado', '!=', 'Anulada')
             ->whereDate('ventas.fecha', '>=', $fechaDesde)
@@ -113,6 +128,16 @@ class ReporteFinancieroController extends Controller
             'totalVentas' => $totalVentas,
             'totalDescuentosVentas' => $totalDescuentosVentas,
             'cantidadVentas' => $cantidadVentas,
+
+            'totalSubtotalGravado' => $totalSubtotalGravado,
+            'totalSubtotalExento' => $totalSubtotalExento,
+            'totalSubtotalNoSujeto' => $totalSubtotalNoSujeto,
+            'totalIsv15' => $totalIsv15,
+            'totalRetencion' => $totalRetencion,
+            'totalNetoRecibido' => $totalNetoRecibido,
+            'totalFacturasFiscales' => $totalFacturasFiscales,
+            'totalRecibosInternos' => $totalRecibosInternos,
+
             'costoVentas' => $costoVentas,
             'utilidadBruta' => $utilidadBruta,
 
@@ -146,6 +171,21 @@ class ReporteFinancieroController extends Controller
         $totalVentas = (clone $ventasQuery)->sum('total');
         $totalDescuentosVentas = (clone $ventasQuery)->sum('descuento');
         $cantidadVentas = (clone $ventasQuery)->count();
+
+        $totalSubtotalGravado = (clone $ventasQuery)->sum('subtotal_gravado');
+        $totalSubtotalExento = (clone $ventasQuery)->sum('subtotal_exento');
+        $totalSubtotalNoSujeto = (clone $ventasQuery)->sum('subtotal_no_sujeto');
+        $totalIsv15 = (clone $ventasQuery)->sum('isv_15');
+        $totalRetencion = (clone $ventasQuery)->sum('retencion');
+        $totalNetoRecibido = (clone $ventasQuery)->sum('neto_recibido');
+
+        $totalFacturasFiscales = (clone $ventasQuery)
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternos = (clone $ventasQuery)
+            ->where('es_fiscal', 0)
+            ->count();
 
         $costoVentas = VentaDetalle::join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
             ->where('ventas.estado', '!=', 'Anulada')
@@ -220,6 +260,16 @@ class ReporteFinancieroController extends Controller
                 'totalVentas' => $totalVentas,
                 'totalDescuentosVentas' => $totalDescuentosVentas,
                 'cantidadVentas' => $cantidadVentas,
+
+                'totalSubtotalGravado' => $totalSubtotalGravado,
+                'totalSubtotalExento' => $totalSubtotalExento,
+                'totalSubtotalNoSujeto' => $totalSubtotalNoSujeto,
+                'totalIsv15' => $totalIsv15,
+                'totalRetencion' => $totalRetencion,
+                'totalNetoRecibido' => $totalNetoRecibido,
+                'totalFacturasFiscales' => $totalFacturasFiscales,
+                'totalRecibosInternos' => $totalRecibosInternos,
+
                 'costoVentas' => $costoVentas,
                 'utilidadBruta' => $utilidadBruta,
 
