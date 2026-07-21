@@ -251,9 +251,11 @@ class VentaHistorial extends Component
                 $search = '%' . $this->search . '%';
 
                 $query->where(function ($q) use ($search) {
-                    $q->where('numero', 'like', $search)
-                        ->orWhere('metodo_pago', 'like', $search)
-                        ->orWhere('estado', 'like', $search)
+                $q->where('numero', 'like', $search)
+                    ->orWhere('tipo_comprobante', 'like', $search)
+                    ->orWhere('cai', 'like', $search)
+                    ->orWhere('metodo_pago', 'like', $search)
+                    ->orWhere('estado', 'like', $search)
                         ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                             $clienteQuery->where('primer_nombre', 'like', $search)
                                 ->orWhere('segundo_nombre', 'like', $search)

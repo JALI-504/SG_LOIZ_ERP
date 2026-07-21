@@ -121,9 +121,10 @@
         </div>
 
         <div class="card-body">
-            <div class="alert alert-warning">
-                <strong>Comprobantes internos no fiscales.</strong><br>
-                Las ventas registradas aquí usan numeración interna tipo REC-000001.
+            <div class="alert alert-info">
+                <strong>Historial de comprobantes de venta.</strong><br>
+                Las ventas pueden corresponder a <strong>recibos internos no fiscales</strong> o a
+                <strong>facturas fiscales</strong>, según la configuración activa al momento de registrar la venta.
             </div>
 
             <div class="table-responsive">
@@ -155,9 +156,25 @@
                                     @endif
                                 </td>
 
-                                <td>
+                               <td>
                                     <strong>{{ $venta->numero }}</strong><br>
-                                    <small>{{ $venta->tipo_comprobante }}</small>
+
+                                    @if ($venta->es_fiscal)
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-file-invoice"></i> Factura fiscal
+                                        </span>
+
+                                        @if ($venta->cai)
+                                            <br>
+                                            <small class="text-muted">
+                                                CAI: {{ $venta->cai }}
+                                            </small>
+                                        @endif
+                                    @else
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-receipt"></i> Recibo interno
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
@@ -237,7 +254,11 @@
                                     <a href="{{ route('ventas.recibo', $venta->id) }}"
                                     target="_blank"
                                     class="btn btn-success btn-xs">
-                                        Recibo
+                                        @if ($venta->es_fiscal)
+                                            <i class="fas fa-file-invoice"></i> Factura
+                                        @else
+                                            <i class="fas fa-receipt"></i> Recibo
+                                        @endif
                                     </a>
 
                                     @if ($venta->estado !== 'Anulada')
@@ -269,7 +290,7 @@
         <div class="card">
             <div class="card-header bg-primary">
                 <h3 class="card-title">
-                    Detalle de venta {{ $ventaSeleccionada->numero }}
+                    Detalle de {{ $ventaSeleccionada->es_fiscal ? 'factura' : 'recibo' }} {{ $ventaSeleccionada->numero }}
                 </h3>
 
                 <div class="card-tools">
@@ -313,6 +334,29 @@
                     @endif
                 </div>
 
+                <div class="mb-3">
+                    @if ($ventaSeleccionada->es_fiscal)
+                        <div class="alert alert-success mb-0">
+                            <strong><i class="fas fa-file-invoice"></i> Factura fiscal</strong><br>
+                            <strong>CAI:</strong> {{ $ventaSeleccionada->cai ?? 'No registrado' }}<br>
+                            <strong>Rango autorizado:</strong>
+                            {{ $ventaSeleccionada->rango_autorizado_desde ?? 'No registrado' }}
+                            al
+                            {{ $ventaSeleccionada->rango_autorizado_hasta ?? 'No registrado' }}<br>
+
+                            @if ($ventaSeleccionada->fecha_limite_emision)
+                                <strong>Fecha límite de emisión:</strong>
+                                {{ \Carbon\Carbon::parse($ventaSeleccionada->fecha_limite_emision)->format('d/m/Y') }}
+                            @endif
+                        </div>
+                    @else
+                        <div class="alert alert-secondary mb-0">
+                            <strong><i class="fas fa-receipt"></i> Recibo interno no fiscal</strong><br>
+                            Este comprobante no sustituye una factura fiscal autorizada.
+                        </div>
+                    @endif
+                </div>
+
                 @if ($ventaSeleccionada->observacion)
                     <div class="mb-3">
                         <strong>Observación:</strong><br>
@@ -353,6 +397,15 @@
 
                                     <td>
                                         {{ $detalle->descripcion }}
+
+                                        @if ($detalle->tipo_impuesto)
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ $detalle->tipo_impuesto }}
+                                                |
+                                                ISV: L {{ number_format($detalle->impuesto ?? 0, 2) }}
+                                            </small>
+                                        @endif
                                     </td>
 
                                     <td>
@@ -441,9 +494,9 @@
                 <hr>
 
                 <div class="row">
-                    <div class="col-md-4 offset-md-8">
+                    <div class="col-md-5 offset-md-7">
                         <div class="d-flex justify-content-between">
-                            <span>Subtotal:</span>
+                            <span>Subtotal bruto:</span>
                             <strong>L {{ number_format($ventaSeleccionada->subtotal, 2) }}</strong>
                         </div>
 
@@ -452,10 +505,51 @@
                             <strong>L {{ number_format($ventaSeleccionada->descuento, 2) }}</strong>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <span>Impuesto:</span>
-                            <strong>L {{ number_format($ventaSeleccionada->impuesto, 2) }}</strong>
-                        </div>
+                        @if (
+                            $ventaSeleccionada->subtotal_gravado > 0 ||
+                            $ventaSeleccionada->subtotal_exento > 0 ||
+                            $ventaSeleccionada->subtotal_no_sujeto > 0 ||
+                            $ventaSeleccionada->isv_15 > 0
+                        )
+                            <div class="d-flex justify-content-between">
+                                <span>Subtotal gravado:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->subtotal_gravado, 2) }}</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <span>Subtotal exento:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->subtotal_exento, 2) }}</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <span>Subtotal no sujeto:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->subtotal_no_sujeto, 2) }}</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <span>ISV 15%:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->isv_15, 2) }}</strong>
+                            </div>
+                        @else
+                            <div class="d-flex justify-content-between">
+                                <span>Impuesto:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->impuesto, 2) }}</strong>
+                            </div>
+                        @endif
+
+                        @if ($ventaSeleccionada->retencion > 0)
+                            <div class="d-flex justify-content-between">
+                                <span>Retención:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->retencion, 2) }}</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <span>Neto recibido:</span>
+                                <strong>L {{ number_format($ventaSeleccionada->neto_recibido, 2) }}</strong>
+                            </div>
+                        @endif
+
+                        <hr>
 
                         <div class="d-flex justify-content-between">
                             <span>Pagado:</span>

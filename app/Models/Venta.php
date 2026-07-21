@@ -128,12 +128,46 @@ class Venta extends Model
         $desde = self::extraerNumeroFinal($configuracion->rango_desde);
         $hasta = self::extraerNumeroFinal($configuracion->rango_hasta);
 
-        $numeroActual = (int) $configuracion->numero_actual_factura;
+        $establecimiento = str_pad($configuracion->establecimiento ?: '000', 3, '0', STR_PAD_LEFT);
+        $puntoEmision = str_pad($configuracion->punto_emision ?: '001', 3, '0', STR_PAD_LEFT);
+        $tipoDocumento = str_pad($configuracion->tipo_documento_fiscal ?: '01', 2, '0', STR_PAD_LEFT);
 
-        if ($numeroActual <= 0 && $desde > 0) {
+        $prefijoFactura = $establecimiento . '-' . $puntoEmision . '-' . $tipoDocumento . '-';
+
+        $ultimaFactura = self::where('es_fiscal', true)
+            ->where('numero', 'like', $prefijoFactura . '%')
+            ->orderByDesc('id')
+            ->first();
+
+        $ultimoNumeroVentas = 0;
+
+        if ($ultimaFactura) {
+            $ultimoNumeroVentas = self::extraerNumeroFinal($ultimaFactura->numero);
+        }
+
+        $ultimoNumeroConfiguracion = (int) $configuracion->numero_actual_factura;
+
+        /*
+    |--------------------------------------------------------------------------
+    | Determinar siguiente número real
+    |--------------------------------------------------------------------------
+    | Toma el número más alto entre:
+    | - número actual guardado en configuración
+    | - última factura existente en ventas
+    |
+    | Así evitamos duplicados si la configuración quedó atrasada.
+    */
+
+        $base = max($ultimoNumeroConfiguracion, $ultimoNumeroVentas);
+
+        if ($base <= 0) {
             $nuevoNumero = $desde;
         } else {
-            $nuevoNumero = $numeroActual + 1;
+            $nuevoNumero = $base + 1;
+        }
+
+        if ($nuevoNumero < $desde) {
+            $nuevoNumero = $desde;
         }
 
         if ($hasta > 0 && $nuevoNumero > $hasta) {
