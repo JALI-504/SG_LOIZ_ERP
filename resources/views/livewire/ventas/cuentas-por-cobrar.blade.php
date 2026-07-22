@@ -86,7 +86,7 @@
 
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label>Buscar</label>
                     <input type="text"
                            class="form-control"
@@ -106,6 +106,15 @@
                     <input type="date"
                            class="form-control"
                            wire:model="fechaHasta">
+                </div>
+
+                <div class="col-md-2">
+                    <label>Comprobante</label>
+                    <select class="form-control" wire:model="filtroComprobante">
+                        <option value="todos">Todos</option>
+                        <option value="interno">Recibos internos</option>
+                        <option value="fiscal">Facturas fiscales</option>
+                    </select>
                 </div>
 
                 <div class="col-md-2">
@@ -162,7 +171,23 @@
 
                                 <td>
                                     <strong>{{ $venta->numero }}</strong><br>
-                                    <small>{{ $venta->tipo_comprobante }}</small>
+
+                                    @if ($venta->es_fiscal)
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-file-invoice"></i> Factura fiscal
+                                        </span>
+
+                                        @if ($venta->cai)
+                                            <br>
+                                            <small class="text-muted">
+                                                CAI: {{ $venta->cai }}
+                                            </small>
+                                        @endif
+                                    @else
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-receipt"></i> Recibo interno
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>
@@ -214,9 +239,13 @@
                                     </button>
 
                                     <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                       target="_blank"
-                                       class="btn btn-primary btn-xs">
-                                        Recibo
+                                    target="_blank"
+                                    class="btn btn-primary btn-xs">
+                                        @if ($venta->es_fiscal)
+                                            <i class="fas fa-file-invoice"></i> Factura
+                                        @else
+                                            <i class="fas fa-receipt"></i> Recibo
+                                        @endif
                                     </a>
                                 </td>
                             </tr>
@@ -309,9 +338,16 @@
                 <div class="modal-body">
                     @if ($ventaSeleccionada)
                         <div class="alert alert-info">
-                            <strong>Venta:</strong> {{ $ventaSeleccionada->numero }} <br>
+                            <strong>
+                                {{ $ventaSeleccionada->es_fiscal ? 'Factura fiscal:' : 'Recibo interno:' }}
+                            </strong>
+                            {{ $ventaSeleccionada->numero }} <br>
                             <strong>Total:</strong> L {{ number_format($ventaSeleccionada->total, 2) }} <br>
                             <strong>Pagado:</strong> L {{ number_format($ventaSeleccionada->monto_pagado, 2) }} <br>
+                            @if (($ventaSeleccionada->retencion ?? 0) > 0)
+                                <strong>Retención aplicada:</strong>
+                                L {{ number_format($ventaSeleccionada->retencion, 2) }} <br>
+                            @endif
                             <strong>Saldo pendiente:</strong>
                             <span class="text-danger">
                                 L {{ number_format($ventaSeleccionada->saldo_pendiente, 2) }}

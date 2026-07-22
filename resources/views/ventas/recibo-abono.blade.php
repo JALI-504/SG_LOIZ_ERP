@@ -1,8 +1,18 @@
+@php
+    $venta = $pago->venta;
+    $esFiscal = (bool) $venta->es_fiscal;
+
+    $tipoDocumentoVenta = $esFiscal ? 'factura fiscal' : 'recibo interno';
+    $tituloAbono = $esFiscal ? 'ABONO A FACTURA FISCAL' : 'ABONO A RECIBO INTERNO';
+
+    $totalPagosRecibidos = $venta->pagos->sum('monto');
+    $retencionAplicada = (float) ($venta->retencion ?? 0);
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Recibo de abono {{ $pago->venta->numero }}</title>
+    <title>{{ $tituloAbono }} {{ $venta->numero }}</title>
 
     <style>
         body {
@@ -178,20 +188,30 @@
             @endif
 
             <div class="numero">
-                RECIBO DE ABONO
+                {{ $tituloAbono }}
             </div>
 
             <div class="no-fiscal">
-                COMPROBANTE INTERNO NO FISCAL
+                COMPROBANTE INTERNO DE ABONO
             </div>
+
+            @if ($esFiscal)
+                <div class="subtitulo" style="margin-top: 8px;">
+                    Este abono fue aplicado a una factura fiscal previamente emitida.
+                </div>
+            @else
+                <div class="subtitulo" style="margin-top: 8px;">
+                    Este abono fue aplicado a un recibo interno no fiscal.
+                </div>
+            @endif
         </div>
 
         <div class="seccion">
             <table class="sin-borde">
                 <tr>
                     <td>
-                        <strong>Venta:</strong>
-                        {{ $pago->venta->numero }}
+                        <strong>Abono aplicado a {{ $tipoDocumentoVenta }} No.:</strong>
+                        {{ $venta->numero }}
                     </td>
 
                     <td>
@@ -232,6 +252,33 @@
                     </td>
                 </tr>
 
+                @if ($esFiscal)
+                    <tr>
+                        <td colspan="2">
+                            <strong>CAI:</strong>
+                            {{ $venta->cai ?? 'No registrado' }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td colspan="2">
+                            <strong>Rango autorizado:</strong>
+                            {{ $venta->rango_autorizado_desde ?? 'No registrado' }}
+                            al
+                            {{ $venta->rango_autorizado_hasta ?? 'No registrado' }}
+                        </td>
+                    </tr>
+
+                    @if ($venta->fecha_limite_emision)
+                        <tr>
+                            <td colspan="2">
+                                <strong>Fecha límite de emisión:</strong>
+                                {{ \Carbon\Carbon::parse($venta->fecha_limite_emision)->format('d/m/Y') }}
+                            </td>
+                        </tr>
+                    @endif
+                @endif
+
                 @if ($pago->referencia)
                     <tr>
                         <td colspan="2">
@@ -268,16 +315,32 @@
                     </tr>
 
                     <tr>
-                        <td>Total pagado acumulado</td>
+                        <td>Pagos recibidos acumulados</td>
                         <td class="text-right">
-                            L {{ number_format($pago->venta->monto_pagado, 2) }}
+                            L {{ number_format($totalPagosRecibidos, 2) }}
+                        </td>
+                    </tr>
+
+                    @if ($retencionAplicada > 0)
+                        <tr>
+                            <td>Retención aplicada en la venta</td>
+                            <td class="text-right">
+                                L {{ number_format($retencionAplicada, 2) }}
+                            </td>
+                        </tr>
+                    @endif
+
+                    <tr>
+                        <td>Total aplicado a la venta</td>
+                        <td class="text-right">
+                            L {{ number_format($venta->monto_pagado, 2) }}
                         </td>
                     </tr>
 
                     <tr>
                         <td>Saldo pendiente actual</td>
                         <td class="text-right">
-                            L {{ number_format($pago->venta->saldo_pendiente, 2) }}
+                            L {{ number_format($venta->saldo_pendiente, 2) }}
                         </td>
                     </tr>
                 </tbody>
@@ -298,8 +361,13 @@
         @endif
 
         <div class="seccion text-center text-muted">
-            Este documento es un comprobante interno no fiscal.
-            No sustituye factura fiscal autorizada.
+            @if ($esFiscal)
+                Este documento es un comprobante interno de abono aplicado a una factura fiscal ya emitida.
+                No sustituye ni modifica la factura fiscal original.
+            @else
+                Este documento es un comprobante interno no fiscal.
+                No sustituye factura fiscal autorizada.
+            @endif
         </div>
     </div>
 

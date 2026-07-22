@@ -20,6 +20,8 @@ class CuentasPorCobrar extends Component
     public $fechaHasta;
     public $perPage = 10;
 
+    public $filtroComprobante = 'todos';
+
     public $ventaSeleccionadaId;
 
     public $monto_abono;
@@ -58,6 +60,11 @@ class CuentasPorCobrar extends Component
         $this->resetPage();
     }
 
+    public function updatingFiltroComprobante()
+    {
+        $this->resetPage();
+    }
+
     private function queryCuentas()
     {
         return Venta::with(['cliente', 'pagos'])
@@ -68,6 +75,8 @@ class CuentasPorCobrar extends Component
 
                 $query->where(function ($q) use ($search) {
                     $q->where('numero', 'like', $search)
+                        ->orWhere('tipo_comprobante', 'like', $search)
+                        ->orWhere('cai', 'like', $search)
                         ->orWhere('metodo_pago', 'like', $search)
                         ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                             $clienteQuery->where('primer_nombre', 'like', $search)
@@ -85,6 +94,12 @@ class CuentasPorCobrar extends Component
             })
             ->when($this->fechaHasta, function ($query) {
                 $query->whereDate('fecha', '<=', $this->fechaHasta);
+            })
+            ->when($this->filtroComprobante === 'fiscal', function ($query) {
+                $query->where('es_fiscal', 1);
+            })
+            ->when($this->filtroComprobante === 'interno', function ($query) {
+                $query->where('es_fiscal', 0);
             });
     }
 
@@ -113,7 +128,7 @@ class CuentasPorCobrar extends Component
 
     public function registrarAbono()
     {
-        $venta = Venta::findOrFail($this->ventaSeleccionadaId);
+        $venta = Venta::with('pagos')->findOrFail($this->ventaSeleccionadaId);
 
         $this->validate([
             'monto_abono' => 'required|numeric|min:0.01|max:' . $venta->saldo_pendiente,
@@ -132,7 +147,17 @@ class CuentasPorCobrar extends Component
                     'observacion' => $this->observacion,
                 ]);
 
-                $nuevoMontoPagado = (float) $venta->monto_pagado + (float) $this->monto_abono;
+                $totalPagosRecibidos = PagoVenta::where('venta_id', $venta->id)
+                    ->sum('monto');
+
+                $retencionAplicada = (float) ($venta->retencion ?? 0);
+
+                $nuevoMontoPagado = (float) $totalPagosRecibidos + $retencionAplicada;
+
+                if ($nuevoMontoPagado > (float) $venta->total) {
+                    $nuevoMontoPagado = (float) $venta->total;
+                }
+
                 $nuevoSaldo = (float) $venta->total - $nuevoMontoPagado;
 
                 if ($nuevoSaldo < 0) {
@@ -173,6 +198,16 @@ class CuentasPorCobrar extends Component
         $totalOriginal = (clone $query)->sum('total');
         $totalPagado = (clone $query)->sum('monto_pagado');
 
+        $totalRetencion = (clone $query)->sum('retencion');
+
+        $totalFacturasFiscales = (clone $query)
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternos = (clone $query)
+            ->where('es_fiscal', 0)
+            ->count();
+
         $ventas = $query
             ->orderBy('fecha')
             ->orderBy('id')
@@ -191,6 +226,9 @@ class CuentasPorCobrar extends Component
             'totalPendiente' => $totalPendiente,
             'totalOriginal' => $totalOriginal,
             'totalPagado' => $totalPagado,
+            'totalRetencion' => $totalRetencion,
+            'totalFacturasFiscales' => $totalFacturasFiscales,
+            'totalRecibosInternos' => $totalRecibosInternos,
             'ventaSeleccionada' => $ventaSeleccionada,
         ]);
     }
