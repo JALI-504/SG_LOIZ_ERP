@@ -27,20 +27,35 @@
                     <div class="col-md-3">
                         <label>Desde</label>
                         <input type="date"
-                               name="fecha_desde"
-                               class="form-control"
-                               value="{{ $fechaDesde }}">
+                            name="fecha_desde"
+                            class="form-control"
+                            value="{{ $fechaDesde }}">
                     </div>
 
                     <div class="col-md-3">
                         <label>Hasta</label>
                         <input type="date"
-                               name="fecha_hasta"
-                               class="form-control"
-                               value="{{ $fechaHasta }}">
+                            name="fecha_hasta"
+                            class="form-control"
+                            value="{{ $fechaHasta }}">
                     </div>
 
-                    <div class="col-md-6 d-flex align-items-end">
+                    <div class="col-md-3">
+                        <label>Comprobante ventas</label>
+                        <select name="filtro_comprobante" class="form-control">
+                            <option value="todos" {{ $filtroComprobante === 'todos' ? 'selected' : '' }}>
+                                Todos
+                            </option>
+                            <option value="interno" {{ $filtroComprobante === 'interno' ? 'selected' : '' }}>
+                                Recibos internos
+                            </option>
+                            <option value="fiscal" {{ $filtroComprobante === 'fiscal' ? 'selected' : '' }}>
+                                Facturas fiscales
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary mr-2">
                             Filtrar
                         </button>
@@ -153,6 +168,37 @@
                     <td></td>
                     <td class="text-right">L {{ number_format($totalVentasPagado, 2) }}</td>
                 </tr>
+                <tr>
+                    <td>Pagos recibidos de clientes</td>
+                    <td></td>
+                    <td class="text-right">
+                        L {{ number_format($totalPagosRecibidosClientes, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Retenciones aplicadas en ventas pendientes</td>
+                    <td></td>
+                    <td class="text-right">
+                        L {{ number_format($totalRetencionVentas, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Facturas fiscales pendientes de cobro</td>
+                    <td class="text-right">
+                        {{ number_format($totalFacturasFiscalesPendientes, 0) }}
+                    </td>
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td>Recibos internos pendientes de cobro</td>
+                    <td class="text-right">
+                        {{ number_format($totalRecibosInternosPendientes, 0) }}
+                    </td>
+                    <td></td>
+                </tr>
 
                 <tr>
                     <td><strong>Compras pendientes de pago</strong></td>
@@ -208,7 +254,7 @@
                             <th>Venta</th>
                             <th>Cliente</th>
                             <th>Total</th>
-                            <th>Pagado</th>
+                            <th>Aplicado</th>
                             <th>Saldo</th>
                             <th class="no-print">Acción</th>
                         </tr>
@@ -228,7 +274,28 @@
 
                                 <td>
                                     <strong>{{ $venta->numero }}</strong><br>
-                                    <small>{{ $venta->metodo_pago }}</small>
+
+                                    @if ($venta->es_fiscal)
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-file-invoice"></i> Factura fiscal
+                                        </span>
+
+                                        @if ($venta->cai)
+                                            <br>
+                                            <small class="text-muted">
+                                                CAI: {{ $venta->cai }}
+                                            </small>
+                                        @endif
+                                    @else
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-receipt"></i> Recibo interno
+                                        </span>
+                                    @endif
+
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ $venta->metodo_pago }}
+                                    </small>
                                 </td>
 
                                 <td>
@@ -254,7 +321,23 @@
                                 </td>
 
                                 <td class="text-right">
-                                    L {{ number_format($venta->monto_pagado, 2) }}
+                                    <strong>L {{ number_format($venta->monto_pagado, 2) }}</strong>
+
+                                    @if (($venta->retencion ?? 0) > 0)
+                                        <br>
+                                        <small class="text-muted">
+                                            Incluye retención:
+                                            L {{ number_format($venta->retencion, 2) }}
+                                        </small>
+                                    @endif
+
+                                    @if ($venta->pagos && $venta->pagos->count() > 0)
+                                        <br>
+                                        <small class="text-muted">
+                                            Pagos recibidos:
+                                            L {{ number_format($venta->pagos->sum('monto'), 2) }}
+                                        </small>
+                                    @endif
                                 </td>
 
                                 <td class="text-right">
@@ -265,9 +348,13 @@
 
                                 <td class="no-print">
                                     <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                       target="_blank"
-                                       class="btn btn-success btn-xs">
-                                        Recibo
+                                    target="_blank"
+                                    class="btn btn-success btn-xs">
+                                        @if ($venta->es_fiscal)
+                                            <i class="fas fa-file-invoice"></i> Factura
+                                        @else
+                                            <i class="fas fa-receipt"></i> Recibo
+                                        @endif
                                     </a>
                                 </td>
                             </tr>
@@ -284,7 +371,17 @@
                         <tr>
                             <th colspan="3" class="text-right">Totales</th>
                             <th class="text-right">L {{ number_format($totalVentasOriginal, 2) }}</th>
-                            <th class="text-right">L {{ number_format($totalVentasPagado, 2) }}</th>
+                            <th class="text-right">
+                                L {{ number_format($totalVentasPagado, 2) }}
+
+                                @if ($totalRetencionVentas > 0)
+                                    <br>
+                                    <small>
+                                        Retenciones:
+                                        L {{ number_format($totalRetencionVentas, 2) }}
+                                    </small>
+                                @endif
+                            </th>
                             <th class="text-right">L {{ number_format($totalPorCobrar, 2) }}</th>
                             <th class="no-print"></th>
                         </tr>
@@ -411,6 +508,56 @@
                    class="btn btn-danger">
                     Ir a cuentas por pagar
                 </a>
+            </div>
+        </div>
+    </div>
+    {{-- Resumen fiscal de cuentas por cobrar --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>{{ number_format($totalFacturasFiscalesPendientes, 0) }}</h4>
+                    <p>Facturas fiscales pendientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h4>{{ number_format($totalRecibosInternosPendientes, 0) }}</h4>
+                    <p>Recibos internos pendientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h4>L {{ number_format($totalPagosRecibidosClientes, 2) }}</h4>
+                    <p>Pagos recibidos clientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h4>L {{ number_format($totalRetencionVentas, 2) }}</h4>
+                    <p>Retenciones aplicadas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-percent"></i>
+                </div>
             </div>
         </div>
     </div>

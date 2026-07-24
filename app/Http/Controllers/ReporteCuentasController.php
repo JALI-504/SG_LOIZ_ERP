@@ -12,8 +12,9 @@ class ReporteCuentasController extends Controller
     {
         $fechaDesde = $request->fecha_desde;
         $fechaHasta = $request->fecha_hasta;
+        $filtroComprobante = $request->filtro_comprobante ?? 'todos';
 
-        $ventasPorCobrarQuery = Venta::with('cliente')
+        $ventasPorCobrarQuery = Venta::with(['cliente', 'pagos'])
             ->where('estado', '!=', 'Anulada')
             ->where('saldo_pendiente', '>', 0)
             ->when($fechaDesde, function ($query) use ($fechaDesde) {
@@ -21,6 +22,12 @@ class ReporteCuentasController extends Controller
             })
             ->when($fechaHasta, function ($query) use ($fechaHasta) {
                 $query->whereDate('fecha', '<=', $fechaHasta);
+            })
+            ->when($filtroComprobante === 'fiscal', function ($query) {
+                $query->where('es_fiscal', 1);
+            })
+            ->when($filtroComprobante === 'interno', function ($query) {
+                $query->where('es_fiscal', 0);
             });
 
         $comprasPorPagarQuery = Compra::with('proveedor')
@@ -49,6 +56,20 @@ class ReporteCuentasController extends Controller
         $totalVentasOriginal = $ventasPorCobrar->sum('total');
         $totalVentasPagado = $ventasPorCobrar->sum('monto_pagado');
 
+        $totalPagosRecibidosClientes = $ventasPorCobrar->sum(function ($venta) {
+            return $venta->pagos->sum('monto');
+        });
+
+        $totalRetencionVentas = $ventasPorCobrar->sum('retencion');
+
+        $totalFacturasFiscalesPendientes = $ventasPorCobrar
+            ->where('es_fiscal', 1)
+            ->count();
+
+        $totalRecibosInternosPendientes = $ventasPorCobrar
+            ->where('es_fiscal', 0)
+            ->count();
+
         $totalComprasOriginal = $comprasPorPagar->sum('total');
         $totalComprasPagado = $comprasPorPagar->sum('monto_pagado');
 
@@ -57,6 +78,7 @@ class ReporteCuentasController extends Controller
         return view('reportes.cuentas', [
             'fechaDesde' => $fechaDesde,
             'fechaHasta' => $fechaHasta,
+            'filtroComprobante' => $filtroComprobante,
 
             'ventasPorCobrar' => $ventasPorCobrar,
             'comprasPorPagar' => $comprasPorPagar,
@@ -66,6 +88,11 @@ class ReporteCuentasController extends Controller
 
             'totalVentasOriginal' => $totalVentasOriginal,
             'totalVentasPagado' => $totalVentasPagado,
+            'totalPagosRecibidosClientes' => $totalPagosRecibidosClientes,
+            'totalRetencionVentas' => $totalRetencionVentas,
+
+            'totalFacturasFiscalesPendientes' => $totalFacturasFiscalesPendientes,
+            'totalRecibosInternosPendientes' => $totalRecibosInternosPendientes,
 
             'totalComprasOriginal' => $totalComprasOriginal,
             'totalComprasPagado' => $totalComprasPagado,
