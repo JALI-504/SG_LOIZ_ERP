@@ -15,6 +15,70 @@
 @stop
 
 @section('content')
+
+    {{-- Filtros --}}
+    <div class="card no-print">
+        <div class="card-header">
+            <h3 class="card-title">Filtros</h3>
+        </div>
+
+        <div class="card-body">
+            <form method="GET" action="{{ route('reportes.inventario') }}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Tipo</label>
+                        <select name="tipo" class="form-control">
+                            <option value="todos" {{ $tipo === 'todos' ? 'selected' : '' }}>
+                                Todos
+                            </option>
+                            <option value="insumos" {{ $tipo === 'insumos' ? 'selected' : '' }}>
+                                Solo insumos
+                            </option>
+                            <option value="productos" {{ $tipo === 'productos' ? 'selected' : '' }}>
+                                Solo productos
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Desde</label>
+                        <input type="date"
+                            name="fecha_desde"
+                            class="form-control"
+                            value="{{ $fechaDesde }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Hasta</label>
+                        <input type="date"
+                            name="fecha_hasta"
+                            class="form-control"
+                            value="{{ $fechaHasta }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>Mostrar</label>
+                        <select name="limite" class="form-control">
+                            <option value="10" {{ $limite == 10 ? 'selected' : '' }}>10 registros</option>
+                            <option value="20" {{ $limite == 20 ? 'selected' : '' }}>20 registros</option>
+                            <option value="50" {{ $limite == 50 ? 'selected' : '' }}>50 registros</option>
+                            <option value="100" {{ $limite == 100 ? 'selected' : '' }}>100 registros</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mr-2">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+
+                        <a href="{{ route('reportes.inventario') }}" class="btn btn-secondary">
+                            <i class="fas fa-broom"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
     {{-- Resumen --}}
     <div class="row">
         <div class="col-md-3">
@@ -66,283 +130,370 @@
         </div>
     </div>
 
+    {{-- Resumen secundario --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>L {{ number_format($valorInventarioProductos, 2) }}</h4>
+                    <p>Valor inventario productos</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>{{ number_format($totalInsumosStockBajo, 0) }}</h4>
+                    <p>Insumos con stock bajo</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>{{ number_format($totalProductosStockBajo, 0) }}</h4>
+                    <p>Productos con stock bajo</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h4>{{ number_format($totalMovimientosInsumos + $totalMovimientosProductos, 0) }}</h4>
+                    <p>Movimientos filtrados</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Stock bajo --}}
     <div class="row">
-        <div class="col-md-6">
-            <div class="card card-danger">
-                <div class="card-header">
-                    <h3 class="card-title">Insumos con stock bajo</h3>
-                </div>
+        @if ($mostrarInsumos)
+            <div class="{{ $mostrarProductos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">Insumos con stock bajo</h3>
+                    </div>
 
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Código</th>
-                                <th>Insumo</th>
-                                <th>Stock</th>
-                                <th>Mínimo</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($insumosStockBajo as $insumo)
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
                                 <tr>
-                                    <td>{{ $insumo->codigo }}</td>
-                                    <td>{{ $insumo->nombre }}</td>
-                                    <td>
-                                        <strong class="text-danger">
-                                            {{ number_format($insumo->stock_actual, 2) }}
-                                        </strong>
-                                        {{ $insumo->unidad_consumo }}
-                                    </td>
-                                    <td>
-                                        {{ number_format($insumo->stock_minimo, 2) }}
-                                    </td>
+                                    <th>Código</th>
+                                    <th>Insumo</th>
+                                    <th>Stock</th>
+                                    <th>Mínimo</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center">
-                                        No hay insumos con stock bajo.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                            </thead>
 
-        <div class="col-md-6">
-            <div class="card card-danger">
-                <div class="card-header">
-                    <h3 class="card-title">Productos con stock bajo</h3>
-                </div>
-
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Código</th>
-                                <th>Producto</th>
-                                <th>Stock</th>
-                                <th>Mínimo</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($productosStockBajo as $producto)
-                                <tr>
-                                    <td>{{ $producto->codigo }}</td>
-                                    <td>{{ $producto->nombre }}</td>
-                                    <td>
-                                        <strong class="text-danger">
-                                            {{ number_format($producto->stock_actual, 2) }}
-                                        </strong>
-                                        {{ $producto->unidad_venta }}
-                                    </td>
-                                    <td>
-                                        {{ number_format($producto->stock_minimo, 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center">
-                                        No hay productos con stock bajo.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            <tbody>
+                                @forelse ($insumosStockBajo as $insumo)
+                                    <tr>
+                                        <td>{{ $insumo->codigo }}</td>
+                                        <td>{{ $insumo->nombre }}</td>
+                                        <td>
+                                            <strong class="text-danger">
+                                                {{ number_format($insumo->stock_actual, 2) }}
+                                            </strong>
+                                            {{ $insumo->unidad_consumo }}
+                                        </td>
+                                        <td>
+                                            {{ number_format($insumo->stock_minimo, 2) }}
+                                            {{ $insumo->unidad_consumo }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">
+                                            No hay insumos con stock bajo.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
+
+        @if ($mostrarProductos)
+            <div class="{{ $mostrarInsumos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">Productos con stock bajo</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th>Stock</th>
+                                    <th>Mínimo</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($productosStockBajo as $producto)
+                                    <tr>
+                                        <td>{{ $producto->codigo }}</td>
+                                        <td>{{ $producto->nombre }}</td>
+                                        <td>
+                                            <strong class="text-danger">
+                                                {{ number_format($producto->stock_actual, 2) }}
+                                            </strong>
+                                            {{ $producto->unidad_venta }}
+                                        </td>
+                                        <td>
+                                            {{ number_format($producto->stock_minimo, 2) }}
+                                            {{ $producto->unidad_venta }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">
+                                            No hay productos con stock bajo.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Lotes PEPS --}}
     <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Lotes PEPS disponibles de insumos</h3>
-                </div>
+        @if ($mostrarInsumos)
+            <div class="{{ $mostrarProductos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lotes PEPS disponibles de insumos</h3>
+                    </div>
 
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Insumo</th>
-                                <th>Disponible</th>
-                                <th>Costo</th>
-                                <th>Valor</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($lotesInsumos as $lote)
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
                                 <tr>
-                                    <td>{{ $lote->fecha_entrada }}</td>
-                                    <td>
-                                        @if ($lote->insumo)
-                                            {{ $lote->insumo->nombre }}
-                                        @else
-                                            Sin insumo
-                                        @endif
-                                    </td>
-                                    <td>{{ number_format($lote->cantidad_disponible, 2) }}</td>
-                                    <td>L {{ number_format($lote->costo_unitario, 4) }}</td>
-                                    <td>
-                                        L {{ number_format($lote->cantidad_disponible * $lote->costo_unitario, 2) }}
-                                    </td>
+                                    <th>Fecha</th>
+                                    <th>Insumo</th>
+                                    <th>Disponible</th>
+                                    <th>Costo</th>
+                                    <th>Valor</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">
-                                        No hay lotes disponibles de insumos.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                            </thead>
 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Lotes PEPS disponibles de productos</h3>
-                </div>
+                            <tbody>
+                                @forelse ($lotesInsumos as $lote)
+                                    <tr>
+                                        <td>{{ $lote->fecha_entrada }}</td>
+                                        <td>
+                                            @if ($lote->insumo)
+                                                {{ $lote->insumo->nombre }}
+                                            @else
+                                                Sin insumo
+                                            @endif
+                                        </td>
+                                        <td>{{ number_format($lote->cantidad_disponible, 2) }}</td>
+                                        <td>L {{ number_format($lote->costo_unitario, 4) }}</td>
+                                        <td>
+                                            L {{ number_format($lote->cantidad_disponible * $lote->costo_unitario, 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay lotes disponibles de insumos.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
 
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Producto</th>
-                                <th>Disponible</th>
-                                <th>Costo</th>
-                                <th>Valor</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($lotesProductos as $lote)
+                            <tfoot>
                                 <tr>
-                                    <td>{{ $lote->fecha_entrada }}</td>
-                                    <td>
-                                        @if ($lote->producto)
-                                            {{ $lote->producto->nombre }}
-                                        @else
-                                            Sin producto
-                                        @endif
-                                    </td>
-                                    <td>{{ number_format($lote->cantidad_disponible, 2) }}</td>
-                                    <td>L {{ number_format($lote->costo_unitario, 4) }}</td>
-                                    <td>
-                                        L {{ number_format($lote->cantidad_disponible * $lote->costo_unitario, 2) }}
-                                    </td>
+                                    <th colspan="4" class="text-right">Valor total mostrado</th>
+                                    <th>
+                                        L {{ number_format($lotesInsumos->sum(function ($lote) {
+                                            return $lote->cantidad_disponible * $lote->costo_unitario;
+                                        }), 2) }}
+                                    </th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">
-                                        No hay lotes disponibles de productos.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
+
+        @if ($mostrarProductos)
+            <div class="{{ $mostrarInsumos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lotes PEPS disponibles de productos</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Disponible</th>
+                                    <th>Costo</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($lotesProductos as $lote)
+                                    <tr>
+                                        <td>{{ $lote->fecha_entrada }}</td>
+                                        <td>
+                                            @if ($lote->producto)
+                                                {{ $lote->producto->nombre }}
+                                            @else
+                                                Sin producto
+                                            @endif
+                                        </td>
+                                        <td>{{ number_format($lote->cantidad_disponible, 2) }}</td>
+                                        <td>L {{ number_format($lote->costo_unitario, 4) }}</td>
+                                        <td>
+                                            L {{ number_format($lote->cantidad_disponible * $lote->costo_unitario, 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay lotes disponibles de productos.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+
+                            <tfoot>
+                                <tr>
+                                    <th colspan="4" class="text-right">Valor total mostrado</th>
+                                    <th>
+                                        L {{ number_format($lotesProductos->sum(function ($lote) {
+                                            return $lote->cantidad_disponible * $lote->costo_unitario;
+                                        }), 2) }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Movimientos recientes --}}
     <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Movimientos recientes de insumos</h3>
-                </div>
+        @if ($mostrarInsumos)
+            <div class="{{ $mostrarProductos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Movimientos recientes de insumos</h3>
+                    </div>
 
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Insumo</th>
-                                <th>Tipo</th>
-                                <th>Cantidad</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($movimientosInsumos as $movimiento)
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
                                 <tr>
-                                    <td>{{ $movimiento->created_at }}</td>
-                                    <td>
-                                        {{ $movimiento->insumo->nombre ?? 'Sin insumo' }}
-                                    </td>
-                                    <td>{{ $movimiento->tipo_movimiento }}</td>
-                                    <td>{{ number_format($movimiento->cantidad, 2) }}</td>
-                                    <td>L {{ number_format($movimiento->total, 2) }}</td>
+                                    <th>Fecha</th>
+                                    <th>Insumo</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">
-                                        No hay movimientos recientes de insumos.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                            </thead>
 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Movimientos recientes de productos</h3>
-                </div>
-
-                <div class="card-body">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Producto</th>
-                                <th>Tipo</th>
-                                <th>Cantidad</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse ($movimientosProductos as $movimiento)
-                                <tr>
-                                    <td>{{ $movimiento->created_at }}</td>
-                                    <td>
-                                        {{ $movimiento->producto->nombre ?? 'Sin producto' }}
-                                    </td>
-                                    <td>{{ $movimiento->tipo_movimiento }}</td>
-                                    <td>{{ number_format($movimiento->cantidad, 2) }}</td>
-                                    <td>L {{ number_format($movimiento->total, 2) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">
-                                        No hay movimientos recientes de productos.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            <tbody>
+                                @forelse ($movimientosInsumos as $movimiento)
+                                    <tr>
+                                        <td>{{ $movimiento->created_at }}</td>
+                                        <td>
+                                            {{ $movimiento->insumo->nombre ?? 'Sin insumo' }}
+                                        </td>
+                                        <td>{{ $movimiento->tipo_movimiento }}</td>
+                                        <td>{{ number_format($movimiento->cantidad, 2) }}</td>
+                                        <td>L {{ number_format($movimiento->total, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay movimientos recientes de insumos.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
+
+        @if ($mostrarProductos)
+            <div class="{{ $mostrarInsumos ? 'col-md-6' : 'col-md-12' }}">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Movimientos recientes de productos</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <table class="table table-bordered table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($movimientosProductos as $movimiento)
+                                    <tr>
+                                        <td>{{ $movimiento->created_at }}</td>
+                                        <td>
+                                            {{ $movimiento->producto->nombre ?? 'Sin producto' }}
+                                        </td>
+                                        <td>{{ $movimiento->tipo_movimiento }}</td>
+                                        <td>{{ number_format($movimiento->cantidad, 2) }}</td>
+                                        <td>L {{ number_format($movimiento->total, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay movimientos recientes de productos.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 @stop
 
@@ -353,7 +504,8 @@
             .main-sidebar,
             .main-footer,
             .control-sidebar,
-            .content-header .btn {
+            .content-header .btn,
+            .no-print {
                 display: none !important;
             }
 

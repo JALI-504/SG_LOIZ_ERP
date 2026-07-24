@@ -16,19 +16,37 @@ class ReporteInventarioController extends Controller
     public function index(Request $request)
     {
         $tipo = $request->tipo ?: 'todos';
+        $fechaDesde = $request->fecha_desde;
+        $fechaHasta = $request->fecha_hasta;
+        $limite = (int) ($request->limite ?: 20);
 
-        $insumosStockBajo = Insumo::query()
+        if (!in_array($tipo, ['todos', 'insumos', 'productos'])) {
+            $tipo = 'todos';
+        }
+
+        if (!in_array($limite, [10, 20, 50, 100])) {
+            $limite = 20;
+        }
+
+        $mostrarInsumos = $tipo === 'todos' || $tipo === 'insumos';
+        $mostrarProductos = $tipo === 'todos' || $tipo === 'productos';
+
+        $insumosStockBajo = $mostrarInsumos
+            ? Insumo::query()
             ->where('activo', true)
             ->whereColumn('stock_actual', '<=', 'stock_minimo')
             ->orderBy('stock_actual')
-            ->get();
+            ->get()
+            : collect();
 
-        $productosStockBajo = Producto::query()
+        $productosStockBajo = $mostrarProductos
+            ? Producto::query()
             ->where('activo', true)
             ->where('maneja_inventario', true)
             ->whereColumn('stock_actual', '<=', 'stock_minimo')
             ->orderBy('stock_actual')
-            ->get();
+            ->get()
+            : collect();
 
         $totalInsumos = Insumo::where('activo', true)->count();
 
@@ -48,40 +66,89 @@ class ReporteInventarioController extends Controller
 
         $valorInventarioTotal = $valorInventarioInsumos + $valorInventarioProductos;
 
-        $lotesInsumos = LoteInsumo::with('insumo')
+        $lotesInsumos = $mostrarInsumos
+            ? LoteInsumo::with('insumo')
             ->where('activo', true)
             ->where('cantidad_disponible', '>', 0)
             ->orderBy('fecha_entrada')
             ->orderBy('id')
-            ->limit(20)
-            ->get();
+            ->limit($limite)
+            ->get()
+            : collect();
 
-        $lotesProductos = LoteProducto::with('producto')
+        $lotesProductos = $mostrarProductos
+            ? LoteProducto::with('producto')
             ->where('activo', true)
             ->where('cantidad_disponible', '>', 0)
             ->orderBy('fecha_entrada')
             ->orderBy('id')
-            ->limit(20)
-            ->get();
+            ->limit($limite)
+            ->get()
+            : collect();
 
-        $movimientosInsumos = MovimientoInventario::with('insumo')
-            ->orderByDesc('id')
-            ->limit(15)
-            ->get();
+        $movimientosInsumosQuery = MovimientoInventario::with('insumo')
+            ->when($fechaDesde, function ($query) use ($fechaDesde) {
+                $query->whereDate('created_at', '>=', $fechaDesde);
+            })
+            ->when($fechaHasta, function ($query) use ($fechaHasta) {
+                $query->whereDate('created_at', '<=', $fechaHasta);
+            });
 
-        $movimientosProductos = MovimientoProducto::with('producto')
+        $movimientosProductosQuery = MovimientoProducto::with('producto')
+            ->when($fechaDesde, function ($query) use ($fechaDesde) {
+                $query->whereDate('created_at', '>=', $fechaDesde);
+            })
+            ->when($fechaHasta, function ($query) use ($fechaHasta) {
+                $query->whereDate('created_at', '<=', $fechaHasta);
+            });
+
+        $totalMovimientosInsumos = $mostrarInsumos
+            ? (clone $movimientosInsumosQuery)->count()
+            : 0;
+
+        $totalMovimientosProductos = $mostrarProductos
+            ? (clone $movimientosProductosQuery)->count()
+            : 0;
+
+        $valorMovimientosInsumos = $mostrarInsumos
+            ? (clone $movimientosInsumosQuery)->sum('total')
+            : 0;
+
+        $valorMovimientosProductos = $mostrarProductos
+            ? (clone $movimientosProductosQuery)->sum('total')
+            : 0;
+
+        $movimientosInsumos = $mostrarInsumos
+            ? $movimientosInsumosQuery
             ->orderByDesc('id')
-            ->limit(15)
-            ->get();
+            ->limit($limite)
+            ->get()
+            : collect();
+
+        $movimientosProductos = $mostrarProductos
+            ? $movimientosProductosQuery
+            ->orderByDesc('id')
+            ->limit($limite)
+            ->get()
+            : collect();
 
         return view('reportes.inventario', [
             'tipo' => $tipo,
+            'fechaDesde' => $fechaDesde,
+            'fechaHasta' => $fechaHasta,
+            'limite' => $limite,
+
+            'mostrarInsumos' => $mostrarInsumos,
+            'mostrarProductos' => $mostrarProductos,
 
             'insumosStockBajo' => $insumosStockBajo,
             'productosStockBajo' => $productosStockBajo,
 
             'totalInsumos' => $totalInsumos,
             'totalProductos' => $totalProductos,
+
+            'totalInsumosStockBajo' => $insumosStockBajo->count(),
+            'totalProductosStockBajo' => $productosStockBajo->count(),
 
             'valorInventarioInsumos' => $valorInventarioInsumos,
             'valorInventarioProductos' => $valorInventarioProductos,
@@ -92,6 +159,11 @@ class ReporteInventarioController extends Controller
 
             'movimientosInsumos' => $movimientosInsumos,
             'movimientosProductos' => $movimientosProductos,
+
+            'totalMovimientosInsumos' => $totalMovimientosInsumos,
+            'totalMovimientosProductos' => $totalMovimientosProductos,
+            'valorMovimientosInsumos' => $valorMovimientosInsumos,
+            'valorMovimientosProductos' => $valorMovimientosProductos,
         ]);
     }
 }
