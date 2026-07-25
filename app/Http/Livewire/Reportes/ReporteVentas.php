@@ -21,6 +21,10 @@ class ReporteVentas extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver reporte ventas')) {
+            abort(403, 'No tiene permiso para ver el reporte de ventas.');
+        }
+
         $this->fechaDesde = now()->format('Y-m-d');
         $this->fechaHasta = now()->format('Y-m-d');
 
@@ -311,6 +315,10 @@ class ReporteVentas extends Component
 
     public function exportarExcel()
     {
+        if (!auth()->user()->can('ver reporte ventas')) {
+            abort(403, 'No tiene permiso para exportar el reporte de ventas.');
+        }
+        
         $detalles = VentaDetalle::query()
             ->join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
             ->leftJoin('clientes', 'ventas.cliente_id', '=', 'clientes.id')

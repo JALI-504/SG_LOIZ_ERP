@@ -10,6 +10,10 @@ class GastoController extends Controller
 {
     public function create()
     {
+        if (!auth()->user()->can('crear gastos')) {
+            abort(403, 'No tiene permiso para crear gastos.');
+        }
+
         $categorias = Catalogo::opciones('categoria_gasto')->pluck('nombre')->toArray();
         $metodosPago = Catalogo::opciones('metodo_pago')->pluck('nombre')->toArray();
 
@@ -22,6 +26,10 @@ class GastoController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('crear gastos')) {
+            abort(403, 'No tiene permiso para registrar gastos.');
+        }
+
         $request->validate([
             'fecha' => 'required|date',
             'categoria' => 'required|max:100',
@@ -52,6 +60,10 @@ class GastoController extends Controller
 
     public function edit(Gasto $gasto)
     {
+        if (!auth()->user()->can('editar gastos')) {
+            abort(403, 'No tiene permiso para editar gastos.');
+        }
+
         if ($gasto->estado === 'Anulado') {
             return redirect()
                 ->route('gastos.index')
@@ -70,6 +82,10 @@ class GastoController extends Controller
 
     public function update(Request $request, Gasto $gasto)
     {
+        if (!auth()->user()->can('editar gastos')) {
+            abort(403, 'No tiene permiso para actualizar gastos.');
+        }
+
         if ($gasto->estado === 'Anulado') {
             return redirect()
                 ->route('gastos.index')

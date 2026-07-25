@@ -10,6 +10,10 @@ class ReporteCuentasController extends Controller
 {
     public function index(Request $request)
     {
+        if (!auth()->user()->can('ver reporte cuentas')) {
+            abort(403, 'No tiene permiso para ver el reporte de cuentas.');
+        }
+        
         $fechaDesde = $request->fecha_desde;
         $fechaHasta = $request->fecha_hasta;
         $filtroComprobante = $request->filtro_comprobante ?? 'todos';

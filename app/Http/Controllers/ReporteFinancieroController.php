@@ -9,11 +9,16 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ReporteFinancieroController extends Controller
 {
     public function index(Request $request)
     {
+        if (!auth()->user()->can('ver reporte financiero')) {
+            abort(403, 'No tiene permiso para ver el reporte financiero.');
+        }
+
         $fechaDesde = $request->fecha_desde ?: now()->startOfMonth()->format('Y-m-d');
         $fechaHasta = $request->fecha_hasta ?: now()->format('Y-m-d');
 
@@ -176,6 +181,10 @@ class ReporteFinancieroController extends Controller
 
     public function exportarExcel(Request $request)
     {
+        if (!auth()->user()->can('ver reporte financiero')) {
+            abort(403, 'No tiene permiso para exportar el reporte financiero.');
+        }
+
         $fechaDesde = $request->fecha_desde ?: now()->startOfMonth()->format('Y-m-d');
         $fechaHasta = $request->fecha_hasta ?: now()->format('Y-m-d');
 

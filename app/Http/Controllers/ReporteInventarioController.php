@@ -15,6 +15,10 @@ class ReporteInventarioController extends Controller
 {
     public function index(Request $request)
     {
+        if (!auth()->user()->can('ver reporte inventario')) {
+            abort(403, 'No tiene permiso para ver el reporte de inventario.');
+        }
+        
         $tipo = $request->tipo ?: 'todos';
         $fechaDesde = $request->fecha_desde;
         $fechaHasta = $request->fecha_hasta;

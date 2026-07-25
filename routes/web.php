@@ -356,3 +356,5 @@ Route::middleware(['auth'])->group(function () {
         ->name('compras.anular')
         ->middleware('permission:anular compras');
 });
+
+

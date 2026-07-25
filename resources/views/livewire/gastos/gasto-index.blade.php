@@ -18,10 +18,13 @@
     @endif
 
     <div class="mb-3">
-        <a href="{{ route('gastos.create') }}"
-        class="btn btn-success btn-sm">
-            <i class="fas fa-plus"></i> Registrar gasto
-        </a>
+        
+        @can('crear gastos')
+            <a href="{{ route('gastos.create') }}"
+            class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Registrar gasto
+            </a>
+        @endcan
 
         <button type="button"
                 class="btn btn-secondary btn-sm"
@@ -170,7 +173,9 @@
                             <th>Referencia</th>
                             <th>Estado</th>
                             <th>Observación</th>
-                            <th width="150">Acciones</th>
+                            @if (auth()->user()->can('editar gastos') || auth()->user()->can('anular gastos'))
+                                <th width="150">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -232,32 +237,44 @@
                                     {{ $gasto->observacion ?? 'Sin observación' }}
                                 </td>
 
-                                <td>
-                                    @if ($gasto->estado !== 'Anulado')
-                                        <a href="{{ route('gastos.edit', $gasto->id) }}"
-                                        class="btn btn-primary btn-xs">
-                                            Editar
-                                        </a>
+                                @if (auth()->user()->can('editar gastos') || auth()->user()->can('anular gastos'))
+                                    <td>
+                                        @if ($gasto->estado !== 'Anulado')
 
-                                        <button type="button"
-                                                class="btn btn-danger btn-xs"
-                                                onclick="confirm('¿Seguro que desea anular este gasto?') || event.stopImmediatePropagation()"
-                                                wire:click="anular({{ $gasto->id }})">
-                                            Anular
-                                        </button>
-                                    @else
-                                        <button type="button"
-                                                class="btn btn-warning btn-xs"
-                                                onclick="confirm('¿Seguro que desea reactivar este gasto?') || event.stopImmediatePropagation()"
-                                                wire:click="reactivar({{ $gasto->id }})">
-                                            Reactivar
-                                        </button>
-                                    @endif
-                                </td>
+                                            @can('editar gastos')
+                                                <a href="{{ route('gastos.edit', $gasto->id) }}"
+                                                class="btn btn-primary btn-xs">
+                                                    Editar
+                                                </a>
+                                            @endcan
+
+                                            @can('anular gastos')
+                                                <button type="button"
+                                                        class="btn btn-danger btn-xs"
+                                                        onclick="confirm('¿Seguro que desea anular este gasto?') || event.stopImmediatePropagation()"
+                                                        wire:click="anular({{ $gasto->id }})">
+                                                    Anular
+                                                </button>
+                                            @endcan
+
+                                        @else
+
+                                            @can('anular gastos')
+                                                <button type="button"
+                                                        class="btn btn-warning btn-xs"
+                                                        onclick="confirm('¿Seguro que desea reactivar este gasto?') || event.stopImmediatePropagation()"
+                                                        wire:click="reactivar({{ $gasto->id }})">
+                                                    Reactivar
+                                                </button>
+                                            @endcan
+
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar gastos') || auth()->user()->can('anular gastos') ? 10 : 9 }}" class="text-center">
                                     No hay gastos registrados con los filtros seleccionados.
                                 </td>
                             </tr>

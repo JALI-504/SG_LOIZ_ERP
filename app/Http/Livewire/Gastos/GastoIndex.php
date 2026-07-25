@@ -38,6 +38,10 @@ class GastoIndex extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver gastos')) {
+            abort(403, 'No tiene permiso para ver gastos.');
+        }
+
         $this->categorias = Catalogo::opciones('categoria_gasto')
             ->pluck('nombre')
             ->toArray();
@@ -127,6 +131,10 @@ class GastoIndex extends Component
 
     public function crear()
     {
+        if (!auth()->user()->can('crear gastos')) {
+            abort(403, 'No tiene permiso para crear gastos.');
+        }
+
         $this->resetFormulario();
 
         $this->gasto_id = null;
@@ -143,6 +151,10 @@ class GastoIndex extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('crear gastos')) {
+            abort(403, 'No tiene permiso para registrar gastos.');
+        }
+
         $this->validate();
 
         Gasto::create([
@@ -166,6 +178,10 @@ class GastoIndex extends Component
 
     public function editar($gastoId)
     {
+        if (!auth()->user()->can('editar gastos')) {
+            abort(403, 'No tiene permiso para editar gastos.');
+        }
+
         $gasto = Gasto::findOrFail($gastoId);
 
         $this->gasto_id = $gasto->id;
@@ -184,6 +200,10 @@ class GastoIndex extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar gastos')) {
+            abort(403, 'No tiene permiso para actualizar gastos.');
+        }
+
         $this->validate();
 
         $gasto = Gasto::findOrFail($this->gasto_id);
@@ -214,6 +234,10 @@ class GastoIndex extends Component
 
     public function anular($gastoId)
     {
+        if (!auth()->user()->can('anular gastos')) {
+            abort(403, 'No tiene permiso para anular gastos.');
+        }
+
         $gasto = Gasto::findOrFail($gastoId);
 
         if ($gasto->estado === 'Anulado') {
@@ -235,6 +259,10 @@ class GastoIndex extends Component
 
     public function reactivar($gastoId)
     {
+        if (!auth()->user()->can('anular gastos')) {
+            abort(403, 'No tiene permiso para reactivar gastos.');
+        }
+
         $gasto = Gasto::findOrFail($gastoId);
 
         if ($gasto->estado === 'Registrado') {
