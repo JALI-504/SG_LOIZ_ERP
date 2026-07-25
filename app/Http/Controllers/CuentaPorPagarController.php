@@ -93,7 +93,15 @@ class CuentaPorPagarController extends Controller
                     'observacion' => $request->observacion,
                 ]);
 
-                $nuevoMontoPagado = (float) $compra->monto_pagado + (float) $request->monto;
+                $totalPagosRegistrados = PagoCompra::where('compra_id', $compra->id)
+                    ->sum('monto');
+
+                $nuevoMontoPagado = (float) $totalPagosRegistrados;
+
+                if ($nuevoMontoPagado > (float) $compra->total) {
+                    $nuevoMontoPagado = (float) $compra->total;
+                }
+
                 $nuevoSaldo = (float) $compra->total - $nuevoMontoPagado;
 
                 if ($nuevoSaldo < 0) {
@@ -102,6 +110,12 @@ class CuentaPorPagarController extends Controller
 
                 $compra->monto_pagado = $nuevoMontoPagado;
                 $compra->saldo_pendiente = $nuevoSaldo;
+
+                // IMPORTANTE:
+                // En compras, el estado debe seguir siendo Registrada.
+                // El saldo pendiente en 0 indica que ya está pagada.
+                $compra->estado = 'Registrada';
+
                 $compra->save();
             });
 

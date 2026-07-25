@@ -149,7 +149,7 @@
                             <th>Compra</th>
                             <th>Proveedor</th>
                             <th>Total</th>
-                            <th>Pagado</th>
+                            <th>Pagado acumulado</th>
                             <th>Saldo</th>
                             <th width="260">Registrar pago</th>
                             <th width="90">Acción</th>
@@ -320,7 +320,7 @@
                                                                 <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
                                                                 target="_blank"
                                                                 class="btn btn-success btn-xs">
-                                                                    Recibo pago
+                                                                    <i class="fas fa-receipt"></i> Recibo
                                                                 </a>
                                                             </td>
                                                         </tr>

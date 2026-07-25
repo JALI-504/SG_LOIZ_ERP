@@ -1,8 +1,17 @@
+@php
+    $compra = $pago->compra;
+    $proveedor = $compra->proveedor ?? null;
+
+    $totalPagosRegistrados = $compra->pagos->sum('monto');
+
+    $tipoComprobanteCompra = $compra->tipo_comprobante ?? 'Comprobante';
+    $numeroComprobanteCompra = $compra->numero_comprobante ?? null;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Comprobante de pago {{ $pago->compra->numero }}</title>
+    <title>Comprobante de pago {{ $compra->numero }}</title>
 
     <style>
         body {
@@ -183,13 +192,24 @@
             <table class="sin-borde">
                 <tr>
                     <td>
-                        <strong>Compra:</strong>
-                        {{ $pago->compra->numero }}
+                       <strong>Pago aplicado a compra No.:</strong>
+                        {{ $compra->numero }}
                     </td>
 
                     <td>
                         <strong>Fecha pago:</strong>
                         {{ $pago->fecha }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2">
+                        <strong>Comprobante de compra:</strong>
+                        {{ $tipoComprobanteCompra }}
+
+                        @if ($numeroComprobanteCompra)
+                            | No. {{ $numeroComprobanteCompra }}
+                        @endif
                     </td>
                 </tr>
 
@@ -209,15 +229,15 @@
                     <td colspan="2">
                         <strong>Proveedor:</strong>
 
-                        @if ($pago->compra->proveedor)
-                            {{ $pago->compra->proveedor->nombre_comercial }}
+                       @if ($proveedor)
+                            {{ $proveedor->nombre_comercial }}
 
-                            @if ($pago->compra->proveedor->rtn)
-                                | RTN: {{ $pago->compra->proveedor->rtn }}
+                            @if ($proveedor->rtn)
+                                | RTN: {{ $proveedor->rtn }}
                             @endif
 
-                            @if ($pago->compra->proveedor->telefono)
-                                | Tel: {{ $pago->compra->proveedor->telefono }}
+                            @if ($proveedor->telefono)
+                                | Tel: {{ $proveedor->telefono }}
                             @endif
                         @else
                             Sin proveedor registrado
@@ -249,12 +269,12 @@
                     <tr>
                         <td>Total de la compra</td>
                         <td class="text-right">
-                            L {{ number_format($pago->compra->total, 2) }}
+                            L {{ number_format($compra->total, 2) }}
                         </td>
                     </tr>
 
                     <tr>
-                        <td>Monto pagado en este abono</td>
+                        <td>Monto pagado en este pago</td>
                         <td class="text-right total-final">
                             L {{ number_format($pago->monto, 2) }}
                         </td>
@@ -263,14 +283,14 @@
                     <tr>
                         <td>Total pagado acumulado</td>
                         <td class="text-right">
-                            L {{ number_format($pago->compra->monto_pagado, 2) }}
+                            L {{ number_format($totalPagosRegistrados, 2) }}
                         </td>
                     </tr>
 
                     <tr>
                         <td>Saldo pendiente actual</td>
                         <td class="text-right">
-                            L {{ number_format($pago->compra->saldo_pendiente, 2) }}
+                            L {{ number_format($compra->saldo_pendiente, 2) }}
                         </td>
                     </tr>
                 </tbody>
@@ -291,7 +311,8 @@
         @endif
 
         <div class="seccion text-center text-muted">
-            Este documento es un comprobante interno no fiscal.
+            Este documento es un comprobante interno de pago a proveedor.
+            No sustituye el comprobante original de compra.
         </div>
     </div>
 </body>

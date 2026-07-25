@@ -193,15 +193,24 @@ Route::get('/compras/crear', [CompraController::class, 'create'])
 Route::post('/compras', [CompraController::class, 'store'])
     ->name('compras.store');
 
-    // Recibo de pago
+// Recibo de pago
 
 Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
-    $pago->load(['compra.proveedor']);
+    $pago->load(['compra.proveedor', 'compra.pagos']);
 
     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
     return view('compras.recibo-pago', compact('pago', 'configuracion'));
 })->name('compras.pagos.recibo');
+
+// Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
+//     $pago->load(['compra.proveedor']);
+
+//     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+//     return view('compras.recibo-pago', compact('pago', 'configuracion'));
+// })->name('compras.pagos.recibo');
+
 // compras  proveedores
 
 Route::get('/compras/{compra}', [CompraController::class, 'show'])
