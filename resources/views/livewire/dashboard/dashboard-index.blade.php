@@ -180,6 +180,84 @@
         </div>
     </div>
 
+    {{-- Flujo operativo del día --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h4>L {{ number_format($totalGastosHoy, 2) }}</h4>
+                    <p>Gastos hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>L {{ number_format($totalPagosProveedoresActivosHoy, 2) }}</h4>
+                    <p>Pagos proveedores hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-truck-loading"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h4>L {{ number_format($totalEgresosOperativosHoy, 2) }}</h4>
+                    <p>Egresos operativos hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box {{ $flujoNetoEstimadoHoy >= 0 ? 'bg-info' : 'bg-danger' }}">
+                <div class="inner">
+                    <h4>L {{ number_format($flujoNetoEstimadoHoy, 2) }}</h4>
+                    <p>Flujo neto estimado hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Cuentas pendientes --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>L {{ number_format($cuentasPorPagarPendientes, 2) }}</h4>
+                    <p>Cuentas por pagar pendientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h4>{{ number_format($cantidadCuentasPorPagarPendientes, 0) }}</h4>
+                    <p>Compras pendientes de pago</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-list"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         {{-- Últimas ventas --}}
         <div class="col-md-7">

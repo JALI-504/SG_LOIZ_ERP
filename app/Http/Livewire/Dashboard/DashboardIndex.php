@@ -2,6 +2,9 @@
 
 namespace App\Http\Livewire\Dashboard;
 
+use App\Models\Compra;
+use App\Models\Gasto;
+use App\Models\PagoCompra;
 use App\Models\Insumo;
 use App\Models\Producto;
 use App\Models\Venta;
@@ -42,6 +45,33 @@ class DashboardIndex extends Component
 
         $totalRecibosInternosHoy = (clone $ventasValidasHoyQuery)
             ->where('es_fiscal', 0)
+            ->count();
+
+        $gastosHoyQuery = Gasto::query()
+            ->where('estado', 'Registrado')
+            ->whereDate('fecha', $hoy);
+
+        $totalGastosHoy = (clone $gastosHoyQuery)->sum('monto');
+        $cantidadGastosHoy = (clone $gastosHoyQuery)->count();
+
+        $pagosProveedoresHoyQuery = PagoCompra::query()
+            ->where('estado', 'Activo')
+            ->whereDate('fecha', $hoy);
+
+        $totalPagosProveedoresActivosHoy = (clone $pagosProveedoresHoyQuery)->sum('monto');
+        $cantidadPagosProveedoresActivosHoy = (clone $pagosProveedoresHoyQuery)->count();
+
+        $totalEgresosOperativosHoy = $totalGastosHoy + $totalPagosProveedoresActivosHoy;
+        $flujoNetoEstimadoHoy = $totalNetoRecibidoHoy - $totalEgresosOperativosHoy;
+
+        $cuentasPorPagarPendientes = Compra::query()
+            ->where('estado', '!=', 'Anulada')
+            ->where('saldo_pendiente', '>', 0)
+            ->sum('saldo_pendiente');
+
+        $cantidadCuentasPorPagarPendientes = Compra::query()
+            ->where('estado', '!=', 'Anulada')
+            ->where('saldo_pendiente', '>', 0)
             ->count();
 
         $ventasPendientesHoy = (clone $ventasHoyQuery)
@@ -131,6 +161,15 @@ class DashboardIndex extends Component
             'totalNetoRecibidoHoy' => $totalNetoRecibidoHoy,
             'totalFacturasFiscalesHoy' => $totalFacturasFiscalesHoy,
             'totalRecibosInternosHoy' => $totalRecibosInternosHoy,
+
+            'totalGastosHoy' => $totalGastosHoy,
+            'cantidadGastosHoy' => $cantidadGastosHoy,
+            'totalPagosProveedoresActivosHoy' => $totalPagosProveedoresActivosHoy,
+            'cantidadPagosProveedoresActivosHoy' => $cantidadPagosProveedoresActivosHoy,
+            'totalEgresosOperativosHoy' => $totalEgresosOperativosHoy,
+            'flujoNetoEstimadoHoy' => $flujoNetoEstimadoHoy,
+            'cuentasPorPagarPendientes' => $cuentasPorPagarPendientes,
+            'cantidadCuentasPorPagarPendientes' => $cantidadCuentasPorPagarPendientes,
 
             'ventasPendientesHoy' => $ventasPendientesHoy,
             'ventasAnuladasHoy' => $ventasAnuladasHoy,
