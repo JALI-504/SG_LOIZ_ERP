@@ -47,6 +47,10 @@ class ServicioIndex extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver servicios')) {
+            abort(403, 'No tiene permiso para ver servicios.');
+        }
+
         $this->tiposServicio = Catalogo::opciones('tipo_servicio')->pluck('nombre')->toArray();
         $this->tamanosPapel = Catalogo::opciones('tamano_papel')->pluck('nombre')->toArray();
         $this->colores = Catalogo::opciones('color_servicio')->pluck('nombre')->toArray();
@@ -119,6 +123,10 @@ class ServicioIndex extends Component
 
     public function create()
     {
+        if (!auth()->user()->can('crear servicios')) {
+            abort(403, 'No tiene permiso para crear servicios.');
+        }
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo servicio';
@@ -128,6 +136,10 @@ class ServicioIndex extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('crear servicios')) {
+            abort(403, 'No tiene permiso para registrar servicios.');
+        }
+
         $this->validate();
 
         Servicio::create([
@@ -158,6 +170,10 @@ class ServicioIndex extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para editar servicios.');
+        }
+
         $servicio = Servicio::findOrFail($id);
 
         $this->servicio_id = $servicio->id;
@@ -184,6 +200,10 @@ class ServicioIndex extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para actualizar servicios.');
+        }
+
         $this->validate();
 
         $servicio = Servicio::findOrFail($this->servicio_id);
@@ -214,6 +234,10 @@ class ServicioIndex extends Component
 
     public function cambiarEstado($id)
     {
+        if (!auth()->user()->can('eliminar servicios')) {
+            abort(403, 'No tiene permiso para activar o desactivar servicios.');
+        }
+        
         $servicio = Servicio::findOrFail($id);
 
         $servicio->update([

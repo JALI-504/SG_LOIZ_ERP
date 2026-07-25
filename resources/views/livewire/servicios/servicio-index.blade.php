@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de servicios</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo servicio
-                </button>
+                @can('crear servicios')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo servicio
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -67,7 +69,12 @@
                             <th>Precio</th>
                             <th>Utilidad</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @if (
+                                auth()->user()->can('editar servicios') ||
+                                auth()->user()->can('eliminar servicios')
+                            )
+                                <th width="170">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -128,30 +135,39 @@
                                     @endif
                                 </td>
 
-                               <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $servicio->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                               @if (
+                                    auth()->user()->can('editar servicios') ||
+                                    auth()->user()->can('eliminar servicios')
+                                )
+                                    <td>
+                                        @can('editar servicios')
+                                            <button class="btn btn-warning btn-xs"
+                                                    wire:click="edit({{ $servicio->id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
 
-                                    <a href="{{ route('servicios.insumos', $servicio->id) }}"
-                                    class="btn btn-info btn-xs">
-                                        Insumos
-                                    </a>
+                                            <a href="{{ route('servicios.insumos', $servicio->id) }}"
+                                            class="btn btn-info btn-xs">
+                                                Insumos
+                                            </a>
+                                        @endcan
 
-                                    <button class="btn btn-{{ $servicio->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $servicio->id }})">
-                                        @if ($servicio->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
-                                </td>
+                                        @can('eliminar servicios')
+                                            <button class="btn btn-{{ $servicio->activo ? 'secondary' : 'success' }} btn-xs"
+                                                    wire:click="cambiarEstado({{ $servicio->id }})">
+                                                @if ($servicio->activo)
+                                                    Desactivar
+                                                @else
+                                                    Activar
+                                                @endif
+                                            </button>
+                                        @endcan
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar servicios') || auth()->user()->can('eliminar servicios') ? 9 : 8 }}" class="text-center">
                                     No hay servicios registrados.
                                 </td>
                             </tr>
@@ -338,9 +354,14 @@
                         Cancelar
                     </button>
 
-                    <button type="submit" class="btn btn-primary">
-                        {{ $servicio_id ? 'Actualizar servicio' : 'Guardar servicio' }}
-                    </button>
+                    @if (
+                        (!$servicio_id && auth()->user()->can('crear servicios')) ||
+                        ($servicio_id && auth()->user()->can('editar servicios'))
+                    )
+                        <button type="submit" class="btn btn-primary">
+                            {{ $servicio_id ? 'Actualizar servicio' : 'Guardar servicio' }}
+                        </button>
+                    @endif
                 </div>
             </form>
         </div>
