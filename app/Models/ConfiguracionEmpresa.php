@@ -42,6 +42,18 @@ class ConfiguracionEmpresa extends Model
         'numero_actual_factura',
     ];
 
+    protected $casts = [
+        'usa_facturacion_fiscal' => 'boolean',
+        'usa_impuestos' => 'boolean',
+        'usa_retenciones' => 'boolean',
+        'precios_incluyen_isv' => 'boolean',
+        'activo' => 'boolean',
+        'fecha_limite_emision' => 'date',
+        'porcentaje_isv_general' => 'decimal:2',
+        'numero_actual_recibo' => 'integer',
+        'numero_actual_factura' => 'integer',
+    ];
+
     public static function actual()
     {
         $configuracion = self::where('activo', true)
@@ -84,7 +96,12 @@ class ConfiguracionEmpresa extends Model
 
     public function getTieneFacturacionFiscalAttribute()
     {
-        return $this->usa_facturacion_fiscal && $this->cai && $this->rtn;
+        return $this->esta_en_modo_fiscal
+            && !empty($this->rtn)
+            && !empty($this->cai)
+            && !empty($this->rango_desde)
+            && !empty($this->rango_hasta)
+            && !empty($this->fecha_limite_emision);
     }
 
     public function getEstaEnModoFiscalAttribute()
@@ -97,5 +114,38 @@ class ConfiguracionEmpresa extends Model
     public function getEstaEnModoInternoAttribute()
     {
         return !$this->esta_en_modo_fiscal;
+    }
+
+    public function getProximoReciboEstimadoAttribute()
+    {
+        $prefijo = $this->prefijo_recibo ?: 'REC';
+        $numero = ((int) $this->numero_actual_recibo) + 1;
+
+        return strtoupper($prefijo) . '-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function getProximaFacturaEstimadaAttribute()
+    {
+        $numero = ((int) $this->numero_actual_factura) + 1;
+
+        if ((int) $this->numero_actual_factura <= 0 && $this->rango_desde) {
+            $numero = $this->extraerNumeroFinal($this->rango_desde);
+        }
+
+        return str_pad($this->establecimiento ?: '000', 3, '0', STR_PAD_LEFT) . '-' .
+            str_pad($this->punto_emision ?: '001', 3, '0', STR_PAD_LEFT) . '-' .
+            str_pad($this->tipo_documento_fiscal ?: '01', 2, '0', STR_PAD_LEFT) . '-' .
+            str_pad($numero, 8, '0', STR_PAD_LEFT);
+    }
+
+    private function extraerNumeroFinal($numeroDocumento)
+    {
+        $limpio = preg_replace('/[^0-9]/', '', $numeroDocumento);
+
+        if (!$limpio) {
+            return 1;
+        }
+
+        return (int) substr($limpio, -8);
     }
 }
