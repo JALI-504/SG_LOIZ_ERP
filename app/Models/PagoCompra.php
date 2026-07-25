@@ -19,6 +19,9 @@ class PagoCompra extends Model
         'metodo_pago',
         'referencia',
         'observacion',
+        'estado',
+        'fecha_anulacion',
+        'observacion_anulacion',
     ];
 
     protected static function booted()

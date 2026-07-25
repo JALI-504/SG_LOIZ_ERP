@@ -91,9 +91,11 @@ class CuentaPorPagarController extends Controller
                     'metodo_pago' => $request->metodo_pago,
                     'referencia' => $request->referencia,
                     'observacion' => $request->observacion,
+                    'estado' => 'Activo',
                 ]);
 
                 $totalPagosRegistrados = PagoCompra::where('compra_id', $compra->id)
+                    ->where('estado', 'Activo')
                     ->sum('monto');
 
                 $nuevoMontoPagado = (float) $totalPagosRegistrados;
@@ -125,6 +127,70 @@ class CuentaPorPagarController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('compras.cuentas-por-pagar')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    public function anularPago(Request $request, PagoCompra $pago)
+    {
+        if ($pago->estado === 'Anulado') {
+            return redirect()
+                ->back()
+                ->with('error', 'Este pago ya está anulado.');
+        }
+
+        $request->validate([
+            'observacion_anulacion' => 'nullable|max:500',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $pago) {
+                $pago->load('compra');
+
+                $compra = $pago->compra;
+
+                if (!$compra) {
+                    throw new \Exception('No se encontró la compra asociada a este pago.');
+                }
+
+                if ($compra->estado === 'Anulada') {
+                    throw new \Exception('No se puede anular un pago de una compra anulada.');
+                }
+
+                $pago->update([
+                    'estado' => 'Anulado',
+                    'fecha_anulacion' => now(),
+                    'observacion_anulacion' => $request->observacion_anulacion,
+                ]);
+
+                $totalPagosActivos = PagoCompra::where('compra_id', $compra->id)
+                    ->where('estado', 'Activo')
+                    ->sum('monto');
+
+                $nuevoMontoPagado = (float) $totalPagosActivos;
+
+                if ($nuevoMontoPagado > (float) $compra->total) {
+                    $nuevoMontoPagado = (float) $compra->total;
+                }
+
+                $nuevoSaldo = (float) $compra->total - $nuevoMontoPagado;
+
+                if ($nuevoSaldo < 0) {
+                    $nuevoSaldo = 0;
+                }
+
+                $compra->monto_pagado = $nuevoMontoPagado;
+                $compra->saldo_pendiente = $nuevoSaldo;
+                $compra->estado = 'Registrada';
+                $compra->save();
+            });
+
+            return redirect()
+                ->back()
+                ->with('message', 'Pago anulado correctamente y saldo recalculado.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
                 ->with('error', $e->getMessage());
         }
     }

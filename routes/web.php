@@ -218,3 +218,6 @@ Route::get('/compras/{compra}', [CompraController::class, 'show'])
 
 Route::patch('/compras/{compra}/anular', [CompraController::class, 'anular'])
     ->name('compras.anular');
+
+Route::patch('/compras/pagos/{pago}/anular', [\App\Http\Controllers\CuentaPorPagarController::class, 'anularPago'])
+    ->name('compras.pagos.anular');

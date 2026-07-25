@@ -23,7 +23,7 @@ class CompraController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Compra::with('proveedor')
+        $query = Compra::with(['proveedor', 'pagos'])
             ->when($request->search, function ($query) use ($request) {
                 $search = '%' . $request->search . '%';
 
@@ -51,7 +51,26 @@ class CompraController extends Controller
             })
             ->when($request->estado && $request->estado !== 'todos', function ($query) use ($request) {
                 $query->where('estado', $request->estado);
+            })
+            ->when($request->estado_pago && $request->estado_pago !== 'todos', function ($query) use ($request) {
+                if ($request->estado_pago === 'pagada') {
+                    $query->where('estado', '!=', 'Anulada')
+                        ->where('saldo_pendiente', '<=', 0);
+                }
+
+                if ($request->estado_pago === 'pendiente') {
+                    $query->where('estado', '!=', 'Anulada')
+                        ->where('monto_pagado', '<=', 0)
+                        ->where('saldo_pendiente', '>', 0);
+                }
+
+                if ($request->estado_pago === 'parcial') {
+                    $query->where('estado', '!=', 'Anulada')
+                        ->where('monto_pagado', '>', 0)
+                        ->where('saldo_pendiente', '>', 0);
+                }
             });
+
 
         $totalCompras = (clone $query)->count();
 
@@ -256,6 +275,7 @@ class CompraController extends Controller
                     'saldo_pendiente' => $saldoPendiente,
                     'estado' => 'Registrada',
                     'observacion' => $request->observacion,
+                    
                 ]);
 
                 if ($montoPagado > 0) {
@@ -267,6 +287,7 @@ class CompraController extends Controller
                         'observacion' => $request->tipo_pago === 'Contado'
                             ? 'Pago completo registrado al momento de la compra.'
                             : 'Abono inicial registrado al momento de la compra.',
+                        'estado' => 'Activo',
                     ]);
                 }
 
@@ -302,6 +323,16 @@ class CompraController extends Controller
             return redirect()
                 ->route('compras.index')
                 ->with('error', 'Esta compra ya está anulada.');
+        }
+
+        $pagosActivos = PagoCompra::where('compra_id', $compra->id)
+            ->where('estado', 'Activo')
+            ->count();
+
+        if ($pagosActivos > 0) {
+            return redirect()
+                ->route('compras.show', $compra->id)
+                ->with('error', 'No se puede anular esta compra porque tiene pagos activos registrados. Primero debe anular los pagos asociados.');
         }
 
         try {

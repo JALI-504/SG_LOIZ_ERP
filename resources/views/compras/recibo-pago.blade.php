@@ -2,7 +2,12 @@
     $compra = $pago->compra;
     $proveedor = $compra->proveedor ?? null;
 
-    $totalPagosRegistrados = $compra->pagos->sum('monto');
+    $estadoPago = $pago->estado ?? 'Activo';
+    $pagoAnulado = $estadoPago === 'Anulado';
+
+    $totalPagosRegistrados = $compra->pagos
+        ->where('estado', 'Activo')
+        ->sum('monto');
 
     $tipoComprobanteCompra = $compra->tipo_comprobante ?? 'Comprobante';
     $numeroComprobanteCompra = $compra->numero_comprobante ?? null;
@@ -11,7 +16,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Comprobante de pago {{ $compra->numero }}</title>
+    <title>
+        {{ $pagoAnulado ? 'Pago anulado' : 'Comprobante de pago' }} {{ $compra->numero }}
+    </title>
 
     <style>
         body {
@@ -186,6 +193,26 @@
             <div class="no-fiscal">
                 COMPROBANTE INTERNO NO FISCAL
             </div>
+
+            @if ($pagoAnulado)
+                <div style="margin-top: 12px; border: 3px solid #000; padding: 8px; font-size: 20px; font-weight: bold;">
+                    PAGO ANULADO
+                </div>
+
+                @if ($pago->fecha_anulacion)
+                    <div class="subtitulo" style="margin-top: 6px;">
+                        Fecha de anulación:
+                        {{ \Carbon\Carbon::parse($pago->fecha_anulacion)->format('d/m/Y H:i') }}
+                    </div>
+                @endif
+
+                @if ($pago->observacion_anulacion)
+                    <div class="subtitulo">
+                        Motivo:
+                        {{ $pago->observacion_anulacion }}
+                    </div>
+                @endif
+            @endif
         </div>
 
         <div class="seccion">
@@ -311,8 +338,13 @@
         @endif
 
         <div class="seccion text-center text-muted">
-            Este documento es un comprobante interno de pago a proveedor.
-            No sustituye el comprobante original de compra.
+            @if ($pagoAnulado)
+                Este comprobante corresponde a un pago anulado. 
+                No debe considerarse como pago válido aplicado a la compra.
+            @else
+                Este documento es un comprobante interno de pago a proveedor.
+                No sustituye el comprobante original de compra.
+            @endif
         </div>
     </div>
 </body>

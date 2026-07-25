@@ -142,18 +142,47 @@
                         </select>
                     </div>
 
-                    <div class="col-md-1 d-flex align-items-end">
+                    <div class="col-md-2">
+                        <label>Estado pago</label>
+                        <select name="estado_pago" class="form-control">
+                            <option value="todos">Todos</option>
+
+                            <option value="pagada" {{ request('estado_pago') === 'pagada' ? 'selected' : '' }}>
+                                Pagada
+                            </option>
+
+                            <option value="pendiente" {{ request('estado_pago') === 'pendiente' ? 'selected' : '' }}>
+                                Pendiente
+                            </option>
+
+                            <option value="parcial" {{ request('estado_pago') === 'parcial' ? 'selected' : '' }}>
+                                Parcial
+                            </option>
+                        </select>
+                    </div>
+
+                    {{-- <div class="col-md-1 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary mr-1">
                             Filtrar
                         </button>
+                    </div> --}}
+
+                    <div class="col-md-12 mt-2">
+                        <button type="submit" class="btn btn-primary mr-1">
+                            Filtrar
+                        </button>
+
+                        <a href="{{ route('compras.index') }}" class="btn btn-secondary">
+                            Limpiar filtros
+                        </a>
                     </div>
                 </div>
 
-                <div class="mt-2">
+                {{-- <div class="mt-2">
                     <a href="{{ route('compras.index') }}" class="btn btn-secondary btn-sm">
                         Limpiar filtros
                     </a>
-                </div>
+                </div> --}}
             </form>
         </div>
     </div>
@@ -166,7 +195,7 @@
 
         <div class="card-body">
             <div class="alert alert-info">
-                Aquí se muestran las compras registradas. En esta primera versión la compra queda guardada formalmente, pero todavía no crea entradas automáticas al inventario PEPS.
+                Aquí se muestran las compras registradas. Las compras actualizan automáticamente el inventario PEPS y, si se anulan, el sistema intenta revertir los lotes asociados siempre que no hayan sido utilizados.
             </div>
 
             <div class="table-responsive">
@@ -181,7 +210,8 @@
                             <th>Total</th>
                             <th>Pagado</th>
                             <th>Saldo</th>
-                            <th>Estado</th>
+                            <th>Estado compra</th>
+                            <th>Estado pago</th>
                             <th width="170">Acciones</th>
                         </tr>
                     </thead>
@@ -258,9 +288,29 @@
                                 <td>
                                     @if ($compra->estado === 'Registrada')
                                         <span class="badge badge-success">Registrada</span>
-                                    @else
+                                    @elseif ($compra->estado === 'Anulada')
                                         <span class="badge badge-secondary">Anulada</span>
+                                    @else
+                                        <span class="badge badge-warning">{{ $compra->estado }}</span>
                                     @endif
+                                </td>
+
+                                <td>
+                                    @if ($compra->estado === 'Anulada')
+                                        <span class="badge badge-secondary">No aplica</span>
+                                    @elseif ($compra->saldo_pendiente <= 0)
+                                        <span class="badge badge-success">Pagada</span>
+                                    @elseif ($compra->monto_pagado > 0)
+                                        <span class="badge badge-info">Parcial</span>
+                                    @else
+                                        <span class="badge badge-warning">Pendiente</span>
+                                    @endif
+
+                                    <br>
+
+                                    <small class="text-muted">
+                                        Pagos: {{ $compra->pagos ? $compra->pagos->where('estado', 'Activo')->count() : 0 }}
+                                    </small>
                                 </td>
 
                                 <td>
@@ -270,24 +320,30 @@
                                     </a>
 
                                     @if ($compra->estado !== 'Anulada')
-                                        <form action="{{ route('compras.anular', $compra->id) }}"
-                                              method="POST"
-                                              class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
+                                        @if ($compra->pagos && $compra->pagos->where('estado', 'Activo')->count() > 0)
+                                            <span class="badge badge-warning d-block mt-1">
+                                                Tiene pagos activos
+                                            </span>
+                                        @else
+                                            <form action="{{ route('compras.anular', $compra->id) }}"
+                                                method="POST"
+                                                class="d-inline">
+                                                @csrf
+                                                @method('PATCH')
 
-                                            <button type="submit"
-                                                    class="btn btn-danger btn-xs"
-                                                    onclick="return confirm('¿Seguro que desea anular esta compra?')">
-                                                Anular
-                                            </button>
-                                        </form>
+                                                <button type="submit"
+                                                        class="btn btn-danger btn-xs"
+                                                        onclick="return confirm('¿Seguro que desea anular esta compra? Esta acción intentará revertir el inventario PEPS asociado.')">
+                                                    Anular
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>
-                        @empty
+                       @empty
                             <tr>
-                                <td colspan="10" class="text-center">
+                                <td colspan="11" class="text-center">
                                     No hay compras registradas con los filtros seleccionados.
                                 </td>
                             </tr>
