@@ -99,7 +99,7 @@
 <body>
     <table>
         <tr>
-            <td colspan="33" class="titulo">
+            <td colspan="35" class="titulo">
                 REPORTE DE VENTAS
             </td>
         </tr>
@@ -113,13 +113,13 @@
         </tr>
 
         <tr>
-            <td colspan="33"></td>
+            <td colspan="35"></td>
         </tr>
 
         <tr>
             <td colspan="12" class="fiscal-header">Datos del comprobante</td>
             <td colspan="15" class="detalle-header">Detalle vendido</td>
-            <td colspan="6" class="venta-header">Totales fiscales de la venta</td>
+            <td colspan="8" class="venta-header">Totales fiscales y estado de pago</td>
         </tr>
 
         <tr>
@@ -158,6 +158,8 @@
             <th style="width: 120px;">ISV venta</th>
             <th style="width: 120px;">Retención</th>
             <th style="width: 130px;">Neto recibido</th>
+            <th style="width: 130px;">Pagado aplicado</th>
+            <th style="width: 130px;">Saldo pendiente</th>
         </tr>
 
         @forelse ($detalles as $detalle)
@@ -253,21 +255,28 @@
                 <td class="moneda">
                     {{ number_format((float) ($detalle->neto_recibido ?? 0), 2, '.', '') }}
                 </td>
+                <td class="moneda">
+                    {{ number_format((float) ($detalle->monto_pagado ?? 0), 2, '.', '') }}
+                </td>
+
+                <td class="moneda">
+                    {{ number_format((float) ($detalle->saldo_pendiente ?? 0), 2, '.', '') }}
+                </td>
             </tr>
         @empty
             <tr>
-                <td colspan="33" style="text-align: center;">
+                <td colspan="35" style="text-align: center;">
                     No hay ventas registradas con los filtros seleccionados.
                 </td>
             </tr>
         @endforelse
 
         <tr>
-            <td colspan="33"></td>
+            <td colspan="35"></td>
         </tr>
 
         <tr>
-            <td colspan="33" class="subtitulo">
+            <td colspan="35" class="subtitulo">
                 Nota: los valores fiscales de la venta se repiten por cada línea de detalle para facilitar filtros y análisis en Excel.
             </td>
         </tr>

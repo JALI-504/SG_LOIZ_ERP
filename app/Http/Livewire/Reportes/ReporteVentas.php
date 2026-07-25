@@ -217,7 +217,12 @@ class ReporteVentas extends Component
         $totalSubtotalNoSujeto = (clone $ventasValidasQuery)->sum('subtotal_no_sujeto');
         $totalIsv15 = (clone $ventasValidasQuery)->sum('isv_15');
         $totalRetencion = (clone $ventasValidasQuery)->sum('retencion');
-        $totalNetoRecibido = (clone $ventasValidasQuery)->sum('neto_recibido');
+        $totalNetoRecibido = (clone $ventasValidasQuery)
+            ->select(DB::raw('SUM(CASE WHEN neto_recibido > 0 THEN neto_recibido ELSE total - IFNULL(retencion, 0) END) as total'))
+            ->value('total') ?? 0;
+
+        $totalPagadoAplicado = (clone $ventasValidasQuery)->sum('monto_pagado');
+        $totalSaldoPendiente = (clone $ventasValidasQuery)->sum('saldo_pendiente');
 
         $totalFacturasFiscales = (clone $ventasValidasQuery)
             ->where('es_fiscal', 1)
@@ -289,6 +294,8 @@ class ReporteVentas extends Component
             'totalIsv15' => $totalIsv15,
             'totalRetencion' => $totalRetencion,
             'totalNetoRecibido' => $totalNetoRecibido,
+            'totalPagadoAplicado' => $totalPagadoAplicado,
+            'totalSaldoPendiente' => $totalSaldoPendiente,
             'totalFacturasFiscales' => $totalFacturasFiscales,
             'totalRecibosInternos' => $totalRecibosInternos,
             'totalAnuladas' => $totalAnuladas,
@@ -344,7 +351,9 @@ class ReporteVentas extends Component
                 'ventas.subtotal_no_sujeto',
                 'ventas.isv_15',
                 'ventas.retencion',
-                'ventas.neto_recibido',
+                DB::raw('CASE WHEN ventas.neto_recibido > 0 THEN ventas.neto_recibido ELSE ventas.total - IFNULL(ventas.retencion, 0) END as neto_recibido'),
+                'ventas.monto_pagado',
+                'ventas.saldo_pendiente',
 
                 DB::raw("IFNULL(TRIM(CONCAT_WS(' ', clientes.primer_nombre, clientes.segundo_nombre, clientes.primer_apellido, clientes.segundo_apellido)), 'Consumidor final') as cliente"),
 

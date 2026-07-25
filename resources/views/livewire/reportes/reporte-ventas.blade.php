@@ -50,9 +50,9 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label>Tipo de venta</label>
+                    <label>Tipo de ítem</label>
                     <select class="form-control" wire:model="filtroTipoItem">
-                        <option value="todos">Productos y servicios</option>
+                        <option value="todos">Todos los ítems</option>
                         <option value="Producto">Solo productos</option>
                         <option value="Servicio">Solo servicios</option>
                     </select>
@@ -231,6 +231,34 @@
         </div>
             
     </div>
+
+    {{-- Resumen de pagos --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>L {{ number_format($totalPagadoAplicado, 2) }}</h4>
+                    <p>Pagado aplicado</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>L {{ number_format($totalSaldoPendiente, 2) }}</h4>
+                    <p>Saldo pendiente</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
         {{-- Desglose fiscal --}}
     <div class="row justify-content-center my-4">
         <div class="col-12 col-md-7 col-lg-5">
