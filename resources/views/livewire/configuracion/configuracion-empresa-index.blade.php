@@ -142,6 +142,18 @@
                         <strong>Modo fiscal:</strong> genera facturas con CAI, rango autorizado y fecha límite de emisión.
                     </div>
 
+                    @if ($modo_fiscal === 'Fiscal')
+                        <div class="alert alert-success">
+                            <strong>Modo fiscal activo.</strong><br>
+                            Las próximas ventas generarán facturas fiscales, siempre que el CAI, rango autorizado y fecha límite estén correctamente configurados.
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            <strong>Modo interno activo.</strong><br>
+                            Las próximas ventas generarán recibos internos no fiscales.
+                        </div>
+                    @endif
+
                     <div class="row">
                         <div class="form-group col-md-4">
                             <label>Modo fiscal</label>
@@ -286,8 +298,10 @@
 
                             <div class="form-group col-md-2">
                                 <label>Establecimiento</label>
-                                <input type="text"
+                               <input type="text"
                                     maxlength="3"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     class="form-control"
                                     wire:model.defer="establecimiento"
                                     placeholder="000">
@@ -301,6 +315,8 @@
                                 <label>Punto emisión</label>
                                 <input type="text"
                                     maxlength="3"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     class="form-control"
                                     wire:model.defer="punto_emision"
                                     placeholder="001">
@@ -314,6 +330,8 @@
                                 <label>Tipo doc.</label>
                                 <input type="text"
                                     maxlength="2"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
                                     class="form-control"
                                     wire:model.defer="tipo_documento_fiscal"
                                     placeholder="01">
@@ -331,7 +349,7 @@
                                     wire:model.defer="numero_actual_factura">
 
                                 <small class="text-muted">
-                                    Usa 0 para iniciar en el rango desde.
+                                    Usa 0 para iniciar en el rango desde. Si ya existen facturas emitidas, no bajes este número.
                                 </small>
 
                                 @error('numero_actual_factura')
@@ -339,6 +357,35 @@
                                 @enderror
                             </div>
                         </div>
+                        @php
+                            $soloNumerosRangoDesde = preg_replace('/[^0-9]/', '', $rango_desde ?? '');
+                            $rangoDesdeNumero = $soloNumerosRangoDesde ? (int) substr($soloNumerosRangoDesde, -8) : 1;
+
+                            $proximoNumeroFactura = ((int) $numero_actual_factura) > 0
+                                ? ((int) $numero_actual_factura) + 1
+                                : $rangoDesdeNumero;
+
+                            $proximaFacturaEstimada =
+                                str_pad($establecimiento ?: '000', 3, '0', STR_PAD_LEFT) . '-' .
+                                str_pad($punto_emision ?: '001', 3, '0', STR_PAD_LEFT) . '-' .
+                                str_pad($tipo_documento_fiscal ?: '01', 2, '0', STR_PAD_LEFT) . '-' .
+                                str_pad($proximoNumeroFactura, 8, '0', STR_PAD_LEFT);
+                        @endphp
+
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label>Próxima factura estimada</label>
+                                <input type="text"
+                                    class="form-control"
+                                    value="{{ $proximaFacturaEstimada }}"
+                                    readonly>
+
+                                <small class="text-muted">
+                                    Este valor es solo una vista previa. La numeración real se confirma al guardar la venta.
+                                </small>
+                            </div>
+                        </div>
+
                     @endif
                 </div>
             </div>
@@ -480,12 +527,17 @@
             <button type="button"
                     class="btn btn-primary"
                     wire:click="guardar"
-                    wire:loading.attr="disabled">
+                    wire:loading.attr="disabled"
+                    wire:target="guardar,logoNuevo">
                 <i class="fas fa-save"></i> Guardar configuración
             </button>
 
             <span wire:loading wire:target="guardar" class="text-info ml-2">
                 Guardando...
+            </span>
+
+            <span wire:loading wire:target="logoNuevo" class="text-info ml-2">
+                Cargando logo...
             </span>
         </div>
     </div>
