@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Configuracion;
 
 use App\Models\ConfiguracionEmpresa;
+use App\Models\Venta;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -159,12 +160,11 @@ class ConfiguracionEmpresaIndex extends Component
             'precios_incluyen_isv' => 'boolean',
             'porcentaje_isv_general' => 'required|numeric|min:0|max:100',
 
-            'establecimiento' => 'required|max:3',
-            'punto_emision' => 'required|max:3',
-            'tipo_documento_fiscal' => 'required|max:2',
+            'establecimiento' => 'required|digits:3',
+            'punto_emision' => 'required|digits:3',
+            'tipo_documento_fiscal' => 'required|digits:2',
             'numero_actual_factura' => 'required|numeric|min:0',
 
-            'logoNuevo' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ];
     }
 
@@ -185,6 +185,10 @@ class ConfiguracionEmpresaIndex extends Component
             'punto_emision.required' => 'El punto de emisión es obligatorio.',
             'tipo_documento_fiscal.required' => 'El tipo de documento fiscal es obligatorio.',
             'numero_actual_factura.required' => 'El número actual de factura es obligatorio.',
+
+            'establecimiento.digits' => 'El establecimiento debe tener exactamente 3 dígitos. Ejemplo: 000.',
+            'punto_emision.digits' => 'El punto de emisión debe tener exactamente 3 dígitos. Ejemplo: 001.',
+            'tipo_documento_fiscal.digits' => 'El tipo de documento fiscal debe tener exactamente 2 dígitos. Ejemplo: 01.',
         ];
     }
 
@@ -301,6 +305,22 @@ class ConfiguracionEmpresaIndex extends Component
         $rangoDesde = $this->extraerNumeroFinal($this->rango_desde);
         $rangoHasta = $this->extraerNumeroFinal($this->rango_hasta);
         $numeroActual = (int) $this->numero_actual_factura;
+
+        $ultimaFactura = Venta::where('es_fiscal', true)
+            ->orderByDesc('id')
+            ->first();
+
+        $ultimoNumeroEmitido = 0;
+
+        if ($ultimaFactura) {
+            $ultimoNumeroEmitido = $this->extraerNumeroFinal($ultimaFactura->numero);
+        }
+
+        if ($ultimoNumeroEmitido > 0 && $numeroActual < $ultimoNumeroEmitido) {
+            throw new \Exception(
+                'El número actual de factura no puede ser menor que la última factura emitida. Última factura: ' . $ultimaFactura->numero
+            );
+        }
 
         if ($rangoDesde <= 0) {
             throw new \Exception('El rango desde no tiene un correlativo válido. Ejemplo: 000-001-01-00000001');
