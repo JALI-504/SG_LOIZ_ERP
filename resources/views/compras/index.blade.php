@@ -6,9 +6,11 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Compras</h1>
 
-        <a href="{{ route('compras.create') }}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Nueva compra
-        </a>
+        @can('crear compras')
+            <a href="{{ route('compras.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva compra
+            </a>
+        @endcan
     </div>
 @stop
 
@@ -325,6 +327,7 @@
                                                 Tiene pagos activos
                                             </span>
                                         @else
+                                            @can('anular compras')
                                             <form action="{{ route('compras.anular', $compra->id) }}"
                                                 method="POST"
                                                 class="d-inline">
@@ -337,6 +340,7 @@
                                                     Anular
                                                 </button>
                                             </form>
+                                            @endcan
                                         @endif
                                     @endif
                                 </td>

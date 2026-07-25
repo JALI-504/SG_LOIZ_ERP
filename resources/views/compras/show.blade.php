@@ -273,30 +273,34 @@
                                                         </td>
 
                                                         <td>
-                                                            <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
-                                                            target="_blank"
-                                                            class="btn btn-success btn-xs">
-                                                                Recibo pago
-                                                            </a>
+                                                            @can('ver cuentas por pagar')
+                                                                <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
+                                                                target="_blank"
+                                                                class="btn btn-success btn-xs">
+                                                                    Recibo pago
+                                                                </a>
+                                                            @endcan
 
-                                                            @if (($pago->estado ?? 'Activo') !== 'Anulado')
-                                                                <form action="{{ route('compras.pagos.anular', $pago->id) }}"
-                                                                    method="POST"
-                                                                    class="d-inline">
-                                                                    @csrf
-                                                                    @method('PATCH')
+                                                            @can('anular pagos proveedores')
+                                                                @if (($pago->estado ?? 'Activo') !== 'Anulado' && $compra->estado !== 'Anulada')
+                                                                    <form action="{{ route('compras.pagos.anular', $pago->id) }}"
+                                                                        method="POST"
+                                                                        class="d-inline">
+                                                                        @csrf
+                                                                        @method('PATCH')
 
-                                                                    <input type="hidden"
-                                                                        name="observacion_anulacion"
-                                                                        value="Pago anulado desde detalle de compra.">
+                                                                        <input type="hidden"
+                                                                            name="observacion_anulacion"
+                                                                            value="Pago anulado desde detalle de compra.">
 
-                                                                    <button type="submit"
-                                                                            class="btn btn-danger btn-xs"
-                                                                            onclick="return confirm('¿Seguro que desea anular este pago? El saldo de la compra será recalculado.')">
-                                                                        Anular pago
-                                                                    </button>
-                                                                </form>
-                                                            @endif
+                                                                        <button type="submit"
+                                                                                class="btn btn-danger btn-xs"
+                                                                                onclick="return confirm('¿Seguro que desea anular este pago? El saldo de la compra será recalculado.')">
+                                                                            Anular pago
+                                                                        </button>
+                                                                    </form>
+                                                                @endif
+                                                            @endcan
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -356,7 +360,7 @@
                         </tr>
 
                         <tr>
-                            <td>Pagado:</td>
+                            <td>Pagado activo:</td>
                             <td class="text-right">
                                 L {{ number_format($compra->monto_pagado, 2) }}
                             </td>
@@ -392,26 +396,28 @@
                         Volver al listado
                     </a>
 
-                    @if ($compra->estado !== 'Anulada')
-                        @if ($compra->pagos->where('estado', 'Activo')->count() > 0)
-                            <div class="alert alert-warning mt-2">
-                                Esta compra tiene pagos activos registrados. Primero debe anular los pagos asociados para poder anular la compra.
-                            </div>
-                        @else
-                            <form action="{{ route('compras.anular', $compra->id) }}"
-                                method="POST"
-                                class="mt-2">
-                                @csrf
-                                @method('PATCH')
+                    @can('anular compras')
+                        @if ($compra->estado !== 'Anulada')
+                            @if ($compra->pagos->where('estado', 'Activo')->count() > 0)
+                                <div class="alert alert-warning mt-2">
+                                    Esta compra tiene pagos activos registrados. Primero debe anular los pagos asociados para poder anular la compra.
+                                </div>
+                            @else
+                                <form action="{{ route('compras.anular', $compra->id) }}"
+                                    method="POST"
+                                    class="mt-2">
+                                    @csrf
+                                    @method('PATCH')
 
-                                <button type="submit"
-                                        class="btn btn-danger btn-block"
-                                        onclick="return confirm('¿Seguro que desea anular esta compra? Esta acción intentará revertir el inventario PEPS asociado.')">
-                                    Anular compra
-                                </button>
-                            </form>
+                                    <button type="submit"
+                                            class="btn btn-danger btn-block"
+                                            onclick="return confirm('¿Seguro que desea anular esta compra? Esta acción intentará revertir el inventario PEPS asociado.')">
+                                        Anular compra
+                                    </button>
+                                </form>
+                            @endif
                         @endif
-                    @endif
+                    @endcan
                 </div>
             </div>
         </div>

@@ -84,6 +84,10 @@ class VentaHistorial extends Component
 
     public function anularVenta($ventaId)
     {
+        if (!auth()->user()->can('anular ventas')) {
+            abort(403, 'No tiene permiso para anular ventas.');
+        }
+
         $venta = Venta::with(['detalles', 'pagos'])->findOrFail($ventaId);
 
         if ($venta->estado === 'Anulada') {
@@ -138,6 +142,10 @@ class VentaHistorial extends Component
 
     public function anularPago($pagoId)
     {
+        if (!auth()->user()->can('anular abonos clientes')) {
+            abort(403, 'No tiene permiso para anular abonos de clientes.');
+        }
+        
         $pago = PagoVenta::with('venta')->findOrFail($pagoId);
 
         if (($pago->estado ?? 'Activo') === 'Anulado') {

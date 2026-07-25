@@ -129,6 +129,10 @@ class CuentasPorCobrar extends Component
 
     public function registrarAbono()
     {
+        if (!auth()->user()->can('registrar abonos clientes')) {
+            abort(403, 'No tiene permiso para registrar abonos de clientes.');
+        }
+
         $venta = Venta::with('pagos')->findOrFail($this->ventaSeleccionadaId);
 
         $this->validate([
@@ -164,6 +168,10 @@ class CuentasPorCobrar extends Component
 
     public function anularPago($pagoId)
     {
+        if (!auth()->user()->can('anular abonos clientes')) {
+            abort(403, 'No tiene permiso para anular abonos de clientes.');
+        }
+        
         $pago = PagoVenta::with('venta')->findOrFail($pagoId);
 
         if (($pago->estado ?? 'Activo') === 'Anulado') {

@@ -225,52 +225,58 @@
                                 </td>
 
                                 <td>
-                                    <form method="POST" action="{{ route('compras.registrar-pago', $compra->id) }}">
-                                        @csrf
+                                    @can('registrar pagos proveedores')
+                                        <form method="POST" action="{{ route('compras.registrar-pago', $compra->id) }}">
+                                            @csrf
 
-                                        <div class="form-group mb-1">
-                                            <input type="number"
-                                                   step="0.01"
-                                                   min="0.01"
-                                                   max="{{ $compra->saldo_pendiente }}"
-                                                   name="monto"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="Monto a pagar"
-                                                   required>
-                                        </div>
-
-                                        <div class="form-group mb-1">
-                                            <select name="metodo_pago"
+                                            <div class="form-group mb-1">
+                                                <input type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    max="{{ $compra->saldo_pendiente }}"
+                                                    name="monto"
                                                     class="form-control form-control-sm"
+                                                    placeholder="Monto a pagar"
                                                     required>
-                                                @foreach ($metodosPago as $metodo)
-                                                    <option value="{{ $metodo }}">
-                                                        {{ $metodo }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                            </div>
 
-                                        <div class="form-group mb-1">
-                                            <input type="text"
-                                                   name="referencia"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="Referencia opcional">
-                                        </div>
+                                            <div class="form-group mb-1">
+                                                <select name="metodo_pago"
+                                                        class="form-control form-control-sm"
+                                                        required>
+                                                    @foreach ($metodosPago as $metodo)
+                                                        <option value="{{ $metodo }}">
+                                                            {{ $metodo }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
 
-                                        <div class="form-group mb-1">
-                                            <input type="text"
-                                                   name="observacion"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="Observación opcional">
-                                        </div>
+                                            <div class="form-group mb-1">
+                                                <input type="text"
+                                                    name="referencia"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Referencia opcional">
+                                            </div>
 
-                                        <button type="submit"
-                                                class="btn btn-success btn-sm btn-block"
-                                                onclick="return confirm('¿Desea registrar este pago?')">
-                                            Registrar pago
-                                        </button>
-                                    </form>
+                                            <div class="form-group mb-1">
+                                                <input type="text"
+                                                    name="observacion"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Observación opcional">
+                                            </div>
+
+                                            <button type="submit"
+                                                    class="btn btn-success btn-sm btn-block"
+                                                    onclick="return confirm('¿Desea registrar este pago?')">
+                                                Registrar pago
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted">
+                                            Sin permiso para registrar pagos.
+                                        </span>
+                                    @endcan
                                 </td>
 
                                 <td>
@@ -354,30 +360,34 @@
                                                             </td>
 
                                                             <td>
-                                                                <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
-                                                                target="_blank"
-                                                                class="btn btn-success btn-xs">
-                                                                    <i class="fas fa-receipt"></i> Recibo
-                                                                </a>
+                                                                @can('ver cuentas por pagar')
+                                                                    <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
+                                                                    target="_blank"
+                                                                    class="btn btn-success btn-xs">
+                                                                        <i class="fas fa-receipt"></i> Recibo
+                                                                    </a>
+                                                                @endcan
 
-                                                                @if (($pago->estado ?? 'Activo') !== 'Anulado')
-                                                                    <form action="{{ route('compras.pagos.anular', $pago->id) }}"
-                                                                        method="POST"
-                                                                        class="d-inline">
-                                                                        @csrf
-                                                                        @method('PATCH')
+                                                                @can('anular pagos proveedores')
+                                                                    @if (($pago->estado ?? 'Activo') !== 'Anulado')
+                                                                        <form action="{{ route('compras.pagos.anular', $pago->id) }}"
+                                                                            method="POST"
+                                                                            class="d-inline">
+                                                                            @csrf
+                                                                            @method('PATCH')
 
-                                                                        <input type="hidden"
-                                                                            name="observacion_anulacion"
-                                                                            value="Pago anulado desde cuentas por pagar.">
+                                                                            <input type="hidden"
+                                                                                name="observacion_anulacion"
+                                                                                value="Pago anulado desde cuentas por pagar.">
 
-                                                                        <button type="submit"
-                                                                                class="btn btn-danger btn-xs"
-                                                                                onclick="return confirm('¿Seguro que desea anular este pago? El saldo de la compra será recalculado.')">
-                                                                            Anular
-                                                                        </button>
-                                                                    </form>
-                                                                @endif
+                                                                            <button type="submit"
+                                                                                    class="btn btn-danger btn-xs"
+                                                                                    onclick="return confirm('¿Seguro que desea anular este pago? El saldo de la compra será recalculado.')">
+                                                                                Anular
+                                                                            </button>
+                                                                        </form>
+                                                                    @endif
+                                                                @endcan
                                                             </td>
                                                         </tr>
                                                     @endforeach

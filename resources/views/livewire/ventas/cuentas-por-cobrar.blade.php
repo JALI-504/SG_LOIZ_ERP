@@ -233,10 +233,13 @@
                                 </td>
 
                                 <td>
-                                    <button class="btn btn-success btn-xs"
-                                            wire:click="abrirAbono({{ $venta->id }})">
-                                        Abonar
-                                    </button>
+                                    @can('registrar abonos clientes')
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm"
+                                                wire:click="abrirAbono({{ $venta->id }})">
+                                            Registrar abono
+                                        </button>
+                                    @endcan
 
                                     <a href="{{ route('ventas.recibo', $venta->id) }}"
                                     target="_blank"
@@ -330,14 +333,16 @@
                                                                 Recibo abono
                                                             </a>
 
-                                                            @if (($pago->estado ?? 'Activo') !== 'Anulado')
-                                                                <button type="button"
-                                                                        class="btn btn-danger btn-xs"
-                                                                        wire:click="anularPago({{ $pago->id }})"
-                                                                        onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
-                                                                    Anular
-                                                                </button>
-                                                            @endif
+                                                           @can('anular abonos clientes')
+                                                                @if (($pago->estado ?? 'Activo') !== 'Anulado')
+                                                                    <button type="button"
+                                                                            class="btn btn-danger btn-xs"
+                                                                            wire:click="anularPago({{ $pago->id }})"
+                                                                            onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
+                                                                        Anular
+                                                                    </button>
+                                                                @endif
+                                                            @endcan
                                                         </td>
                                                     </tr>
                                                 @endforeach

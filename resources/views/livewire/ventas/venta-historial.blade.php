@@ -288,13 +288,16 @@
                                         @endif
                                     </a>
 
-                                    @if ($venta->estado !== 'Anulada')
-                                        <button class="btn btn-danger btn-xs"
-                                                onclick="confirm('¿Seguro que desea anular esta venta? Se restaurará el inventario.') || event.stopImmediatePropagation()"
-                                                wire:click="anularVenta({{ $venta->id }})">
-                                            Anular
-                                        </button>
-                                    @endif
+                                    @can('anular ventas')
+                                        @if ($venta->estado !== 'Anulada')
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm"
+                                                    wire:click="anularVenta({{ $ventaSeleccionada->id }})"
+                                                    onclick="confirm('¿Seguro que desea anular esta venta? Se restaurará el inventario.') || event.stopImmediatePropagation()">
+                                                <i class="fas fa-ban"></i> Anular venta
+                                            </button>                                    
+                                        @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -551,12 +554,16 @@
                                                 </a>
 
                                                 @if (($pago->estado ?? 'Activo') !== 'Anulado' && $ventaSeleccionada->estado !== 'Anulada')
-                                                    <button type="button"
-                                                            class="btn btn-danger btn-xs"
-                                                            wire:click="anularPago({{ $pago->id }})"
-                                                            onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
-                                                        Anular
-                                                    </button>
+                                                   @can('anular abonos clientes')
+                                                        @if (($pago->estado ?? 'Activo') !== 'Anulado' && $ventaSeleccionada->estado !== 'Anulada')
+                                                            <button type="button"
+                                                                    class="btn btn-danger btn-xs"
+                                                                    wire:click="anularPago({{ $pago->id }})"
+                                                                    onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
+                                                                Anular
+                                                            </button>
+                                                        @endif
+                                                    @endcan
                                                 @endif
                                             </td>
                                         </tr>

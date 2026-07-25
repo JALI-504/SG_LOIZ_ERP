@@ -63,6 +63,10 @@ class ProveedorController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('crear proveedores')) {
+            abort(403, 'No tiene permiso para crear proveedores.');
+        }
+
         $tiposProveedor = Catalogo::opciones('tipo_proveedor')
             ->pluck('nombre')
             ->toArray();
@@ -75,6 +79,10 @@ class ProveedorController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('crear proveedores')) {
+            abort(403, 'No tiene permiso para registrar proveedores.');
+        }
+
         $request->validate([
             'nombre_comercial' => 'required|min:3|max:150',
             'nombre_legal' => 'nullable|max:150',
@@ -113,6 +121,10 @@ class ProveedorController extends Controller
 
     public function edit(Proveedor $proveedor)
     {
+        if (!auth()->user()->can('editar proveedores')) {
+            abort(403, 'No tiene permiso para editar proveedores.');
+        }
+
         $tiposProveedor = Catalogo::opciones('tipo_proveedor')
             ->pluck('nombre')
             ->toArray();
@@ -125,6 +137,10 @@ class ProveedorController extends Controller
 
     public function update(Request $request, Proveedor $proveedor)
     {
+        if (!auth()->user()->can('editar proveedores')) {
+            abort(403, 'No tiene permiso para actualizar proveedores.');
+        }
+
         $request->validate([
             'nombre_comercial' => 'required|min:3|max:150',
             'nombre_legal' => 'nullable|max:150',
@@ -162,6 +178,10 @@ class ProveedorController extends Controller
 
     public function cambiarEstado(Proveedor $proveedor)
     {
+        if (!auth()->user()->can('editar proveedores')) {
+            abort(403, 'No tiene permiso para cambiar el estado del proveedor.');
+        }
+        
         $proveedor->update([
             'activo' => !$proveedor->activo,
         ]);

@@ -64,6 +64,10 @@ class CuentaPorPagarController extends Controller
 
     public function pagar(Request $request, Compra $compra)
     {
+        if (!auth()->user()->can('registrar pagos proveedores')) {
+            abort(403, 'No tiene permiso para registrar pagos a proveedores.');
+        }
+
         if ($compra->estado === 'Anulada') {
             return redirect()
                 ->route('compras.cuentas-por-pagar')
@@ -133,6 +137,11 @@ class CuentaPorPagarController extends Controller
 
     public function anularPago(Request $request, PagoCompra $pago)
     {
+        
+        if (!auth()->user()->can('anular pagos proveedores')) {
+            abort(403, 'No tiene permiso para anular pagos a proveedores.');
+        }
+
         if ($pago->estado === 'Anulado') {
             return redirect()
                 ->back()

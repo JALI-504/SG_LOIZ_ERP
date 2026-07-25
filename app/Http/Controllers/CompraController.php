@@ -103,6 +103,10 @@ class CompraController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('crear compras')) {
+            abort(403, 'No tiene permiso para crear compras.');
+        }
+
         $proveedores = Proveedor::where('activo', true)
             ->orderBy('nombre_comercial')
             ->get();
@@ -160,6 +164,10 @@ class CompraController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('crear compras')) {
+            abort(403, 'No tiene permiso para registrar compras.');
+        }
+
         $items = collect($request->input('items', []))
             ->filter(function ($item) {
                 return !empty($item['item_key'])
@@ -319,6 +327,10 @@ class CompraController extends Controller
 
     public function anular(Compra $compra)
     {
+        if (!auth()->user()->can('anular compras')) {
+            abort(403, 'No tiene permiso para anular compras.');
+        }
+        
         if ($compra->estado === 'Anulada') {
             return redirect()
                 ->route('compras.index')

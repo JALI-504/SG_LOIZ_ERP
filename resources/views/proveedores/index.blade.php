@@ -6,9 +6,11 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Proveedores</h1>
 
-        <a href="{{ route('proveedores.create') }}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Nuevo proveedor
-        </a>
+        @can('crear proveedores')
+            <a href="{{ route('proveedores.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo proveedor
+            </a>
+        @endcan
     </div>
 @stop
 
@@ -142,7 +144,9 @@
                             <th>Contacto</th>
                             <th>Correo</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @can('editar proveedores')
+                                <th width="170">Acciones</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -217,29 +221,31 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <a href="{{ route('proveedores.edit', $proveedor->id) }}"
-                                       class="btn btn-primary btn-xs">
-                                        Editar
-                                    </a>
+                               @can('editar proveedores')
+                                    <td>
+                                        <a href="{{ route('proveedores.edit', $proveedor->id) }}"
+                                        class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
 
-                                    <form action="{{ route('proveedores.estado', $proveedor->id) }}"
-                                          method="POST"
-                                          class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
+                                        <form action="{{ route('proveedores.estado', $proveedor->id) }}"
+                                            method="POST"
+                                            class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
 
-                                        <button type="submit"
-                                                class="btn {{ $proveedor->activo ? 'btn-danger' : 'btn-warning' }} btn-xs"
-                                                onclick="return confirm('¿Seguro que desea cambiar el estado de este proveedor?')">
-                                            {{ $proveedor->activo ? 'Desactivar' : 'Reactivar' }}
-                                        </button>
-                                    </form>
-                                </td>
+                                            <button type="submit"
+                                                    class="btn {{ $proveedor->activo ? 'btn-danger' : 'btn-warning' }} btn-xs"
+                                                    onclick="return confirm('¿Seguro que desea cambiar el estado de este proveedor?')">
+                                                {{ $proveedor->activo ? 'Desactivar' : 'Reactivar' }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar proveedores') ? 8 : 7 }}" class="text-center">
                                     No hay proveedores registrados con los filtros seleccionados.
                                 </td>
                             </tr>
