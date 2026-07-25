@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de productos</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo producto
-                </button>
+                @can('crear productos')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo producto
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -77,7 +79,13 @@
                             <th>Precio</th>
                             <th>Utilidad</th>
                             <th>Estado</th>
-                            <th width="190">Acciones</th>
+                            @if (
+                                auth()->user()->can('editar productos') ||
+                                auth()->user()->can('eliminar productos') ||
+                                auth()->user()->can('ver inventario')
+                            )
+                                <th width="190">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -198,39 +206,53 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $producto->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                @if (
+                                    auth()->user()->can('editar productos') ||
+                                    auth()->user()->can('eliminar productos') ||
+                                    auth()->user()->can('ver inventario')
+                                )
+                                    <td>
+                                        @can('editar productos')
+                                            <button class="btn btn-warning btn-xs"
+                                                    wire:click="edit({{ $producto->id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endcan
 
-                                    @if ($producto->usa_receta)
-                                        <a href="{{ route('productos.insumos', $producto->id) }}"
-                                        class="btn btn-info btn-xs">
-                                            Insumos
-                                        </a>
-                                    @endif
+                                        @can('editar productos')
+                                            @if ($producto->usa_receta)
+                                                <a href="{{ route('productos.insumos', $producto->id) }}"
+                                                class="btn btn-info btn-xs">
+                                                    Insumos
+                                                </a>
+                                            @endif
+                                        @endcan
 
-                                    @if ($producto->maneja_inventario)
-                                        <a href="{{ route('productos.movimientos', $producto->id) }}"
-                                        class="btn btn-primary btn-xs">
-                                            Movimientos
-                                        </a>
-                                    @endif
+                                        @can('ver inventario')
+                                            @if ($producto->maneja_inventario)
+                                                <a href="{{ route('productos.movimientos', $producto->id) }}"
+                                                class="btn btn-primary btn-xs">
+                                                    Movimientos
+                                                </a>
+                                            @endif
+                                        @endcan
 
-                                    <button class="btn btn-{{ $producto->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $producto->id }})">
-                                        @if ($producto->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
-                                </td>
+                                        @can('eliminar productos')
+                                            <button class="btn btn-{{ $producto->activo ? 'secondary' : 'success' }} btn-xs"
+                                                    wire:click="cambiarEstado({{ $producto->id }})">
+                                                @if ($producto->activo)
+                                                    Desactivar
+                                                @else
+                                                    Activar
+                                                @endif
+                                            </button>
+                                        @endcan
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar productos') || auth()->user()->can('eliminar productos') || auth()->user()->can('ver inventario') ? 9 : 8 }}" class="text-center">
                                     No hay productos registrados.
                                 </td>
                             </tr>
@@ -584,9 +606,14 @@
                         Cancelar
                     </button>
 
-                    <button type="submit" class="btn btn-primary">
-                        {{ $producto_id ? 'Actualizar producto' : 'Guardar producto' }}
-                    </button>
+                    @if (
+                        (!$producto_id && auth()->user()->can('crear productos')) ||
+                        ($producto_id && auth()->user()->can('editar productos'))
+                    )
+                        <button type="submit" class="btn btn-primary">
+                            {{ $producto_id ? 'Actualizar producto' : 'Guardar producto' }}
+                        </button>
+                    @endif
                 </div>
             </form>
         </div>

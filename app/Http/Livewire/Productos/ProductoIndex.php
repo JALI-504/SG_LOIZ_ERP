@@ -59,6 +59,10 @@ class ProductoIndex extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver productos')) {
+            abort(403, 'No tiene permiso para ver productos.');
+        }
+
         $this->categorias = Catalogo::opciones('categoria_producto')->pluck('nombre')->toArray();
         $this->tiposProducto = Catalogo::opciones('tipo_producto')->pluck('nombre')->toArray();
         $this->unidadesVenta = Catalogo::opciones('unidad_venta')->pluck('nombre')->toArray();
@@ -163,6 +167,10 @@ class ProductoIndex extends Component
 
     public function create()
     {
+        if (!auth()->user()->can('crear productos')) {
+            abort(403, 'No tiene permiso para crear productos.');
+        }
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo producto';
@@ -172,6 +180,10 @@ class ProductoIndex extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('crear productos')) {
+            abort(403, 'No tiene permiso para registrar productos.');
+        }
+
         $this->ajustarCostosYStock();
 
         $this->validate();
@@ -215,6 +227,10 @@ class ProductoIndex extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para editar productos.');
+        }
+
         $producto = Producto::findOrFail($id);
 
         $this->producto_id = $producto->id;
@@ -254,6 +270,10 @@ class ProductoIndex extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para actualizar productos.');
+        }
+
         $this->ajustarCostosYStock();
 
         $this->validate();
@@ -302,6 +322,10 @@ class ProductoIndex extends Component
 
     public function cambiarEstado($id)
     {
+        if (!auth()->user()->can('eliminar productos')) {
+            abort(403, 'No tiene permiso para activar o desactivar productos.');
+        }
+        
         $producto = Producto::findOrFail($id);
 
         $producto->update([
