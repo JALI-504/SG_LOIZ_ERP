@@ -249,10 +249,35 @@
 
                 <div class="card-body">
 
-                    <div class="alert alert-warning">
-                        <strong>Comprobante no fiscal.</strong><br>
-                        Este módulo genera recibos internos tipo REC-000001.
-                    </div>
+                    @if ($configuracionEmpresa && $configuracionEmpresa->esta_en_modo_fiscal)
+                        <div class="alert alert-success">
+                            <strong>Factura fiscal activa.</strong><br>
+                            Esta venta generará una factura fiscal con numeración autorizada.
+
+                            @if ($configuracionEmpresa->cai)
+                                <br>
+                                <small>
+                                    CAI: {{ $configuracionEmpresa->cai }}
+                                </small>
+                            @endif
+
+                            @if ($configuracionEmpresa->rango_desde && $configuracionEmpresa->rango_hasta)
+                                <br>
+                                <small>
+                                    Rango:
+                                    {{ $configuracionEmpresa->rango_desde }}
+                                    al
+                                    {{ $configuracionEmpresa->rango_hasta }}
+                                </small>
+                            @endif
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            <strong>Comprobante interno no fiscal.</strong><br>
+                            Esta venta generará un recibo interno tipo REC-000001.
+                            No sustituye factura fiscal autorizada.
+                        </div>
+                    @endif
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -270,11 +295,9 @@
 
                         <div class="form-group col-md-6">
                             <label>Estado</label>
-                            <select class="form-control" wire:model="estado">                                @foreach ($estadosVenta as $estadoOpcion)
-                                    @if ($estadoOpcion !== 'Anulada')
-                                        <option value="{{ $estadoOpcion }}">{{ $estadoOpcion }}</option>
-                                    @endif
-                                @endforeach
+                            <select class="form-control" wire:model="estado">
+                                <option value="Pagada">Pagada</option>
+                                <option value="Pendiente">Pendiente</option>
                             </select>
 
                             @if ($estado === 'Pendiente')
@@ -292,7 +315,7 @@
                                         @enderror
 
                                         <small class="text-muted">
-                                            Si el cliente deja un anticipo, escríbalo aquí.
+                                            Este monto se registrará como abono activo inicial.
                                         </small>
                                     </div>
 
@@ -310,8 +333,23 @@
                                 </div>
 
                                 <div class="alert alert-info">
-                                    <strong>Saldo estimado:</strong>
-                                    L {{ number_format(max($total - ((float) $monto_inicial + ($usa_retenciones_config ? (float) $retencion : 0)), 0), 2) }}
+                                    <strong>Resumen de crédito:</strong><br>
+
+                                    Total venta:
+                                    <strong>L {{ number_format($total, 2) }}</strong><br>
+
+                                    Abono inicial:
+                                    <strong>L {{ number_format((float) $monto_inicial, 2) }}</strong><br>
+
+                                    @if ($usa_retenciones_config && (float) $retencion > 0)
+                                        Retención aplicada:
+                                        <strong>L {{ number_format((float) $retencion, 2) }}</strong><br>
+                                    @endif
+
+                                    Saldo estimado:
+                                    <strong>
+                                        L {{ number_format(max($total - ((float) $monto_inicial + ($usa_retenciones_config ? (float) $retencion : 0)), 0), 2) }}
+                                    </strong>
                                 </div>
                             @endif
 
