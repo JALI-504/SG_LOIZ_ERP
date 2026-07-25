@@ -149,7 +149,7 @@
                             <th>Compra</th>
                             <th>Proveedor</th>
                             <th>Total</th>
-                            <th>Pagado acumulado</th>
+                            <th>Pagado activo</th>
                             <th>Saldo</th>
                             <th width="260">Registrar pago</th>
                             <th width="90">Acción</th>
@@ -210,6 +210,12 @@
 
                                 <td>
                                     L {{ number_format($compra->monto_pagado, 2) }}
+
+                                    <br>
+
+                                    <small class="text-muted">
+                                        Pagos activos: {{ $compra->pagos->where('estado', 'Activo')->count() }}
+                                    </small>
                                 </td>
 
                                 <td>
@@ -278,7 +284,7 @@
                             @if ($compra->pagos->count() > 0)
                                 <tr>
                                     <td colspan="8">
-                                        <strong>Pagos registrados:</strong>
+                                        <strong>Historial de pagos:</strong>
 
                                         <div class="table-responsive mt-2">
                                             <table class="table table-bordered table-sm mb-0">
@@ -289,20 +295,27 @@
                                                         <th>Método</th>
                                                         <th>Referencia</th>
                                                         <th>Observación</th>
+                                                        <th>Estado</th>
                                                         <th>Acción</th>
                                                     </tr>
                                                 </thead>
 
                                                 <tbody>
                                                     @foreach ($compra->pagos as $pago)
-                                                        <tr>
+                                                        <tr class="{{ ($pago->estado ?? 'Activo') === 'Anulado' ? 'table-secondary' : '' }}">
                                                             <td>
                                                                 {{ $pago->fecha }}
                                                                 {{ $pago->hora }}
                                                             </td>
 
                                                             <td>
-                                                                <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                                                @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                                    <span class="text-muted">
+                                                                        <del>L {{ number_format($pago->monto, 2) }}</del>
+                                                                    </span>
+                                                                @else
+                                                                    <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                                                @endif
                                                             </td>
 
                                                             <td>
@@ -315,13 +328,56 @@
 
                                                             <td>
                                                                 {{ $pago->observacion ?? 'Sin observación' }}
+
+                                                                @if (($pago->estado ?? 'Activo') === 'Anulado' && $pago->observacion_anulacion)
+                                                                    <br>
+                                                                    <small class="text-danger">
+                                                                        <strong>Motivo anulación:</strong>
+                                                                        {{ $pago->observacion_anulacion }}
+                                                                    </small>
+                                                                @endif
                                                             </td>
+
+                                                            <td>
+                                                                @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                                    <span class="badge badge-secondary">Anulado</span>
+
+                                                                    @if ($pago->fecha_anulacion)
+                                                                        <br>
+                                                                        <small class="text-muted">
+                                                                            {{ \Carbon\Carbon::parse($pago->fecha_anulacion)->format('d/m/Y H:i') }}
+                                                                        </small>
+                                                                    @endif
+                                                                @else
+                                                                    <span class="badge badge-success">Activo</span>
+                                                                @endif
+                                                            </td>
+
                                                             <td>
                                                                 <a href="{{ route('compras.pagos.recibo', $pago->id) }}"
                                                                 target="_blank"
                                                                 class="btn btn-success btn-xs">
                                                                     <i class="fas fa-receipt"></i> Recibo
                                                                 </a>
+
+                                                                @if (($pago->estado ?? 'Activo') !== 'Anulado')
+                                                                    <form action="{{ route('compras.pagos.anular', $pago->id) }}"
+                                                                        method="POST"
+                                                                        class="d-inline">
+                                                                        @csrf
+                                                                        @method('PATCH')
+
+                                                                        <input type="hidden"
+                                                                            name="observacion_anulacion"
+                                                                            value="Pago anulado desde cuentas por pagar.">
+
+                                                                        <button type="submit"
+                                                                                class="btn btn-danger btn-xs"
+                                                                                onclick="return confirm('¿Seguro que desea anular este pago? El saldo de la compra será recalculado.')">
+                                                                            Anular
+                                                                        </button>
+                                                                    </form>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach
