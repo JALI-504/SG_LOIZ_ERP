@@ -138,8 +138,8 @@
 
         <div class="card-body">
             <div class="alert alert-info">
-                Aquí se muestran las ventas con saldo pendiente. Al registrar un abono, el sistema actualiza el monto pagado y el saldo.
-                Si el saldo llega a cero, la venta se marca automáticamente como pagada.
+                Aquí se muestran las ventas con saldo pendiente. Al registrar o anular un abono, el sistema actualiza el monto pagado y el saldo.
+                Si el saldo llega a cero, la venta se marca automáticamente como pagada. Si se anula un abono, puede volver a quedar pendiente.
             </div>
 
             <div class="table-responsive">
@@ -150,7 +150,7 @@
                             <th>Número</th>
                             <th>Cliente</th>
                             <th>Total</th>
-                            <th>Pagado</th>
+                            <th>Pagado aplicado</th>
                             <th>Saldo</th>
                             <th>Estado</th>
                             <th width="170">Acciones</th>
@@ -251,63 +251,102 @@
                             </tr>
 
                             @if ($venta->pagos->count() > 0)
-                                <tr>
-                                    <td colspan="8">
-                                        <strong>Abonos registrados:</strong>
+                            <tr>
+                                <td colspan="8">
+                                    <strong>Abonos registrados:</strong>
 
-                                        <div class="table-responsive mt-2">
-                                            <table class="table table-bordered table-sm mb-0">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Fecha</th>
-                                                        <th>Monto</th>
-                                                        <th>Método</th>
-                                                        <th>Referencia</th>
-                                                        <th>Observación</th>
-                                                        <th>Acción</th>
-                                                    </tr>
-                                                </thead>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-bordered table-sm mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Monto</th>
+                                                    <th>Método</th>
+                                                    <th>Referencia</th>
+                                                    <th>Observación</th>
+                                                    <th>Estado</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
 
-                                                <tbody>
-                                                    @foreach ($venta->pagos as $pago)
-                                                        <tr>
-                                                            <td>
-                                                                {{ $pago->fecha }}
-                                                                {{ $pago->hora }}
-                                                            </td>
+                                            <tbody>
+                                                @foreach ($venta->pagos as $pago)
+                                                    <tr class="{{ ($pago->estado ?? 'Activo') === 'Anulado' ? 'table-secondary' : '' }}">
+                                                        <td>
+                                                            {{ $pago->fecha }}
+                                                            {{ $pago->hora }}
 
-                                                            <td>
+                                                            @if (($pago->estado ?? 'Activo') === 'Anulado' && $pago->fecha_anulacion)
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    Anulado:
+                                                                    {{ \Carbon\Carbon::parse($pago->fecha_anulacion)->format('d/m/Y H:i') }}
+                                                                </small>
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                                <span class="text-muted">
+                                                                    <del>L {{ number_format($pago->monto, 2) }}</del>
+                                                                </span>
+                                                            @else
                                                                 <strong>L {{ number_format($pago->monto, 2) }}</strong>
-                                                            </td>
+                                                            @endif
+                                                        </td>
 
-                                                            <td>
-                                                                {{ $pago->metodo_pago }}
-                                                            </td>
+                                                        <td>
+                                                            {{ $pago->metodo_pago }}
+                                                        </td>
 
-                                                            <td>
-                                                                {{ $pago->referencia ?? 'Sin referencia' }}
-                                                            </td>
+                                                        <td>
+                                                            {{ $pago->referencia ?? 'Sin referencia' }}
+                                                        </td>
 
-                                                            <td>
-                                                                {{ $pago->observacion ?? 'Sin observación' }}
-                                                            </td>
+                                                        <td>
+                                                            {{ $pago->observacion ?? 'Sin observación' }}
 
-                                                            <td>
-                                                                <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
-                                                                target="_blank"
-                                                                class="btn btn-success btn-xs">
-                                                                    Recibo abono
-                                                                </a>
-                                                            </td>
-                                                            
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endif
+                                                            @if (($pago->estado ?? 'Activo') === 'Anulado' && $pago->observacion_anulacion)
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    Motivo anulación:
+                                                                    {{ $pago->observacion_anulacion }}
+                                                                </small>
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                                <span class="badge badge-secondary">Anulado</span>
+                                                            @else
+                                                                <span class="badge badge-success">Activo</span>
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
+                                                            target="_blank"
+                                                            class="btn btn-success btn-xs">
+                                                                Recibo abono
+                                                            </a>
+
+                                                            @if (($pago->estado ?? 'Activo') !== 'Anulado')
+                                                                <button type="button"
+                                                                        class="btn btn-danger btn-xs"
+                                                                        wire:click="anularPago({{ $pago->id }})"
+                                                                        onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
+                                                                    Anular
+                                                                </button>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                         @empty
                             <tr>
                                 <td colspan="8" class="text-center">

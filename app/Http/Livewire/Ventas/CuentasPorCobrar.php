@@ -78,6 +78,7 @@ class CuentasPorCobrar extends Component
                         ->orWhere('tipo_comprobante', 'like', $search)
                         ->orWhere('cai', 'like', $search)
                         ->orWhere('metodo_pago', 'like', $search)
+                        ->orWhere('estado', 'like', $search)
                         ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                             $clienteQuery->where('primer_nombre', 'like', $search)
                                 ->orWhere('segundo_nombre', 'like', $search)
@@ -145,29 +146,10 @@ class CuentasPorCobrar extends Component
                     'metodo_pago' => $this->metodo_pago,
                     'referencia' => $this->referencia,
                     'observacion' => $this->observacion,
+                    'estado' => 'Activo',
                 ]);
 
-                $totalPagosRecibidos = PagoVenta::where('venta_id', $venta->id)
-                    ->sum('monto');
-
-                $retencionAplicada = (float) ($venta->retencion ?? 0);
-
-                $nuevoMontoPagado = (float) $totalPagosRecibidos + $retencionAplicada;
-
-                if ($nuevoMontoPagado > (float) $venta->total) {
-                    $nuevoMontoPagado = (float) $venta->total;
-                }
-
-                $nuevoSaldo = (float) $venta->total - $nuevoMontoPagado;
-
-                if ($nuevoSaldo < 0) {
-                    $nuevoSaldo = 0;
-                }
-
-                $venta->monto_pagado = $nuevoMontoPagado;
-                $venta->saldo_pendiente = $nuevoSaldo;
-                $venta->estado = $nuevoSaldo <= 0 ? 'Pagada' : 'Pendiente';
-                $venta->save();
+                $this->recalcularSaldoVenta($venta->id);
             });
 
             $this->resetFormularioAbono();
@@ -178,6 +160,74 @@ class CuentasPorCobrar extends Component
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
+    }
+
+    public function anularPago($pagoId)
+    {
+        $pago = PagoVenta::with('venta')->findOrFail($pagoId);
+
+        if (($pago->estado ?? 'Activo') === 'Anulado') {
+            session()->flash('error', 'Este abono ya está anulado.');
+            return;
+        }
+
+        if (!$pago->venta) {
+            session()->flash('error', 'No se encontró la venta asociada a este abono.');
+            return;
+        }
+
+        if ($pago->venta->estado === 'Anulada') {
+            session()->flash('error', 'No se puede anular un abono de una venta anulada.');
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($pago) {
+                $pago->update([
+                    'estado' => 'Anulado',
+                    'fecha_anulacion' => now(),
+                    'observacion_anulacion' => 'Abono anulado desde cuentas por cobrar.',
+                ]);
+
+                $this->recalcularSaldoVenta($pago->venta_id);
+            });
+
+            session()->flash('message', 'Abono anulado correctamente y saldo recalculado.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    private function recalcularSaldoVenta($ventaId)
+    {
+        $venta = Venta::findOrFail($ventaId);
+
+        if ($venta->estado === 'Anulada') {
+            return;
+        }
+
+        $totalPagosActivos = PagoVenta::where('venta_id', $venta->id)
+            ->where('estado', 'Activo')
+            ->sum('monto');
+
+        $retencionAplicada = (float) ($venta->retencion ?? 0);
+
+        $nuevoMontoPagado = (float) $totalPagosActivos + $retencionAplicada;
+
+        if ($nuevoMontoPagado > (float) $venta->total) {
+            $nuevoMontoPagado = (float) $venta->total;
+        }
+
+        $nuevoSaldo = (float) $venta->total - $nuevoMontoPagado;
+
+        if ($nuevoSaldo < 0) {
+            $nuevoSaldo = 0;
+        }
+
+        $venta->monto_pagado = $nuevoMontoPagado;
+        $venta->saldo_pendiente = $nuevoSaldo;
+        $venta->estado = $nuevoSaldo <= 0 ? 'Pagada' : 'Pendiente';
+        $venta->save();
     }
 
     private function resetFormularioAbono()

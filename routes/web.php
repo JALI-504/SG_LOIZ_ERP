@@ -98,8 +98,16 @@ Route::get('/ventas/cuentas-por-cobrar', function () {
     return view('ventas.cuentas-por-cobrar');
 })->name('ventas.cuentas-por-cobrar');
 
+// Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
+//     $pago->load(['venta.cliente']);
+
+//     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+//     return view('ventas.recibo-abono', compact('pago', 'configuracion'));
+// })->name('ventas.pagos.recibo');
+
 Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
-    $pago->load(['venta.cliente']);
+    $pago->load(['venta.cliente', 'venta.pagos']);
 
     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 

@@ -57,7 +57,7 @@ class ReporteCuentasController extends Controller
         $totalVentasPagado = $ventasPorCobrar->sum('monto_pagado');
 
         $totalPagosRecibidosClientes = $ventasPorCobrar->sum(function ($venta) {
-            return $venta->pagos->sum('monto');
+            return $venta->pagos->where('estado', 'Activo')->sum('monto');
         });
 
         $totalRetencionVentas = $ventasPorCobrar->sum('retencion');

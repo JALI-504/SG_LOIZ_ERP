@@ -2,10 +2,18 @@
     $venta = $pago->venta;
     $esFiscal = (bool) $venta->es_fiscal;
 
+    $estadoPago = $pago->estado ?? 'Activo';
+    $pagoAnulado = $estadoPago === 'Anulado';
+
     $tipoDocumentoVenta = $esFiscal ? 'factura fiscal' : 'recibo interno';
     $tituloAbono = $esFiscal ? 'ABONO A FACTURA FISCAL' : 'ABONO A RECIBO INTERNO';
 
-    $totalPagosRecibidos = $venta->pagos->sum('monto');
+    $totalPagosRecibidos = $venta->pagos
+        ->filter(function ($pagoItem) {
+            return ($pagoItem->estado ?? 'Activo') === 'Activo';
+        })
+        ->sum('monto');
+
     $retencionAplicada = (float) ($venta->retencion ?? 0);
 @endphp
 <!DOCTYPE html>
@@ -112,6 +120,20 @@
             font-size: 13px;
         }
 
+        .anulado-box {
+            margin-top: 12px;
+            border: 3px solid #000;
+            padding: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .monto-anulado {
+            color: #777;
+            text-decoration: line-through;
+        }
+
         @media print {
             .botones {
                 display: none;
@@ -195,6 +217,26 @@
                 COMPROBANTE INTERNO DE ABONO
             </div>
 
+            @if ($pagoAnulado)
+                <div class="anulado-box">
+                    ABONO ANULADO
+                </div>
+
+                @if ($pago->fecha_anulacion)
+                    <div class="subtitulo" style="margin-top: 6px;">
+                        Fecha de anulación:
+                        {{ \Carbon\Carbon::parse($pago->fecha_anulacion)->format('d/m/Y H:i') }}
+                    </div>
+                @endif
+
+                @if ($pago->observacion_anulacion)
+                    <div class="subtitulo">
+                        Motivo:
+                        {{ $pago->observacion_anulacion }}
+                    </div>
+                @endif
+            @endif
+
             @if ($esFiscal)
                 <div class="subtitulo" style="margin-top: 8px;">
                     Este abono fue aplicado a una factura fiscal previamente emitida.
@@ -229,6 +271,18 @@
                     <td>
                         <strong>Método de pago:</strong>
                         {{ $pago->metodo_pago }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2">
+                        <strong>Estado del abono:</strong>
+
+                        @if ($pagoAnulado)
+                            ABONO ANULADO
+                        @else
+                            ACTIVO
+                        @endif
                     </td>
                 </tr>
 
@@ -308,14 +362,27 @@
                     </tr>
 
                     <tr>
-                        <td>Monto abonado en este pago</td>
+                        <td>
+                            @if ($pagoAnulado)
+                                Monto de este abono anulado
+                            @else
+                                Monto abonado en este pago
+                            @endif
+                        </td>
+
                         <td class="text-right total-final">
-                            L {{ number_format($pago->monto, 2) }}
+                            @if ($pagoAnulado)
+                                <span class="monto-anulado">
+                                    L {{ number_format($pago->monto, 2) }}
+                                </span>
+                            @else
+                                L {{ number_format($pago->monto, 2) }}
+                            @endif
                         </td>
                     </tr>
 
                     <tr>
-                        <td>Pagos recibidos acumulados</td>
+                        <td>Pagos activos recibidos acumulados</td>
                         <td class="text-right">
                             L {{ number_format($totalPagosRecibidos, 2) }}
                         </td>
@@ -361,12 +428,17 @@
         @endif
 
         <div class="seccion text-center text-muted">
-            @if ($esFiscal)
-                Este documento es un comprobante interno de abono aplicado a una factura fiscal ya emitida.
-                No sustituye ni modifica la factura fiscal original.
+            @if ($pagoAnulado)
+                Este comprobante corresponde a un abono anulado.
+                No debe considerarse como pago válido aplicado a la venta.
             @else
-                Este documento es un comprobante interno no fiscal.
-                No sustituye factura fiscal autorizada.
+                @if ($esFiscal)
+                    Este documento es un comprobante interno de abono aplicado a una factura fiscal ya emitida.
+                    No sustituye ni modifica la factura fiscal original.
+                @else
+                    Este documento es un comprobante interno no fiscal.
+                    No sustituye factura fiscal autorizada.
+                @endif
             @endif
         </div>
     </div>

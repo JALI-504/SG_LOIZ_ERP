@@ -19,6 +19,9 @@ class PagoVenta extends Model
         'metodo_pago',
         'referencia',
         'observacion',
+        'estado',
+        'fecha_anulacion',
+        'observacion_anulacion',
     ];
 
     protected static function booted()
@@ -30,6 +33,10 @@ class PagoVenta extends Model
 
             if (empty($pago->hora)) {
                 $pago->hora = now()->format('H:i:s');
+            }
+
+            if (empty($pago->estado)) {
+                $pago->estado = 'Activo';
             }
         });
     }
