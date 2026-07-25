@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Compra;
 use App\Models\Gasto;
+use App\Models\PagoCompra;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use Illuminate\Http\Request;
@@ -66,6 +67,17 @@ class ReporteFinancieroController extends Controller
 
         $totalCompras = (clone $comprasQuery)->sum('total');
         $cantidadCompras = (clone $comprasQuery)->count();
+
+        $pagosProveedoresQuery = PagoCompra::query()
+            ->where('estado', 'Activo')
+            ->whereDate('fecha', '>=', $fechaDesde)
+            ->whereDate('fecha', '<=', $fechaHasta);
+
+        $totalPagosProveedoresActivos = (clone $pagosProveedoresQuery)->sum('monto');
+        $cantidadPagosProveedoresActivos = (clone $pagosProveedoresQuery)->count();
+
+        $totalEgresosOperativos = $totalGastos + $totalPagosProveedoresActivos;
+        $flujoNetoEstimado = $totalNetoRecibido - $totalEgresosOperativos;
 
         $cuentasPorCobrar = Venta::query()
             ->where('estado', '!=', 'Anulada')
@@ -147,6 +159,10 @@ class ReporteFinancieroController extends Controller
 
             'totalCompras' => $totalCompras,
             'cantidadCompras' => $cantidadCompras,
+            'totalPagosProveedoresActivos' => $totalPagosProveedoresActivos,
+            'cantidadPagosProveedoresActivos' => $cantidadPagosProveedoresActivos,
+            'totalEgresosOperativos' => $totalEgresosOperativos,
+            'flujoNetoEstimado' => $flujoNetoEstimado,
 
             'cuentasPorCobrar' => $cuentasPorCobrar,
             'cuentasPorPagar' => $cuentasPorPagar,
@@ -214,6 +230,17 @@ class ReporteFinancieroController extends Controller
         $totalCompras = (clone $comprasQuery)->sum('total');
         $cantidadCompras = (clone $comprasQuery)->count();
 
+        $pagosProveedoresQuery = PagoCompra::query()
+            ->where('estado', 'Activo')
+            ->whereDate('fecha', '>=', $fechaDesde)
+            ->whereDate('fecha', '<=', $fechaHasta);
+
+        $totalPagosProveedoresActivos = (clone $pagosProveedoresQuery)->sum('monto');
+        $cantidadPagosProveedoresActivos = (clone $pagosProveedoresQuery)->count();
+
+        $totalEgresosOperativos = $totalGastos + $totalPagosProveedoresActivos;
+        $flujoNetoEstimado = $totalNetoRecibido - $totalEgresosOperativos;
+
         $cuentasPorCobrar = Venta::query()
             ->where('estado', '!=', 'Anulada')
             ->where('saldo_pendiente', '>', 0)
@@ -279,6 +306,10 @@ class ReporteFinancieroController extends Controller
 
                 'totalCompras' => $totalCompras,
                 'cantidadCompras' => $cantidadCompras,
+                'totalPagosProveedoresActivos' => $totalPagosProveedoresActivos,
+                'cantidadPagosProveedoresActivos' => $cantidadPagosProveedoresActivos,
+                'totalEgresosOperativos' => $totalEgresosOperativos,
+                'flujoNetoEstimado' => $flujoNetoEstimado,
 
                 'cuentasPorCobrar' => $cuentasPorCobrar,
                 'cuentasPorPagar' => $cuentasPorPagar,

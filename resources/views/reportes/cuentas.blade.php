@@ -213,7 +213,7 @@
                 </tr>
 
                 <tr>
-                    <td>Total pagado a proveedores</td>
+                    <td>Total pagado activo a proveedores</td>
                     <td></td>
                     <td class="text-right">L {{ number_format($totalComprasPagado, 2) }}</td>
                 </tr>
@@ -413,7 +413,7 @@
                             <th>Compra</th>
                             <th>Proveedor</th>
                             <th>Total</th>
-                            <th>Pagado</th>
+                            <th>Pagado activo</th>
                             <th>Saldo</th>
                             <th class="no-print">Acción</th>
                         </tr>
@@ -466,7 +466,23 @@
                                 </td>
 
                                 <td class="text-right">
-                                    L {{ number_format($compra->monto_pagado, 2) }}
+                                    @php
+                                        $pagadoActivoCompra = $compra->pagos
+                                            ? $compra->pagos->where('estado', 'Activo')->sum('monto')
+                                            : $compra->monto_pagado;
+
+                                        $cantidadPagosActivosCompra = $compra->pagos
+                                            ? $compra->pagos->where('estado', 'Activo')->count()
+                                            : 0;
+                                    @endphp
+
+                                    L {{ number_format($pagadoActivoCompra, 2) }}
+
+                                    <br>
+
+                                    <small class="text-muted">
+                                        Pagos activos: {{ $cantidadPagosActivosCompra }}
+                                    </small>
                                 </td>
 
                                 <td class="text-right">

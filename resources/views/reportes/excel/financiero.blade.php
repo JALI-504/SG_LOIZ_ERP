@@ -197,6 +197,20 @@
         </tr>
 
         <tr>
+            <td>Pagos activos a proveedores</td>
+            <td class="numero">{{ number_format($cantidadPagosProveedoresActivos, 0, '.', '') }}</td>
+            <td class="moneda">{{ number_format($totalPagosProveedoresActivos, 2, '.', '') }}</td>
+            <td>Pagos a proveedores con estado Activo</td>
+        </tr>
+
+        <tr>
+            <td class="resaltado">Total egresos operativos</td>
+            <td class="resaltado"></td>
+            <td class="moneda resaltado">{{ number_format($totalEgresosOperativos, 2, '.', '') }}</td>
+            <td class="resaltado">Gastos registrados + pagos activos a proveedores</td>
+        </tr>
+
+        <tr>
             <td class="{{ $utilidadNetaEstimada >= 0 ? 'positivo' : 'negativo' }}">
                 Utilidad neta estimada
             </td>
@@ -206,6 +220,19 @@
             </td>
             <td class="{{ $utilidadNetaEstimada >= 0 ? 'positivo' : 'negativo' }}">
                 Utilidad bruta - gastos
+            </td>
+        </tr>
+
+        <tr>
+            <td class="{{ $flujoNetoEstimado >= 0 ? 'positivo' : 'negativo' }}">
+                Flujo neto estimado
+            </td>
+            <td class="{{ $flujoNetoEstimado >= 0 ? 'positivo' : 'negativo' }}"></td>
+            <td class="moneda {{ $flujoNetoEstimado >= 0 ? 'positivo' : 'negativo' }}">
+                {{ number_format($flujoNetoEstimado, 2, '.', '') }}
+            </td>
+            <td class="{{ $flujoNetoEstimado >= 0 ? 'positivo' : 'negativo' }}">
+                Neto recibido - gastos - pagos activos a proveedores
             </td>
         </tr>
 
@@ -300,10 +327,17 @@
         </tr>
 
         <tr>
-            <td>Compras del período</td>
+            <td>Compras registradas del período</td>
             <td class="numero">{{ number_format($cantidadCompras, 0, '.', '') }}</td>
             <td class="moneda">{{ number_format($totalCompras, 2, '.', '') }}</td>
-            <td>Compras no anuladas</td>
+            <td>Compras no anuladas; no necesariamente pagadas</td>
+        </tr>
+
+        <tr>
+            <td>Pagos activos a proveedores</td>
+            <td class="numero">{{ number_format($cantidadPagosProveedoresActivos, 0, '.', '') }}</td>
+            <td class="moneda">{{ number_format($totalPagosProveedoresActivos, 2, '.', '') }}</td>
+            <td>Dinero realmente pagado a proveedores en el período</td>
         </tr>
 
         <tr>

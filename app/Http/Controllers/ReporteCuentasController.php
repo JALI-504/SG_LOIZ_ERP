@@ -30,7 +30,7 @@ class ReporteCuentasController extends Controller
                 $query->where('es_fiscal', 0);
             });
 
-        $comprasPorPagarQuery = Compra::with('proveedor')
+        $comprasPorPagarQuery = Compra::with(['proveedor', 'pagos'])
             ->where('estado', '!=', 'Anulada')
             ->where('saldo_pendiente', '>', 0)
             ->when($fechaDesde, function ($query) use ($fechaDesde) {
@@ -71,7 +71,9 @@ class ReporteCuentasController extends Controller
             ->count();
 
         $totalComprasOriginal = $comprasPorPagar->sum('total');
-        $totalComprasPagado = $comprasPorPagar->sum('monto_pagado');
+        $totalComprasPagado = $comprasPorPagar->sum(function ($compra) {
+            return $compra->pagos->where('estado', 'Activo')->sum('monto');
+        });
 
         $diferencia = $totalPorCobrar - $totalPorPagar;
 

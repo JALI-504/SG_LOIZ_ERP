@@ -221,10 +221,35 @@
                                 </td>
                             </tr>
 
+                            <tr>
+                                <th>Pagos activos a proveedores</th>
+                                <td class="text-right">
+                                    L {{ number_format($totalPagosProveedoresActivos, 2) }}
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ number_format($cantidadPagosProveedoresActivos, 0) }} pagos activos
+                                    </small>
+                                </td>
+                            </tr>
+
+                            <tr class="table-warning">
+                                <th>Total egresos operativos</th>
+                                <td class="text-right">
+                                    <strong>L {{ number_format($totalEgresosOperativos, 2) }}</strong>
+                                </td>
+                            </tr>
+
                             <tr class="{{ $utilidadNetaEstimada >= 0 ? 'table-success' : 'table-danger' }}">
                                 <th>Utilidad neta estimada</th>
                                 <td class="text-right">
                                     <strong>L {{ number_format($utilidadNetaEstimada, 2) }}</strong>
+                                </td>
+                            </tr>
+
+                            <tr class="{{ $flujoNetoEstimado >= 0 ? 'table-info' : 'table-danger' }}">
+                                <th>Flujo neto estimado</th>
+                                <td class="text-right">
+                                    <strong>L {{ number_format($flujoNetoEstimado, 2) }}</strong>
                                 </td>
                             </tr>
                         </tbody>
@@ -233,7 +258,8 @@
 
                 <div class="card-footer">
                     <small class="text-muted">
-                        La utilidad es estimada con base en los costos registrados al momento de la venta.
+                        La utilidad neta estimada se calcula con ventas, costo de ventas y gastos. 
+                        El flujo neto estimado considera el neto recibido por ventas menos gastos y pagos activos a proveedores.
                     </small>
                 </div>
             </div>
@@ -312,13 +338,64 @@
         </div>
     </div>
 
+    {{-- Flujo de efectivo estimado --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>L {{ number_format($totalNetoRecibido, 2) }}</h4>
+                    <p>Neto recibido por ventas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>L {{ number_format($totalPagosProveedoresActivos, 2) }}</h4>
+                    <p>Pagos activos a proveedores</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-truck-loading"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h4>L {{ number_format($totalEgresosOperativos, 2) }}</h4>
+                    <p>Gastos + pagos proveedores</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box {{ $flujoNetoEstimado >= 0 ? 'bg-info' : 'bg-danger' }}">
+                <div class="inner">
+                    <h4>L {{ number_format($flujoNetoEstimado, 2) }}</h4>
+                    <p>Flujo neto estimado</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Cuentas y compras --}}
     <div class="row">
         <div class="col-md-3">
             <div class="small-box bg-purple">
                 <div class="inner">
                     <h4>L {{ number_format($totalCompras, 2) }}</h4>
-                    <p>Compras del período</p>
+                    <p>Compras registradas del período</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-shopping-cart"></i>
