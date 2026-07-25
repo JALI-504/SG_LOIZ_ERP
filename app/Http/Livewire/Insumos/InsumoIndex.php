@@ -75,6 +75,10 @@ class InsumoIndex extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver insumos')) {
+            abort(403, 'No tiene permiso para ver insumos.');
+        }
+
         $this->categorias = Catalogo::opciones('categoria_insumo')->pluck('nombre')->toArray();
         $this->unidadesCompra = Catalogo::opciones('unidad_compra')->pluck('nombre')->toArray();
         $this->unidadesConsumo = Catalogo::opciones('unidad_consumo')->pluck('nombre')->toArray();
@@ -152,6 +156,10 @@ class InsumoIndex extends Component
 
     public function create()
     {
+        if (!auth()->user()->can('crear insumos')) {
+            abort(403, 'No tiene permiso para crear insumos.');
+        }
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo insumo';
@@ -161,6 +169,10 @@ class InsumoIndex extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('crear insumos')) {
+            abort(403, 'No tiene permiso para registrar insumos.');
+        }
+
         $this->calcularCostosFormulario();
 
         $this->validate();
@@ -216,6 +228,10 @@ class InsumoIndex extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar insumos')) {
+            abort(403, 'No tiene permiso para editar insumos.');
+        }
+
         $insumo = Insumo::findOrFail($id);
 
         $this->insumo_id = $insumo->id;
@@ -250,6 +266,10 @@ class InsumoIndex extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar insumos')) {
+            abort(403, 'No tiene permiso para actualizar insumos.');
+        }
+
         $this->calcularCostosFormulario();
 
         $this->validate();
@@ -291,6 +311,10 @@ class InsumoIndex extends Component
 
     public function cambiarEstado($id)
     {
+        if (!auth()->user()->can('eliminar insumos')) {
+            abort(403, 'No tiene permiso para activar o desactivar insumos.');
+        }
+
         $insumo = Insumo::findOrFail($id);
 
         $insumo->update([
@@ -302,6 +326,10 @@ class InsumoIndex extends Component
 
     public function abrirMovimiento($id)
     {
+        if (!auth()->user()->can('registrar movimientos inventario')) {
+            abort(403, 'No tiene permiso para registrar movimientos de inventario.');
+        }
+
         $insumo = Insumo::findOrFail($id);
 
         $this->resetMovimiento();
@@ -318,6 +346,10 @@ class InsumoIndex extends Component
 
     public function storeMovimiento()
     {
+        if (!auth()->user()->can('registrar movimientos inventario')) {
+            abort(403, 'No tiene permiso para registrar movimientos de inventario.');
+        }
+        
         $this->validate([
             'movimiento_insumo_id' => 'required|exists:insumos,id',
             'movimiento_tipo' => 'required',

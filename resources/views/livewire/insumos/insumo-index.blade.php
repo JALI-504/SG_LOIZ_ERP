@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de insumos</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo insumo
-                </button>
+                @can('crear insumos')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo insumo
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -67,7 +69,14 @@
                             <th>Costo</th>
                             <th>Stock</th>
                             <th>Estado</th>
-                            <th width="230">Acciones</th>
+                            @if (
+                                auth()->user()->can('editar insumos') ||
+                                auth()->user()->can('registrar movimientos inventario') ||
+                                auth()->user()->can('ver inventario') ||
+                                auth()->user()->can('eliminar insumos')
+                            )
+                                <th width="230">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -145,35 +154,50 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $insumo->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                @if (
+                                    auth()->user()->can('editar insumos') ||
+                                    auth()->user()->can('registrar movimientos inventario') ||
+                                    auth()->user()->can('ver inventario') ||
+                                    auth()->user()->can('eliminar insumos')
+                                )
+                                    <td>
+                                        @can('editar insumos')
+                                            <button class="btn btn-warning btn-xs"
+                                                    wire:click="edit({{ $insumo->id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endcan
 
-                                    <button class="btn btn-info btn-xs"
-                                            wire:click="abrirMovimiento({{ $insumo->id }})">
-                                        Movimiento
-                                    </button>
-                                    
-                                    <a href="{{ route('insumos.movimientos', $insumo->id) }}"
-                                    class="btn btn-primary btn-xs">
-                                        Historial
-                                    </a>
+                                        @can('registrar movimientos inventario')
+                                            <button class="btn btn-info btn-xs"
+                                                    wire:click="abrirMovimiento({{ $insumo->id }})">
+                                                Movimiento
+                                            </button>
+                                        @endcan
 
-                                    <button class="btn btn-{{ $insumo->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $insumo->id }})">
-                                        @if ($insumo->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
-                                </td>
+                                        @can('ver inventario')
+                                            <a href="{{ route('insumos.movimientos', $insumo->id) }}"
+                                            class="btn btn-primary btn-xs">
+                                                Historial
+                                            </a>
+                                        @endcan
+
+                                        @can('eliminar insumos')
+                                            <button class="btn btn-{{ $insumo->activo ? 'secondary' : 'success' }} btn-xs"
+                                                    wire:click="cambiarEstado({{ $insumo->id }})">
+                                                @if ($insumo->activo)
+                                                    Desactivar
+                                                @else
+                                                    Activar
+                                                @endif
+                                            </button>
+                                        @endcan
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar insumos') || auth()->user()->can('registrar movimientos inventario') || auth()->user()->can('ver inventario') || auth()->user()->can('eliminar insumos') ? 8 : 7 }}" class="text-center">
                                     No hay insumos registrados.
                                 </td>
                             </tr>
@@ -412,15 +436,21 @@
                         Cancelar
                     </button>
 
-                    <button type="submit" class="btn btn-primary">
-                        {{ $insumo_id ? 'Actualizar insumo' : 'Guardar insumo' }}
-                    </button>
+                    @if (
+                        (!$insumo_id && auth()->user()->can('crear insumos')) ||
+                        ($insumo_id && auth()->user()->can('editar insumos'))
+                    )
+                        <button type="submit" class="btn btn-primary">
+                            {{ $insumo_id ? 'Actualizar insumo' : 'Guardar insumo' }}
+                        </button>
+                    @endif
                 </div>
             </form>
         </div>
     </div>
 
     {{-- Modal movimiento --}}
+    @can('registrar movimientos inventario')
     <div wire:ignore.self class="modal fade" id="movimientoModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <form wire:submit.prevent="storeMovimiento" class="modal-content">
@@ -515,4 +545,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </div>
