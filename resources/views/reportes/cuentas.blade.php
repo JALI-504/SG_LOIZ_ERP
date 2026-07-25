@@ -164,12 +164,12 @@
                 </tr>
 
                 <tr>
-                    <td>Total pagado por clientes</td>
+                    <td>Total aplicado por clientes</td>
                     <td></td>
                     <td class="text-right">L {{ number_format($totalVentasPagado, 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Pagos recibidos de clientes</td>
+                    <td>Pagos activos recibidos de clientes</td>
                     <td></td>
                     <td class="text-right">
                         L {{ number_format($totalPagosRecibidosClientes, 2) }}
@@ -321,6 +321,20 @@
                                 </td>
 
                                 <td class="text-right">
+                                    @php
+                                        $pagosActivosVenta = $venta->pagos
+                                            ? $venta->pagos->where('estado', 'Activo')->sum('monto')
+                                            : 0;
+
+                                        $cantidadPagosActivosVenta = $venta->pagos
+                                            ? $venta->pagos->where('estado', 'Activo')->count()
+                                            : 0;
+
+                                        $cantidadPagosAnuladosVenta = $venta->pagos
+                                            ? $venta->pagos->where('estado', 'Anulado')->count()
+                                            : 0;
+                                    @endphp
+
                                     <strong>L {{ number_format($venta->monto_pagado, 2) }}</strong>
 
                                     @if (($venta->retencion ?? 0) > 0)
@@ -334,9 +348,22 @@
                                     @if ($venta->pagos && $venta->pagos->count() > 0)
                                         <br>
                                         <small class="text-muted">
-                                            Pagos recibidos:
-                                            L {{ number_format($venta->pagos->sum('monto'), 2) }}
+                                            Pagos activos:
+                                            L {{ number_format($pagosActivosVenta, 2) }}
                                         </small>
+
+                                        <br>
+
+                                        <small class="text-muted">
+                                            Cantidad activos: {{ $cantidadPagosActivosVenta }}
+                                        </small>
+
+                                        @if ($cantidadPagosAnuladosVenta > 0)
+                                            <br>
+                                            <small class="text-muted">
+                                                Anulados: {{ $cantidadPagosAnuladosVenta }}
+                                            </small>
+                                        @endif
                                     @endif
                                 </td>
 
@@ -557,7 +584,7 @@
             <div class="small-box bg-primary">
                 <div class="inner">
                     <h4>L {{ number_format($totalPagosRecibidosClientes, 2) }}</h4>
-                    <p>Pagos recibidos clientes</p>
+                    <p>Pagos activos recibidos clientes</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-money-bill-wave"></i>
