@@ -84,7 +84,7 @@ class VentaHistorial extends Component
 
     public function anularVenta($ventaId)
     {
-        $venta = Venta::with('detalles')->findOrFail($ventaId);
+        $venta = Venta::with(['detalles', 'pagos'])->findOrFail($ventaId);
 
         if ($venta->estado === 'Anulada') {
             session()->flash('error', 'Esta venta ya está anulada.');
@@ -100,6 +100,19 @@ class VentaHistorial extends Component
             return;
         }
 
+        $devolucionesProductos = MovimientoProducto::where('referencia', $venta->numero)
+            ->where('tipo_movimiento', 'Devolucion')
+            ->count();
+
+        $devolucionesInsumos = MovimientoInventario::where('referencia', $venta->numero)
+            ->where('tipo_movimiento', 'Devolucion')
+            ->count();
+
+        if ($devolucionesProductos > 0 || $devolucionesInsumos > 0) {
+            session()->flash('error', 'Esta venta ya tiene movimientos de devolución registrados. No se puede duplicar la restauración de inventario.');
+            return;
+        }
+
         try {
             DB::transaction(function () use ($venta) {
                 $this->revertirMovimientosProductos($venta);
@@ -109,6 +122,8 @@ class VentaHistorial extends Component
 
                 $venta->update([
                     'estado' => 'Anulada',
+                    'monto_pagado' => 0,
+                    'saldo_pendiente' => 0,
                     'observacion' => $observacionAnterior . 'Venta anulada el ' . now()->format('d/m/Y H:i'),
                 ]);
             });
@@ -364,8 +379,22 @@ class VentaHistorial extends Component
         $query = $this->queryVentas();
 
         $totalVentas = (clone $query)->count();
-        $totalMonto = (clone $query)->sum('total');
-        $totalDescuento = (clone $query)->sum('descuento');
+
+        $totalVentasValidas = (clone $query)
+            ->where('estado', '!=', 'Anulada')
+            ->count();
+
+        $totalVentasAnuladas = (clone $query)
+            ->where('estado', 'Anulada')
+            ->count();
+
+        $totalMonto = (clone $query)
+            ->where('estado', '!=', 'Anulada')
+            ->sum('total');
+
+        $totalDescuento = (clone $query)
+            ->where('estado', '!=', 'Anulada')
+            ->sum('descuento');
 
         $ventas = $query
             ->orderByDesc('id')
@@ -388,6 +417,8 @@ class VentaHistorial extends Component
             'totalMonto' => $totalMonto,
             'totalDescuento' => $totalDescuento,
             'ventaSeleccionada' => $ventaSeleccionada,
+            'totalVentasValidas' => $totalVentasValidas,
+            'totalVentasAnuladas' => $totalVentasAnuladas,
         ]);
     }
     

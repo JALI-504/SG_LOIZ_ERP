@@ -6,11 +6,11 @@
     </div>
 
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="small-box bg-info">
                 <div class="inner">
                     <h4>{{ number_format($totalVentas, 0) }}</h4>
-                    <p>Ventas encontradas</p>
+                    <p>Comprobantes encontrados</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-receipt"></i>
@@ -18,11 +18,23 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="small-box bg-success">
                 <div class="inner">
+                    <h4>{{ number_format($totalVentasValidas, 0) }}</h4>
+                    <p>Ventas válidas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
                     <h4>L {{ number_format($totalMonto, 2) }}</h4>
-                    <p>Total vendido</p>
+                    <p>Total vendido válido</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-coins"></i>
@@ -30,11 +42,25 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h4>{{ number_format($totalVentasAnuladas, 0) }}</h4>
+                    <p>Ventas anuladas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h4>L {{ number_format($totalDescuento, 2) }}</h4>
-                    <p>Total descuentos</p>
+                    <p>Descuentos en ventas válidas</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-tags"></i>
@@ -125,6 +151,7 @@
                 <strong>Historial de comprobantes de venta.</strong><br>
                 Las ventas pueden corresponder a <strong>recibos internos no fiscales</strong> o a
                 <strong>facturas fiscales</strong>, según la configuración activa al momento de registrar la venta.
+                Los totales superiores consideran como vendido únicamente las ventas válidas; las ventas anuladas se muestran por separado.
             </div>
 
             <div class="table-responsive">
