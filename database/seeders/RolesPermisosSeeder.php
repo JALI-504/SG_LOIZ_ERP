@@ -139,3 +139,4 @@ class RolesPermisosSeeder extends Seeder
         ]);
     }
 }
+    

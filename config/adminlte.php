@@ -299,7 +299,7 @@ return [
     */
 
     'menu' => [
- 
+
         // Navbar superior
         [
             'type' => 'navbar-search',
@@ -316,162 +316,206 @@ return [
 
         [
             'text' => 'Dashboard',
-            'url' => 'dashboard',
+            'url'  => 'dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can'  => 'ver dashboard',
         ],
 
-        ['header' => 'VENTAS'],
-
         [
-            'text' => 'POS / Nueva venta',
-            'url' => 'ventas',
+            'text' => 'Ventas',
             'icon' => 'fas fa-fw fa-cash-register',
-        ],
-        [
-            'text' => 'Historial de ventas',
-            'url' => 'ventas/historial',
-            'icon' => 'fas fa-fw fa-receipt',
-        ],
-        [
-            'text' => 'Cuentas por cobrar',
-            'url' => 'ventas/cuentas-por-cobrar',
-            'icon' => 'fas fa-fw fa-hand-holding-usd',
-        ],
-
-        ['header' => 'CLIENTES Y CATÁLOGOS'],
-
-        [
-            'text' => 'Clientes',
-            'url' => 'clientes',
-            'icon' => 'fas fa-fw fa-users',
-        ],
-        [
-            'text' => 'Servicios',
-            'url' => 'servicios',
-            'icon' => 'fas fa-fw fa-print',
-        ],
-        [
-            'text' => 'Productos',
-            'url' => 'productos',
-            'icon' => 'fas fa-fw fa-box',
-        ],
-        [
-            'text' => 'Catálogos',
-            'url' => 'catalogos',
-            'icon' => 'fas fa-fw fa-list',
+            'can'  => 'ver ventas',
+            'submenu' => [
+                [
+                    'text' => 'POS / Nueva venta',
+                    'url'  => 'ventas',
+                    'icon' => 'fas fa-fw fa-plus-circle',
+                    'can'  => 'crear ventas',
+                ],
+                [
+                    'text' => 'Historial de ventas',
+                    'url'  => 'ventas/historial',
+                    'icon' => 'fas fa-fw fa-receipt',
+                    'can'  => 'ver historial ventas',
+                ],
+                [
+                    'text' => 'Cuentas por cobrar',
+                    'url'  => 'ventas/cuentas-por-cobrar',
+                    'icon' => 'fas fa-fw fa-hand-holding-usd',
+                    'can'  => 'ver cuentas por cobrar',
+                ],
+            ],
         ],
 
-        ['header' => 'INVENTARIO Y PRODUCCIÓN'],
-
         [
-            'text' => 'Insumos',
-            'url' => 'insumos',
-            'icon' => 'fas fa-fw fa-boxes',
-        ],
-        [
-            'text' => 'Producción',
-            'url' => 'produccion',
-            'icon' => 'fas fa-fw fa-industry',
-        ],
-
-        ['header' => 'COMPRAS Y PROVEEDORES'],
-
-        [
-            'text' => 'Proveedores',
-            'url' => 'proveedores',
-            'icon' => 'fas fa-fw fa-truck',
-        ],
-        [
-            'text' => 'Compras',
-            'url' => 'compras',
-            'icon' => 'fas fa-fw fa-shopping-cart',
-        ],
-        [
-            'text' => 'Cuentas por pagar',
-            'url' => 'compras/cuentas-por-pagar',
-            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+            'text' => 'Clientes y catálogos',
+            'icon' => 'fas fa-fw fa-users-cog',
+            'can'  => 'ver clientes',
+            'submenu' => [
+                [
+                    'text' => 'Clientes',
+                    'url'  => 'clientes',
+                    'icon' => 'fas fa-fw fa-users',
+                    'can'  => 'ver clientes',
+                ],
+                [
+                    'text' => 'Catálogos',
+                    'url'  => 'catalogos',
+                    'icon' => 'fas fa-fw fa-list',
+                    'can'  => 'editar configuracion',
+                ],
+                [
+                    'text' => 'Tipos de catálogo',
+                    'url'  => 'catalogos/tipos',
+                    'icon' => 'fas fa-fw fa-tags',
+                    'can'  => 'editar configuracion',
+                ],
+            ],
         ],
 
-        ['header' => 'FINANZAS'],
-
         [
-            'text' => 'Gastos',
-            'url' => 'gastos',
-            'icon' => 'fas fa-fw fa-money-bill-wave',
+            'text' => 'Productos y servicios',
+            'icon' => 'fas fa-fw fa-box-open',
+            'can'  => 'ver productos',
+            'submenu' => [
+                [
+                    'text' => 'Productos',
+                    'url'  => 'productos',
+                    'icon' => 'fas fa-fw fa-box',
+                    'can'  => 'ver productos',
+                ],
+                [
+                    'text' => 'Servicios',
+                    'url'  => 'servicios',
+                    'icon' => 'fas fa-fw fa-print',
+                    'can'  => 'ver servicios',
+                ],
+            ],
         ],
 
-        ['header' => 'REPORTES'],
-
         [
-            'text' => 'Reporte de ventas',
-            'url' => 'reportes/ventas',
-            'icon' => 'fas fa-fw fa-chart-line',
-        ],
-        [
-            'text' => 'Reporte financiero',
-            'url' => 'reportes/financiero',
-            'icon' => 'fas fa-fw fa-chart-pie',
-        ],
-        [
-            'text' => 'Reporte inventario',
-            'url' => 'reportes/inventario',
+            'text' => 'Inventario y producción',
             'icon' => 'fas fa-fw fa-warehouse',
-        ],
-        [
-            'text' => 'Reporte de cuentas',
-            'url' => 'reportes/cuentas',
-            'icon' => 'fas fa-fw fa-file-invoice',
+            'can'  => 'ver inventario',
+            'submenu' => [
+                [
+                    'text' => 'Insumos',
+                    'url'  => 'insumos',
+                    'icon' => 'fas fa-fw fa-boxes',
+                    'can'  => 'ver insumos',
+                ],
+                [
+                    'text' => 'Producción',
+                    'url'  => 'produccion',
+                    'icon' => 'fas fa-fw fa-industry',
+                    'can'  => 'ver produccion',
+                ],
+            ],
         ],
 
-        ['header' => 'CONFIGURACIÓN'],
+        [
+            'text' => 'Compras y proveedores',
+            'icon' => 'fas fa-fw fa-shopping-cart',
+            'can'  => 'ver compras',
+            'submenu' => [
+                [
+                    'text' => 'Compras',
+                    'url'  => 'compras',
+                    'icon' => 'fas fa-fw fa-shopping-bag',
+                    'can'  => 'ver compras',
+                ],
+                [
+                    'text' => 'Nueva compra',
+                    'url'  => 'compras/crear',
+                    'icon' => 'fas fa-fw fa-plus',
+                    'can'  => 'crear compras',
+                ],
+                [
+                    'text' => 'Cuentas por pagar',
+                    'url'  => 'compras/cuentas-por-pagar',
+                    'icon' => 'fas fa-fw fa-file-invoice-dollar',
+                    'can'  => 'ver cuentas por pagar',
+                ],
+                [
+                    'text' => 'Proveedores',
+                    'url'  => 'proveedores',
+                    'icon' => 'fas fa-fw fa-truck',
+                    'can'  => 'ver proveedores',
+                ],
+            ],
+        ],
 
         [
-            'text' => 'Configuración del negocio',
-            'url' => 'configuracion/empresa',
+            'text' => 'Finanzas',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
+            'can'  => 'ver gastos',
+            'submenu' => [
+                [
+                    'text' => 'Gastos',
+                    'url'  => 'gastos',
+                    'icon' => 'fas fa-fw fa-money-bill-wave',
+                    'can'  => 'ver gastos',
+                ],
+                [
+                    'text' => 'Nuevo gasto',
+                    'url'  => 'gastos/crear',
+                    'icon' => 'fas fa-fw fa-plus-circle',
+                    'can'  => 'crear gastos',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Reportes',
+            'icon' => 'fas fa-fw fa-chart-pie',
+            'can'  => 'ver reportes',
+            'submenu' => [
+                [
+                    'text' => 'Reporte de ventas',
+                    'url'  => 'reportes/ventas',
+                    'icon' => 'fas fa-fw fa-chart-line',
+                    'can'  => 'ver reporte ventas',
+                ],
+                [
+                    'text' => 'Reporte financiero',
+                    'url'  => 'reportes/financiero',
+                    'icon' => 'fas fa-fw fa-chart-pie',
+                    'can'  => 'ver reporte financiero',
+                ],
+                [
+                    'text' => 'Reporte inventario',
+                    'url'  => 'reportes/inventario',
+                    'icon' => 'fas fa-fw fa-warehouse',
+                    'can'  => 'ver reporte inventario',
+                ],
+                [
+                    'text' => 'Reporte de cuentas',
+                    'url'  => 'reportes/cuentas',
+                    'icon' => 'fas fa-fw fa-file-invoice',
+                    'can'  => 'ver reporte cuentas',
+                ],
+            ],
+        ],
+
+        [
+            'text' => 'Configuración',
             'icon' => 'fas fa-fw fa-cogs',
+            'can'  => 'ver configuracion',
+            'submenu' => [
+                [
+                    'text' => 'Configuración del negocio',
+                    'url'  => 'configuracion/empresa',
+                    'icon' => 'fas fa-fw fa-store',
+                    'can'  => 'editar configuracion',
+                ],
+                [
+                    'text' => 'Catálogos del sistema',
+                    'url'  => 'catalogos',
+                    'icon' => 'fas fa-fw fa-list',
+                    'can'  => 'editar configuracion',
+                ],
+            ],
         ],
-        
-
-        // Menu no utilizado
- 
-        // [
-        //     'text' => 'multilevel',
-        //     'icon' => 'fas fa-fw fa-share',
-        //     'submenu' => [
-        //         [
-        //             'text' => 'level_one',
-        //             'url' => '#',
-        //         ],
-        //         [
-        //             'text' => 'level_one',
-        //             'url' => '#',
-        //             'submenu' => [
-        //                 [
-        //                     'text' => 'level_two',
-        //                     'url' => '#',
-        //                 ],
-        //                 [
-        //                     'text' => 'level_two',
-        //                     'url' => '#',
-        //                     'submenu' => [
-        //                         [
-        //                             'text' => 'level_three',
-        //                             'url' => '#',
-        //                         ],
-        //                         [
-        //                             'text' => 'level_three',
-        //                             'url' => '#',
-        //                         ],
-        //                     ],
-        //                 ],
-        //             ],
-        //         ],
-        //         [
-        //             'text' => 'level_one',
-        //             'url' => '#',
-        //         ],
-        //     ],
-        // ],
 
     ],
 

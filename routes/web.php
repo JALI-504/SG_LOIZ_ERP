@@ -8,224 +8,351 @@ use App\Http\Controllers\CuentaPorPagarController;
 use App\Http\Controllers\ReporteFinancieroController;
 use App\Http\Controllers\ReporteInventarioController;
 use App\Http\Controllers\ReporteCuentasController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
-// Dashboard
 
 Route::get('/', function () {
     return redirect()->route('dashboard.index');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard.index');
-})->name('dashboard.index');
+/*
+|--------------------------------------------------------------------------
+| Rutas protegidas
+|--------------------------------------------------------------------------
+| Todas estas rutas requieren usuario autenticado.
+| Luego cada grupo aplica permisos específicos.
+*/
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::post('/login', function (Request $request) {
+    $credenciales = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    $recordar = $request->has('remember');
+
+    if (Auth::attempt($credenciales, $recordar)) {
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('dashboard.index'));
+    }
+
+    return back()
+        ->withErrors([
+            'email' => 'Las credenciales ingresadas no son correctas.',
+        ])
+        ->onlyInput('email');
+})->name('login.post');
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('login');
+})->name('logout');
+
+Route::middleware(['auth'])->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/dashboard', function () {
+        return view('dashboard.index');
+    })->name('dashboard.index')
+        ->middleware('permission:ver dashboard');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clientes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/clientes', function () {
+        return view('clientes.index');
+    })->name('clientes.index')
+        ->middleware('permission:ver clientes');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Servicios
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/servicios', function () {
+        return view('servicios.index');
+    })->name('servicios.index')
+        ->middleware('permission:ver servicios');
+
+    Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $servicio) {
+        return view('servicios.insumos', compact('servicio'));
+    })->name('servicios.insumos')
+        ->middleware('permission:editar servicios');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Catálogos
+    |--------------------------------------------------------------------------
+    | Por ahora lo dejamos solo para configuración/administración.
+    */
+
+    Route::get('/catalogos', function () {
+        return view('catalogos.index');
+    })->name('catalogos.index')
+        ->middleware('permission:editar configuracion');
+
+    Route::get('/catalogos/tipos', function () {
+        return view('catalogos.tipos');
+    })->name('catalogos.tipos')
+        ->middleware('permission:editar configuracion');
 
 
-// Clientes
+    /*
+    |--------------------------------------------------------------------------
+    | Productos
+    |--------------------------------------------------------------------------
+    */
 
-Route::get('/clientes', function () {
-    return view('clientes.index');
-})->name('clientes.index');
+    Route::get('/productos', function () {
+        return view('productos.index');
+    })->name('productos.index')
+        ->middleware('permission:ver productos');
 
-// Servicios
+    Route::get('/productos/{producto}/insumos', function (\App\Models\Producto $producto) {
+        return view('productos.insumos', compact('producto'));
+    })->name('productos.insumos')
+        ->middleware('permission:editar productos');
 
-Route::get('/servicios', function () {
-    return view('servicios.index');
-})->name('servicios.index');
+    Route::get('/productos/{producto}/movimientos', function (\App\Models\Producto $producto) {
+        return view('productos.movimientos', compact('producto'));
+    })->name('productos.movimientos')
+        ->middleware('permission:ver inventario');
 
-Route::get('/servicios/{servicio}/insumos', function (\App\Models\Servicio $servicio) {
-    return view('servicios.insumos', compact('servicio'));
-})->name('servicios.insumos');
 
-// Rutas Catalogos
+    /*
+    |--------------------------------------------------------------------------
+    | Insumos
+    |--------------------------------------------------------------------------
+    */
 
-Route::get('/catalogos', function () {
-    return view('catalogos.index');
-})->name('catalogos.index');
+    Route::get('/insumos', function () {
+        return view('insumos.index');
+    })->name('insumos.index')
+        ->middleware('permission:ver insumos');
 
-Route::get('/catalogos/tipos', function () {
-    return view('catalogos.tipos');
-})->name('catalogos.tipos');
+    Route::get('/insumos/{insumo}/movimientos', function (\App\Models\Insumo $insumo) {
+        return view('insumos.movimientos', compact('insumo'));
+    })->name('insumos.movimientos')
+        ->middleware('permission:ver inventario');
 
-// Rutas de productos
 
-Route::get('/productos', function () {
-    return view('productos.index');
-})->name('productos.index');
+    /*
+    |--------------------------------------------------------------------------
+    | Ventas
+    |--------------------------------------------------------------------------
+    */
 
-Route::get('/productos/{producto}/insumos', function (\App\Models\Producto $producto) {
-    return view('productos.insumos', compact('producto'));
-})->name('productos.insumos');
+    Route::get('/ventas', function () {
+        return view('ventas.index');
+    })->name('ventas.index')
+        ->middleware('permission:crear ventas');
 
-Route::get('/productos/{producto}/movimientos', function (\App\Models\Producto $producto) {
-    return view('productos.movimientos', compact('producto'));
-})->name('productos.movimientos');
+    Route::get('/ventas/historial', function () {
+        return view('ventas.historial');
+    })->name('ventas.historial')
+        ->middleware('permission:ver historial ventas');
 
-// Insumos
+    Route::get('/ventas/cuentas-por-cobrar', function () {
+        return view('ventas.cuentas-por-cobrar');
+    })->name('ventas.cuentas-por-cobrar')
+        ->middleware('permission:ver cuentas por cobrar');
 
-Route::get('/insumos', function () {
-    return view('insumos.index');
-})->name('insumos.index');
+    Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
+        $pago->load(['venta.cliente', 'venta.pagos']);
 
-Route::get('/insumos/{insumo}/movimientos', function (\App\Models\Insumo $insumo) {
-    return view('insumos.movimientos', compact('insumo'));
-})->name('insumos.movimientos');
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
-// Ventas
-Route::get('/ventas', function () {
-    return view('ventas.index');
-})->name('ventas.index');
+        return view('ventas.recibo-abono', compact('pago', 'configuracion'));
+    })->name('ventas.pagos.recibo')
+        ->middleware('permission:imprimir recibos ventas');
 
-Route::get('/ventas/historial', function () {
-    return view('ventas.historial');
-})->name('ventas.historial');
+    Route::get('/ventas/{venta}/recibo', function (\App\Models\Venta $venta) {
+        $venta->load(['cliente', 'detalles', 'pagos']);
 
-Route::get('/ventas/cuentas-por-cobrar', function () {
-    return view('ventas.cuentas-por-cobrar');
-})->name('ventas.cuentas-por-cobrar');
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
-// Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
-//     $pago->load(['venta.cliente']);
+        return view('ventas.recibo', compact('venta', 'configuracion'));
+    })->name('ventas.recibo')
+        ->middleware('permission:imprimir recibos ventas');
 
-//     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
-//     return view('ventas.recibo-abono', compact('pago', 'configuracion'));
-// })->name('ventas.pagos.recibo');
+    /*
+    |--------------------------------------------------------------------------
+    | Configuración
+    |--------------------------------------------------------------------------
+    */
 
-Route::get('/ventas/pagos/{pago}/recibo', function (\App\Models\PagoVenta $pago) {
-    $pago->load(['venta.cliente', 'venta.pagos']);
+    Route::get('/configuracion/empresa', function () {
+        return view('configuracion.empresa');
+    })->name('configuracion.empresa')
+        ->middleware('permission:editar configuracion');
 
-    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
-    return view('ventas.recibo-abono', compact('pago', 'configuracion'));
-})->name('ventas.pagos.recibo');
+    /*
+    |--------------------------------------------------------------------------
+    | Reportes
+    |--------------------------------------------------------------------------
+    */
 
-// Recibo Venta:
+    Route::get('/reportes/ventas', function () {
+        return view('reportes.ventas');
+    })->name('reportes.ventas')
+        ->middleware('permission:ver reporte ventas');
 
-Route::get('/ventas/{venta}/recibo', function (\App\Models\Venta $venta) {
-    $venta->load(['cliente', 'detalles', 'pagos']);
+    Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index'])
+        ->name('reportes.financiero')
+        ->middleware('permission:ver reporte financiero');
 
-    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+    Route::get('/reportes/financiero/exportar-excel', [ReporteFinancieroController::class, 'exportarExcel'])
+        ->name('reportes.financiero.excel')
+        ->middleware('permission:ver reporte financiero');
 
-    return view('ventas.recibo', compact('venta', 'configuracion'));
-})->name('ventas.recibo');
+    Route::get('/reportes/inventario', [ReporteInventarioController::class, 'index'])
+        ->name('reportes.inventario')
+        ->middleware('permission:ver reporte inventario');
 
+    Route::get('/reportes/cuentas', [ReporteCuentasController::class, 'index'])
+        ->name('reportes.cuentas')
+        ->middleware('permission:ver reporte cuentas');
 
-// Configuracion
 
-Route::get('/configuracion/empresa', function () {
-    return view('configuracion.empresa');
-})->name('configuracion.empresa');
+    /*
+    |--------------------------------------------------------------------------
+    | Gastos
+    |--------------------------------------------------------------------------
+    */
 
-// Reportes
-Route::get('/reportes/ventas', function () {
-    return view('reportes.ventas');
-})->name('reportes.ventas');
+    Route::get('/gastos', function () {
+        return view('gastos.index');
+    })->name('gastos.index')
+        ->middleware('permission:ver gastos');
 
-Route::get('/reportes/financiero', [ReporteFinancieroController::class, 'index'])
-    ->name('reportes.financiero');
+    Route::get('/gastos/crear', [GastoController::class, 'create'])
+        ->name('gastos.create')
+        ->middleware('permission:crear gastos');
 
-Route::get('/reportes/financiero/exportar-excel', [ReporteFinancieroController::class, 'exportarExcel'])
-    ->name('reportes.financiero.excel');
+    Route::post('/gastos', [GastoController::class, 'store'])
+        ->name('gastos.store')
+        ->middleware('permission:crear gastos');
 
-Route::get('/reportes/inventario', [ReporteInventarioController::class, 'index'])
-    ->name('reportes.inventario');
+    Route::get('/gastos/{gasto}/editar', [GastoController::class, 'edit'])
+        ->name('gastos.edit')
+        ->middleware('permission:editar gastos');
 
-Route::get('/reportes/cuentas', [ReporteCuentasController::class, 'index'])
-    ->name('reportes.cuentas');
+    Route::put('/gastos/{gasto}', [GastoController::class, 'update'])
+        ->name('gastos.update')
+        ->middleware('permission:editar gastos');
 
-// Gastos
-Route::get('/gastos', function () {
-    return view('gastos.index');
-})->name('gastos.index');
 
-Route::get('/gastos/crear', [GastoController::class, 'create'])
-    ->name('gastos.create');
+    /*
+    |--------------------------------------------------------------------------
+    | Proveedores
+    |--------------------------------------------------------------------------
+    */
 
-Route::post('/gastos', [GastoController::class, 'store'])
-    ->name('gastos.store');
+    Route::get('/proveedores', [ProveedorController::class, 'index'])
+        ->name('proveedores.index')
+        ->middleware('permission:ver proveedores');
 
-Route::get('/gastos/{gasto}/editar', [GastoController::class, 'edit'])
-    ->name('gastos.edit');
+    Route::get('/proveedores/crear', [ProveedorController::class, 'create'])
+        ->name('proveedores.create')
+        ->middleware('permission:crear proveedores');
 
-Route::put('/gastos/{gasto}', [GastoController::class, 'update'])
-    ->name('gastos.update');
+    Route::post('/proveedores', [ProveedorController::class, 'store'])
+        ->name('proveedores.store')
+        ->middleware('permission:crear proveedores');
 
-// Proveedores
-Route::get('/proveedores', [ProveedorController::class, 'index'])
-    ->name('proveedores.index');
+    Route::get('/proveedores/{proveedor}/editar', [ProveedorController::class, 'edit'])
+        ->name('proveedores.edit')
+        ->middleware('permission:editar proveedores');
 
-Route::get('/proveedores/crear', [ProveedorController::class, 'create'])
-    ->name('proveedores.create');
+    Route::put('/proveedores/{proveedor}', [ProveedorController::class, 'update'])
+        ->name('proveedores.update')
+        ->middleware('permission:editar proveedores');
 
-Route::post('/proveedores', [ProveedorController::class, 'store'])
-    ->name('proveedores.store');
+    Route::patch('/proveedores/{proveedor}/estado', [ProveedorController::class, 'cambiarEstado'])
+        ->name('proveedores.estado')
+        ->middleware('permission:editar proveedores');
 
-Route::get('/proveedores/{proveedor}/editar', [ProveedorController::class, 'edit'])
-    ->name('proveedores.edit');
 
-Route::put('/proveedores/{proveedor}', [ProveedorController::class, 'update'])
-    ->name('proveedores.update');
+    /*
+    |--------------------------------------------------------------------------
+    | Cuentas por pagar
+    |--------------------------------------------------------------------------
+    */
 
-Route::patch('/proveedores/{proveedor}/estado', [ProveedorController::class, 'cambiarEstado'])
-    ->name('proveedores.estado');
+    Route::get('/compras/cuentas-por-pagar', [CuentaPorPagarController::class, 'index'])
+        ->name('compras.cuentas-por-pagar')
+        ->middleware('permission:ver cuentas por pagar');
 
-// Cuentas por pagar
-Route::get('/compras/cuentas-por-pagar', [CuentaPorPagarController::class, 'index'])
-    ->name('compras.cuentas-por-pagar');
+    Route::post('/compras/{compra}/registrar-pago', [CuentaPorPagarController::class, 'pagar'])
+        ->name('compras.registrar-pago')
+        ->middleware('permission:registrar pagos proveedores');
 
-Route::post('/compras/{compra}/registrar-pago', [CuentaPorPagarController::class, 'pagar'])
-    ->name('compras.registrar-pago');
+    Route::patch('/compras/pagos/{pago}/anular', [CuentaPorPagarController::class, 'anularPago'])
+        ->name('compras.pagos.anular')
+        ->middleware('permission:anular pagos proveedores');
 
-// Proveedores / COmpras 
-Route::get('/compras', [CompraController::class, 'index'])
-    ->name('compras.index');
+    Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
+        $pago->load(['compra.proveedor', 'compra.pagos']);
 
-Route::get('/compras/crear', [CompraController::class, 'create'])
-    ->name('compras.create');
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
 
-Route::post('/compras', [CompraController::class, 'store'])
-    ->name('compras.store');
+        return view('compras.recibo-pago', compact('pago', 'configuracion'));
+    })->name('compras.pagos.recibo')
+        ->middleware('permission:ver cuentas por pagar');
 
-// Recibo de pago
 
-Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
-    $pago->load(['compra.proveedor', 'compra.pagos']);
+    /*
+    |--------------------------------------------------------------------------
+    | Compras
+    |--------------------------------------------------------------------------
+    */
 
-    $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+    Route::get('/compras', [CompraController::class, 'index'])
+        ->name('compras.index')
+        ->middleware('permission:ver compras');
 
-    return view('compras.recibo-pago', compact('pago', 'configuracion'));
-})->name('compras.pagos.recibo');
+    Route::get('/compras/crear', [CompraController::class, 'create'])
+        ->name('compras.create')
+        ->middleware('permission:crear compras');
 
-// Route::get('/compras/pagos/{pago}/recibo', function (\App\Models\PagoCompra $pago) {
-//     $pago->load(['compra.proveedor']);
+    Route::post('/compras', [CompraController::class, 'store'])
+        ->name('compras.store')
+        ->middleware('permission:crear compras');
 
-//     $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+    Route::get('/compras/{compra}', [CompraController::class, 'show'])
+        ->name('compras.show')
+        ->middleware('permission:ver compras');
 
-//     return view('compras.recibo-pago', compact('pago', 'configuracion'));
-// })->name('compras.pagos.recibo');
-
-// compras  proveedores
-
-Route::get('/compras/{compra}', [CompraController::class, 'show'])
-    ->name('compras.show');
-
-Route::patch('/compras/{compra}/anular', [CompraController::class, 'anular'])
-    ->name('compras.anular');
-
-Route::patch('/compras/pagos/{pago}/anular', [\App\Http\Controllers\CuentaPorPagarController::class, 'anularPago'])
-    ->name('compras.pagos.anular');
+    Route::patch('/compras/{compra}/anular', [CompraController::class, 'anular'])
+        ->name('compras.anular')
+        ->middleware('permission:anular compras');
+});
