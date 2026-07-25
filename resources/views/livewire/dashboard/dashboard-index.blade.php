@@ -258,6 +258,76 @@
         </div>
     </div>
 
+
+    {{-- Gráficas del Dashboard --}}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i> Ventas de los últimos 7 días
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="graficaVentas7Dias"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-outline card-success">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-wallet"></i> Flujo de hoy
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="graficaFlujoHoy"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cube"></i> Productos más vendidos hoy
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="graficaProductosHoy"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-outline card-warning">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-concierge-bell"></i> Servicios más vendidos hoy
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="graficaServiciosHoy"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         {{-- Últimas ventas --}}
         <div class="col-md-7">
@@ -556,4 +626,140 @@
             </div>
         </div>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    function cargarGraficasDashboard() {
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
+        if (window.graficasDashboard) {
+            window.graficasDashboard.forEach(function (grafica) {
+                grafica.destroy();
+            });
+        }
+
+        window.graficasDashboard = [];
+
+        var labels7Dias = @json($graficaVentas7DiasLabels);
+        var ventas7Dias = @json($graficaVentas7DiasMontos);
+        var neto7Dias = @json($graficaNetoRecibido7Dias);
+        var egresos7Dias = @json($graficaEgresos7Dias);
+        var flujo7Dias = @json($graficaFlujo7Dias);
+
+        var productosLabels = @json($graficaProductosLabels);
+        var productosCantidades = @json($graficaProductosCantidades);
+
+        var serviciosLabels = @json($graficaServiciosLabels);
+        var serviciosCantidades = @json($graficaServiciosCantidades);
+
+        var flujoHoyLabels = [
+            'Neto recibido',
+            'Egresos operativos',
+            'Flujo neto'
+        ];
+
+        var flujoHoyData = [
+            Number(@json($totalNetoRecibidoHoy)),
+            Number(@json($totalEgresosOperativosHoy)),
+            Number(@json($flujoNetoEstimadoHoy))
+        ];
+
+        var canvasVentas = document.getElementById('graficaVentas7Dias');
+
+        if (canvasVentas) {
+            window.graficasDashboard.push(new Chart(canvasVentas, {
+                type: 'line',
+                data: {
+                    labels: labels7Dias,
+                    datasets: [
+                        {
+                            label: 'Total vendido',
+                            data: ventas7Dias,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Neto recibido',
+                            data: neto7Dias,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }));
+        }
+
+        var canvasFlujo = document.getElementById('graficaFlujoHoy');
+
+        if (canvasFlujo) {
+            window.graficasDashboard.push(new Chart(canvasFlujo, {
+                type: 'bar',
+                data: {
+                    labels: flujoHoyLabels,
+                    datasets: [
+                        {
+                            label: 'Monto',
+                            data: flujoHoyData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }));
+        }
+
+        var canvasProductos = document.getElementById('graficaProductosHoy');
+
+        if (canvasProductos) {
+            window.graficasDashboard.push(new Chart(canvasProductos, {
+                type: 'bar',
+                data: {
+                    labels: productosLabels,
+                    datasets: [
+                        {
+                            label: 'Cantidad vendida',
+                            data: productosCantidades
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y'
+                }
+            }));
+        }
+
+        var canvasServicios = document.getElementById('graficaServiciosHoy');
+
+        if (canvasServicios) {
+            window.graficasDashboard.push(new Chart(canvasServicios, {
+                type: 'bar',
+                data: {
+                    labels: serviciosLabels,
+                    datasets: [
+                        {
+                            label: 'Cantidad vendida',
+                            data: serviciosCantidades
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y'
+                }
+            }));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarGraficasDashboard);
+    document.addEventListener('livewire:load', cargarGraficasDashboard);
+</script>
 </div>

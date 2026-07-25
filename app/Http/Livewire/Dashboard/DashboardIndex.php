@@ -146,6 +146,70 @@ class DashboardIndex extends Component
             ->limit(5)
             ->get();
 
+        $graficaVentas7DiasLabels = [];
+        $graficaVentas7DiasMontos = [];
+        $graficaNetoRecibido7Dias = [];
+        $graficaEgresos7Dias = [];
+        $graficaFlujo7Dias = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $fecha = now()->subDays($i)->format('Y-m-d');
+            $label = now()->subDays($i)->format('d/m');
+
+            $ventasDiaQuery = Venta::query()
+                ->where('estado', '!=', 'Anulada')
+                ->whereDate('fecha', $fecha);
+
+            $totalVendidoDia = (clone $ventasDiaQuery)->sum('total');
+
+            $netoRecibidoDia = (clone $ventasDiaQuery)
+                ->select(DB::raw('SUM(CASE WHEN neto_recibido > 0 THEN neto_recibido ELSE total - IFNULL(retencion, 0) END) as total'))
+                ->value('total') ?? 0;
+
+            $totalGastosDia = Gasto::query()
+                ->where('estado', 'Registrado')
+                ->whereDate('fecha', $fecha)
+                ->sum('monto');
+
+            $totalPagosProveedoresDia = PagoCompra::query()
+                ->where('estado', 'Activo')
+                ->whereDate('fecha', $fecha)
+                ->sum('monto');
+
+            $egresosDia = $totalGastosDia + $totalPagosProveedoresDia;
+            $flujoDia = $netoRecibidoDia - $egresosDia;
+
+            $graficaVentas7DiasLabels[] = $label;
+            $graficaVentas7DiasMontos[] = round($totalVendidoDia, 2);
+            $graficaNetoRecibido7Dias[] = round($netoRecibidoDia, 2);
+            $graficaEgresos7Dias[] = round($egresosDia, 2);
+            $graficaFlujo7Dias[] = round($flujoDia, 2);
+        }
+
+        $graficaProductosLabels = $productosMasVendidosHoy->map(function ($item) {
+            return strlen($item->descripcion) > 35
+                ? substr($item->descripcion, 0, 35) . '...'
+                : $item->descripcion;
+        })->toArray();
+
+        $graficaProductosCantidades = $productosMasVendidosHoy->pluck('cantidad_total')
+            ->map(function ($cantidad) {
+                return (float) $cantidad;
+            })
+            ->toArray();
+
+        $graficaServiciosLabels = $serviciosMasVendidosHoy->map(function ($item) {
+            return strlen($item->descripcion) > 35
+                ? substr($item->descripcion, 0, 35) . '...'
+                : $item->descripcion;
+        })->toArray();
+
+        $graficaServiciosCantidades = $serviciosMasVendidosHoy->pluck('cantidad_total')
+            ->map(function ($cantidad) {
+                return (float) $cantidad;
+            })
+            ->toArray();
+
         return view('livewire.dashboard.dashboard-index', [
             'hoy' => $hoy,
 
@@ -182,6 +246,17 @@ class DashboardIndex extends Component
             'ultimasVentas' => $ultimasVentas,
             'productosMasVendidosHoy' => $productosMasVendidosHoy,
             'serviciosMasVendidosHoy' => $serviciosMasVendidosHoy,
+
+            'graficaVentas7DiasLabels' => $graficaVentas7DiasLabels,
+            'graficaVentas7DiasMontos' => $graficaVentas7DiasMontos,
+            'graficaNetoRecibido7Dias' => $graficaNetoRecibido7Dias,
+            'graficaEgresos7Dias' => $graficaEgresos7Dias,
+            'graficaFlujo7Dias' => $graficaFlujo7Dias,
+
+            'graficaProductosLabels' => $graficaProductosLabels,
+            'graficaProductosCantidades' => $graficaProductosCantidades,
+            'graficaServiciosLabels' => $graficaServiciosLabels,
+            'graficaServiciosCantidades' => $graficaServiciosCantidades,
         ]);
     }
 }
