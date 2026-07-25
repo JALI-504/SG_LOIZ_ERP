@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Ventas;
 
 use App\Models\Catalogo;
+use App\Models\PagoVenta;
 use App\Models\Venta;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -90,6 +91,15 @@ class VentaHistorial extends Component
             return;
         }
 
+        $pagosActivos = PagoVenta::where('venta_id', $venta->id)
+            ->where('estado', 'Activo')
+            ->count();
+
+        if ($pagosActivos > 0) {
+            session()->flash('error', 'No se puede anular esta venta porque tiene pagos o abonos activos. Primero debe anular los pagos asociados.');
+            return;
+        }
+
         try {
             DB::transaction(function () use ($venta) {
                 $this->revertirMovimientosProductos($venta);
@@ -109,6 +119,74 @@ class VentaHistorial extends Component
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
+    }
+
+    public function anularPago($pagoId)
+    {
+        $pago = PagoVenta::with('venta')->findOrFail($pagoId);
+
+        if (($pago->estado ?? 'Activo') === 'Anulado') {
+            session()->flash('error', 'Este abono ya está anulado.');
+            return;
+        }
+
+        if (!$pago->venta) {
+            session()->flash('error', 'No se encontró la venta asociada a este abono.');
+            return;
+        }
+
+        if ($pago->venta->estado === 'Anulada') {
+            session()->flash('error', 'No se puede anular un abono de una venta anulada.');
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($pago) {
+                $pago->update([
+                    'estado' => 'Anulado',
+                    'fecha_anulacion' => now(),
+                    'observacion_anulacion' => 'Abono anulado desde historial de ventas.',
+                ]);
+
+                $this->recalcularSaldoVenta($pago->venta_id);
+            });
+
+            session()->flash('message', 'Abono anulado correctamente y saldo recalculado.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    private function recalcularSaldoVenta($ventaId)
+    {
+        $venta = Venta::findOrFail($ventaId);
+
+        if ($venta->estado === 'Anulada') {
+            return;
+        }
+
+        $totalPagosActivos = PagoVenta::where('venta_id', $venta->id)
+            ->where('estado', 'Activo')
+            ->sum('monto');
+
+        $retencionAplicada = (float) ($venta->retencion ?? 0);
+
+        $nuevoMontoPagado = (float) $totalPagosActivos + $retencionAplicada;
+
+        if ($nuevoMontoPagado > (float) $venta->total) {
+            $nuevoMontoPagado = (float) $venta->total;
+        }
+
+        $nuevoSaldo = (float) $venta->total - $nuevoMontoPagado;
+
+        if ($nuevoSaldo < 0) {
+            $nuevoSaldo = 0;
+        }
+
+        $venta->monto_pagado = $nuevoMontoPagado;
+        $venta->saldo_pendiente = $nuevoSaldo;
+        $venta->estado = $nuevoSaldo <= 0 ? 'Pagada' : 'Pendiente';
+        $venta->save();
     }
 
     private function revertirMovimientosProductos(Venta $venta)
@@ -295,10 +373,14 @@ class VentaHistorial extends Component
 
         $ventaSeleccionada = null;
 
-        if ($this->ventaSeleccionadaId) {
-            $ventaSeleccionada = Venta::with(['cliente', 'detalles', 'pagos'])
-                ->find($this->ventaSeleccionadaId);
-        }
+        $ventaSeleccionada = Venta::with([
+            'cliente',
+            'detalles',
+            'pagos' => function ($query) {
+                $query->orderBy('fecha')->orderBy('hora')->orderBy('id');
+            },
+        ])
+            ->find($this->ventaSeleccionadaId);
 
         return view('livewire.ventas.venta-historial', [
             'ventas' => $ventas,

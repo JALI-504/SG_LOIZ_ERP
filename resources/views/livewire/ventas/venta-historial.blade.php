@@ -445,31 +445,47 @@
 
                 <hr>
                 @if ($ventaSeleccionada->pagos->count() > 0)
-    <div class="mt-4">
-        <h5>Abonos registrados</h5>
+                    <div class="mt-4">
+                        <h5>Abonos registrados</h5>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover table-sm">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                        <th>Método</th>
-                        <th>Referencia</th>
-                        <th>Observación</th>
-                    </tr>
-                </thead>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-sm">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Referencia</th>
+                                        <th>Observación</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
 
-                <tbody>
-                    @foreach ($ventaSeleccionada->pagos as $pago)
-                                        <tr>
+                                <tbody>
+                                    @foreach ($ventaSeleccionada->pagos as $pago)
+                                        <tr class="{{ ($pago->estado ?? 'Activo') === 'Anulado' ? 'table-secondary' : '' }}">
                                             <td>
                                                 {{ $pago->fecha }}
                                                 {{ $pago->hora }}
+
+                                                @if (($pago->estado ?? 'Activo') === 'Anulado' && $pago->fecha_anulacion)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Anulado:
+                                                        {{ \Carbon\Carbon::parse($pago->fecha_anulacion)->format('d/m/Y H:i') }}
+                                                    </small>
+                                                @endif
                                             </td>
 
                                             <td>
-                                                <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                                @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                    <span class="text-muted">
+                                                        <del>L {{ number_format($pago->monto, 2) }}</del>
+                                                    </span>
+                                                @else
+                                                    <strong>L {{ number_format($pago->monto, 2) }}</strong>
+                                                @endif
                                             </td>
 
                                             <td>
@@ -482,6 +498,39 @@
 
                                             <td>
                                                 {{ $pago->observacion ?? 'Sin observación' }}
+
+                                                @if (($pago->estado ?? 'Activo') === 'Anulado' && $pago->observacion_anulacion)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Motivo anulación:
+                                                        {{ $pago->observacion_anulacion }}
+                                                    </small>
+                                                @endif
+                                            </td>
+
+                                            <td>
+                                                @if (($pago->estado ?? 'Activo') === 'Anulado')
+                                                    <span class="badge badge-secondary">Anulado</span>
+                                                @else
+                                                    <span class="badge badge-success">Activo</span>
+                                                @endif
+                                            </td>
+
+                                            <td>
+                                                <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
+                                                target="_blank"
+                                                class="btn btn-success btn-xs">
+                                                    Recibo abono
+                                                </a>
+
+                                                @if (($pago->estado ?? 'Activo') !== 'Anulado' && $ventaSeleccionada->estado !== 'Anulada')
+                                                    <button type="button"
+                                                            class="btn btn-danger btn-xs"
+                                                            wire:click="anularPago({{ $pago->id }})"
+                                                            onclick="confirm('¿Seguro que desea anular este abono? El saldo de la venta será recalculado.') || event.stopImmediatePropagation()">
+                                                        Anular
+                                                    </button>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
