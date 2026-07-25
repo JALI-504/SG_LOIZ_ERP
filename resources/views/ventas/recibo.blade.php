@@ -189,6 +189,20 @@
             text-align: center;
         }
 
+        .anulada-box {
+            margin-top: 12px;
+            border: 3px solid #000;
+            padding: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .monto-anulado {
+            color: #777;
+            text-decoration: line-through;
+        }
+
         @media print {
             .botones {
                 display: none;
@@ -209,11 +223,29 @@
 <body>
 
     @php
-    $esFiscal = (bool) $venta->es_fiscal;
-    $tituloDocumento = $esFiscal ? 'FACTURA' : 'RECIBO INTERNO';
-    $leyendaDocumento = $esFiscal
-        ? 'DOCUMENTO FISCAL'
-        : 'COMPROBANTE INTERNO NO FISCAL';
+        $esFiscal = (bool) $venta->es_fiscal;
+        $ventaAnulada = $venta->estado === 'Anulada';
+
+        $tituloDocumento = $esFiscal ? 'FACTURA' : 'RECIBO INTERNO';
+        $leyendaDocumento = $esFiscal
+            ? 'DOCUMENTO FISCAL'
+            : 'COMPROBANTE INTERNO NO FISCAL';
+
+        $pagosActivos = $venta->pagos
+            ? $venta->pagos->where('estado', 'Activo')
+            : collect();
+
+        $pagosAnulados = $venta->pagos
+            ? $venta->pagos->where('estado', 'Anulado')
+            : collect();
+
+        $totalPagosActivos = $pagosActivos->sum('monto');
+
+        $netoRecibido = (float) ($venta->neto_recibido ?? 0);
+
+        if ($netoRecibido <= 0) {
+            $netoRecibido = (float) $venta->total - (float) ($venta->retencion ?? 0);
+        }
     @endphp
 
     <div class="botones">
@@ -325,6 +357,12 @@
                         </div>
                     @endif
                 </div>
+
+                @if ($ventaAnulada)
+                    <div class="anulada-box">
+                        VENTA ANULADA
+                    </div>
+                @endif
             </div>
 
         </div>
@@ -493,16 +531,40 @@
                 <tr>
                     <td class="text-right"><strong>Neto recibido:</strong></td>
                     <td class="text-right">
-                        <strong>L {{ number_format($venta->neto_recibido, 2) }}</strong>
+                        <strong>L {{ number_format($netoRecibido, 2) }}</strong>
                     </td>
                 </tr>
             @endif
 
             @if ($venta->monto_pagado > 0)
                 <tr>
-                    <td class="text-right"><strong>Monto pagado:</strong></td>
+                    <td class="text-right"><strong>Monto aplicado:</strong></td>
                     <td class="text-right">
-                        L {{ number_format($venta->monto_pagado, 2) }}
+                        @if ($ventaAnulada)
+                            <span class="monto-anulado">
+                                L {{ number_format($venta->monto_pagado, 2) }}
+                            </span>
+                        @else
+                            L {{ number_format($venta->monto_pagado, 2) }}
+                        @endif
+                    </td>
+                </tr>
+            @endif
+
+            @if ($totalPagosActivos > 0)
+                <tr>
+                    <td class="text-right"><strong>Pagos activos recibidos:</strong></td>
+                    <td class="text-right">
+                        L {{ number_format($totalPagosActivos, 2) }}
+                    </td>
+                </tr>
+            @endif
+
+            @if ($pagosAnulados->count() > 0)
+                <tr>
+                    <td class="text-right"><strong>Pagos anulados:</strong></td>
+                    <td class="text-right">
+                        {{ $pagosAnulados->count() }}
                     </td>
                 </tr>
             @endif
@@ -537,11 +599,16 @@
         @endif
 
        <div class="seccion text-center text-muted">
-            @if ($esFiscal)
-                Documento fiscal generado por el sistema.
+            @if ($ventaAnulada)
+                Este comprobante corresponde a una venta anulada.
+                No debe considerarse como venta válida ni como pago aplicado.
             @else
-                Este documento es un comprobante interno no fiscal.
-                No sustituye factura fiscal autorizada.
+                @if ($esFiscal)
+                    Documento fiscal generado por el sistema.
+                @else
+                    Este documento es un comprobante interno no fiscal.
+                    No sustituye factura fiscal autorizada.
+                @endif
             @endif
         </div>
     </div>
