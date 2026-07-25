@@ -480,13 +480,18 @@ class VentaIndex extends Component
         $this->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
             'metodo_pago' => 'required|max:50',
-            'estado' => 'required|max:30',
+            'estado' => 'required|in:Pagada,Pendiente',
             'descuento_general' => 'nullable|numeric|min:0',
             'retencion' => 'nullable|numeric|min:0',
             'monto_inicial' => 'nullable|numeric|min:0',
             'referencia_pago_inicial' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
         ]);
+
+        if (!in_array($this->estado, ['Pagada', 'Pendiente'])) {
+            session()->flash('error', 'Desde el POS solo se pueden registrar ventas Pagadas o Pendientes.');
+            return;
+        }
 
         if ($this->total < 0) {
             session()->flash('error', 'El total de la venta no puede ser negativo.');
@@ -584,6 +589,7 @@ class VentaIndex extends Component
                         'metodo_pago' => $this->metodo_pago,
                         'referencia' => $this->referencia_pago_inicial,
                         'observacion' => $observacionPago,
+                        'estado' => 'Activo',
                     ]);
                 }
 
