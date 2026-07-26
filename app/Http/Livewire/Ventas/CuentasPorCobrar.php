@@ -31,8 +31,17 @@ class CuentasPorCobrar extends Component
 
     public $metodosPago = [];
 
+    private function autorizarVerCuentasPorCobrar()
+    {
+        if (!auth()->user()->can('ver cuentas por cobrar')) {
+            abort(403, 'No tiene permiso para ver cuentas por cobrar.');
+        }
+    }
+
     public function mount()
     {
+        $this->autorizarVerCuentasPorCobrar();
+
         $this->metodosPago = Catalogo::opciones('metodo_pago')
             ->pluck('nombre')
             ->toArray();
@@ -106,6 +115,10 @@ class CuentasPorCobrar extends Component
 
     public function abrirAbono($ventaId)
     {
+        if (!auth()->user()->can('registrar abonos clientes')) {
+            abort(403, 'No tiene permiso para registrar abonos de clientes.');
+        }
+        
         $venta = Venta::findOrFail($ventaId);
 
         if ($venta->estado === 'Anulada') {

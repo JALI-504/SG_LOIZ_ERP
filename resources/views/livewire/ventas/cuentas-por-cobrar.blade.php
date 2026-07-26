@@ -18,13 +18,17 @@
     @endif
 
     <div class="mb-3">
-        <a href="{{ route('ventas.index') }}" class="btn btn-success btn-sm">
-            <i class="fas fa-cash-register"></i> Nueva venta
-        </a>
+        @can('crear ventas')
+            <a href="{{ route('ventas.index') }}" class="btn btn-success btn-sm">
+                <i class="fas fa-cash-register"></i> Nueva venta
+            </a>
+        @endcan
 
-        <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-receipt"></i> Historial ventas
-        </a>
+        @can('ver historial ventas')
+            <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-receipt"></i> Historial ventas
+            </a>
+        @endcan
     </div>
 
     {{-- Resumen --}}
@@ -153,7 +157,12 @@
                             <th>Pagado aplicado</th>
                             <th>Saldo</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @if (
+                                auth()->user()->can('registrar abonos clientes') ||
+                                auth()->user()->can('imprimir recibos ventas')
+                            )
+                                <th width="170">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -232,31 +241,37 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    @can('registrar abonos clientes')
-                                        <button type="button"
-                                                class="btn btn-primary btn-sm"
-                                                wire:click="abrirAbono({{ $venta->id }})">
-                                            Registrar abono
-                                        </button>
-                                    @endcan
+                                @if (
+                                    auth()->user()->can('registrar abonos clientes') ||
+                                    auth()->user()->can('imprimir recibos ventas')
+                                )
+                                    <td>
+                                        @can('registrar abonos clientes')
+                                            <button type="button"
+                                                    class="btn btn-primary btn-sm"
+                                                    wire:click="abrirAbono({{ $venta->id }})">
+                                                Registrar abono
+                                            </button>
+                                        @endcan
 
-                                    <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                    target="_blank"
-                                    class="btn btn-primary btn-xs">
-                                        @if ($venta->es_fiscal)
-                                            <i class="fas fa-file-invoice"></i> Factura
-                                        @else
-                                            <i class="fas fa-receipt"></i> Recibo
-                                        @endif
-                                    </a>
-                                </td>
+                                        @can('imprimir recibos ventas')
+                                            <a href="{{ route('ventas.recibo', $venta->id) }}"
+                                            target="_blank"
+                                            class="btn btn-primary btn-xs">
+                                                @if ($venta->es_fiscal)
+                                                    <i class="fas fa-file-invoice"></i> Factura
+                                                @else
+                                                    <i class="fas fa-receipt"></i> Recibo
+                                                @endif
+                                            </a>
+                                        @endcan
+                                    </td>
+                                @endif
                             </tr>
 
                             @if ($venta->pagos->count() > 0)
                             <tr>
-                                <td colspan="8">
-                                    <strong>Abonos registrados:</strong>
+                                <td colspan="{{ auth()->user()->can('registrar abonos clientes') || auth()->user()->can('imprimir recibos ventas') ? 8 : 7 }}">                                    <strong>Abonos registrados:</strong>
 
                                     <div class="table-responsive mt-2">
                                         <table class="table table-bordered table-sm mb-0">
@@ -327,11 +342,13 @@
                                                         </td>
 
                                                         <td>
-                                                            <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
-                                                            target="_blank"
-                                                            class="btn btn-success btn-xs">
-                                                                Recibo abono
-                                                            </a>
+                                                            @can('imprimir recibos ventas')
+                                                                <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
+                                                                target="_blank"
+                                                                class="btn btn-success btn-xs">
+                                                                    Recibo abono
+                                                                </a>
+                                                            @endcan
 
                                                            @can('anular abonos clientes')
                                                                 @if (($pago->estado ?? 'Activo') !== 'Anulado')
@@ -354,7 +371,7 @@
                         @endif
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="{{ auth()->user()->can('registrar abonos clientes') || auth()->user()->can('imprimir recibos ventas') ? 8 : 7 }}" class="text-center">
                                     No hay cuentas pendientes de cobro.
                                 </td>
                             </tr>
@@ -368,6 +385,7 @@
     </div>
 
     {{-- Modal abono --}}
+    @can('registrar abonos clientes')
     <div wire:ignore.self class="modal fade" id="abonoModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <form wire:submit.prevent="registrarAbono" class="modal-content">
@@ -474,4 +492,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </div>
