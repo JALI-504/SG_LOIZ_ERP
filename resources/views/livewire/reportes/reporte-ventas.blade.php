@@ -1,18 +1,20 @@
 <div class="reporte-ventas-print">
     {{-- Exportar --}}
-    <div class="mb-3 no-print">
-    <button type="button"
-            class="btn btn-secondary"
-            onclick="window.print()">
-        <i class="fas fa-print"></i> Imprimir reporte
-    </button>
+    @can('ver reporte ventas')
+        <div class="mb-3 no-print">
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir reporte
+            </button>
 
-    <button type="button"
-            class="btn btn-success"
-            wire:click="exportarExcel">
-        <i class="fas fa-file-excel"></i> Exportar Excel
-    </button>
-    </div>
+            <button type="button"
+                    class="btn btn-success"
+                    wire:click="exportarExcel">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+        </div>
+    @endcan
 
     {{-- Filtros --}}
     <div class="card">
@@ -512,7 +514,9 @@
                             <th>Método</th>
                             <th>Estado</th>
                             <th>Total</th>
-                            <th width="100">Acción</th>
+                            @can('imprimir recibos ventas')
+                                <th width="100">Acción</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -569,21 +573,23 @@
                                     <strong>L {{ number_format($venta->total, 2) }}</strong>
                                 </td>
 
-                                <td>
-                                    <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                    target="_blank"
-                                    class="btn btn-success btn-xs">
-                                        @if ($venta->es_fiscal)
-                                            <i class="fas fa-file-invoice"></i> Factura
-                                        @else
-                                            <i class="fas fa-receipt"></i> Recibo
-                                        @endif
-                                    </a>
-                                </td>
+                                @can('imprimir recibos ventas')
+                                    <td>
+                                        <a href="{{ route('ventas.recibo', $venta->id) }}"
+                                        target="_blank"
+                                        class="btn btn-success btn-xs">
+                                            @if ($venta->es_fiscal)
+                                                <i class="fas fa-file-invoice"></i> Factura
+                                            @else
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            @endif
+                                        </a>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="{{ auth()->user()->can('imprimir recibos ventas') ? 7 : 6 }}" class="text-center">
                                     No hay ventas registradas en este período.
                                 </td>
                             </tr>
@@ -592,9 +598,11 @@
                 </table>
             </div>
 
-            <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
-                Ver historial completo
-            </a>
+            @can('ver historial ventas')
+                <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
+                    Ver historial completo
+                </a>
+            @endcan
         </div>
     </div>
 </div>

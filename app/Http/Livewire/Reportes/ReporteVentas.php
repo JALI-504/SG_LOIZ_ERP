@@ -19,11 +19,16 @@ class ReporteVentas extends Component
 
     public $metodosPago = [];
 
-    public function mount()
+    private function autorizarVerReporteVentas()
     {
         if (!auth()->user()->can('ver reporte ventas')) {
             abort(403, 'No tiene permiso para ver el reporte de ventas.');
         }
+    }
+
+    public function mount()
+    {
+        $this->autorizarVerReporteVentas();
 
         $this->fechaDesde = now()->format('Y-m-d');
         $this->fechaHasta = now()->format('Y-m-d');
@@ -35,6 +40,8 @@ class ReporteVentas extends Component
 
     public function limpiarFiltros()
     {
+        $this->autorizarVerReporteVentas();
+
         $this->fechaDesde = now()->format('Y-m-d');
         $this->fechaHasta = now()->format('Y-m-d');
         $this->filtroMetodoPago = 'todos';
@@ -44,6 +51,8 @@ class ReporteVentas extends Component
 
     public function exportarCsv()
     {
+        $this->autorizarVerReporteVentas();
+
         $ventasQuery = $this->queryVentas();
 
         $ventasValidasQuery = (clone $ventasQuery)
@@ -315,9 +324,7 @@ class ReporteVentas extends Component
 
     public function exportarExcel()
     {
-        if (!auth()->user()->can('ver reporte ventas')) {
-            abort(403, 'No tiene permiso para exportar el reporte de ventas.');
-        }
+        $this->autorizarVerReporteVentas();
         
         $detalles = VentaDetalle::query()
             ->join('ventas', 'venta_detalles.venta_id', '=', 'ventas.id')
