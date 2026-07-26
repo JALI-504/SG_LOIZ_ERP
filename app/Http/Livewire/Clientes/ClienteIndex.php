@@ -48,6 +48,10 @@ class ClienteIndex extends Component
 
     public function mount()
     {
+        if (!auth()->user()->can('ver clientes')) {
+            abort(403, 'No tiene permiso para ver clientes.');
+        }
+
         $this->departamentos = Departamento::where('activo', true)
             ->orderBy('nombre')
             ->get();
@@ -114,6 +118,10 @@ class ClienteIndex extends Component
 
     public function create()
     {
+        if (!auth()->user()->can('crear clientes')) {
+            abort(403, 'No tiene permiso para crear clientes.');
+        }
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo cliente';
@@ -123,6 +131,10 @@ class ClienteIndex extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('crear clientes')) {
+            abort(403, 'No tiene permiso para registrar clientes.');
+        }
+
         $this->limpiarFormatos();
 
         $this->validate();
@@ -158,6 +170,10 @@ class ClienteIndex extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar clientes')) {
+            abort(403, 'No tiene permiso para editar clientes.');
+        }
+
         $cliente = Cliente::findOrFail($id);
 
         $this->cliente_id = $cliente->id;
@@ -193,6 +209,10 @@ class ClienteIndex extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar clientes')) {
+            abort(403, 'No tiene permiso para actualizar clientes.');
+        }
+
         $this->limpiarFormatos();
 
         $this->validate();
@@ -230,6 +250,10 @@ class ClienteIndex extends Component
 
     public function cambiarEstado($id)
     {
+        if (!auth()->user()->can('eliminar clientes')) {
+            abort(403, 'No tiene permiso para activar o desactivar clientes.');
+        }
+        
         $cliente = Cliente::findOrFail($id);
 
         $cliente->update([

@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de clientes</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo cliente
-                </button>
+                @can('crear clientes')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo cliente
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -56,7 +58,12 @@
                             <th>Tipo</th>
                             <th>Ubicación</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @if (
+                                auth()->user()->can('editar clientes') ||
+                                auth()->user()->can('eliminar clientes')
+                            )
+                                <th width="170">Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -93,27 +100,34 @@
                                     @endif
                                 </td>
 
+                                @if (
+                                auth()->user()->can('editar clientes') ||
+                                auth()->user()->can('eliminar clientes')
+                            )
                                 <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $cliente->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                    @can('editar clientes')
+                                        <button class="btn btn-warning btn-xs"
+                                                wire:click="edit({{ $cliente->id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @endcan
 
-                                    <button class="btn btn-{{ $cliente->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $cliente->id }})">
-                                        @if ($cliente->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
+                                    @can('eliminar clientes')
+                                        <button class="btn btn-{{ $cliente->activo ? 'secondary' : 'success' }} btn-xs"
+                                                wire:click="cambiarEstado({{ $cliente->id }})">
+                                            @if ($cliente->activo)
+                                                Desactivar
+                                            @else
+                                                Activar
+                                            @endif
+                                        </button>
+                                    @endcan
                                 </td>
+                            @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">
-                                    No hay clientes registrados.
-                                </td>
+                                <td colspan="{{ auth()->user()->can('editar clientes') || auth()->user()->can('eliminar clientes') ? 7 : 6 }}" class="text-center">
                             </tr>
                         @endforelse
                     </tbody>
@@ -293,9 +307,14 @@
                         Cancelar
                     </button>
 
-                    <button type="submit" class="btn btn-primary">
-                        {{ $cliente_id ? 'Actualizar cliente' : 'Guardar cliente' }}
-                    </button>
+                    @if (
+                        (!$cliente_id && auth()->user()->can('crear clientes')) ||
+                        ($cliente_id && auth()->user()->can('editar clientes'))
+                    )
+                        <button type="submit" class="btn btn-primary">
+                            {{ $cliente_id ? 'Actualizar cliente' : 'Guardar cliente' }}
+                        </button>
+                    @endif
                 </div>
             </form>
         </div>
