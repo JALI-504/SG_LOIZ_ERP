@@ -79,6 +79,7 @@
             </div>
 
             <div class="row">
+                @can('editar servicios')
                 <div class="col-md-4">
                     <div class="card card-primary">
                         <div class="card-header">
@@ -156,8 +157,9 @@
                         </div>
                     </div>
                 </div>
+                @endcan
 
-                <div class="col-md-8">
+                <div class="{{ auth()->user()->can('editar servicios') ? 'col-md-8' : 'col-md-12' }}">
                     <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Insumos asignados al servicio</h3>
@@ -173,7 +175,9 @@
                                         <th>Cantidad</th>
                                         <th>Costo unitario</th>
                                         <th>Subtotal</th>
-                                        <th width="120">Acciones</th>
+                                        @can('editar servicios')
+                                            <th width="120">Acciones</th>
+                                        @endcan
                                     </tr>
                                 </thead>
 
@@ -216,22 +220,24 @@
                                                 </strong>
                                             </td>
 
-                                            <td>
-                                                <button class="btn btn-warning btn-xs"
-                                                        wire:click="edit({{ $receta->id }})">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
+                                            @can('editar servicios')
+                                                <td>
+                                                    <button class="btn btn-warning btn-xs"
+                                                            wire:click="edit({{ $receta->id }})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
 
-                                                <button class="btn btn-danger btn-xs"
-                                                        onclick="confirm('¿Desea eliminar este insumo del servicio?') || event.stopImmediatePropagation()"
-                                                        wire:click="delete({{ $receta->id }})">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
+                                                    <button class="btn btn-danger btn-xs"
+                                                            onclick="confirm('¿Desea eliminar este insumo del servicio?') || event.stopImmediatePropagation()"
+                                                            wire:click="delete({{ $receta->id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center">
+                                            <td colspan="{{ auth()->user()->can('editar servicios') ? 7 : 6 }}" class="text-center">
                                                 Este servicio todavía no tiene insumos asignados.
                                             </td>
                                         </tr>
@@ -241,7 +247,7 @@
                                 <tfoot>
                                     <tr>
                                         <th colspan="5" class="text-right">Costo total:</th>
-                                        <th colspan="2">
+                                        <th colspan="{{ auth()->user()->can('editar servicios') ? 2 : 1 }}">
                                             L {{ number_format($costoTotal, 2) }}
                                         </th>
                                     </tr>

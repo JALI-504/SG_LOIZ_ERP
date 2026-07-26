@@ -27,6 +27,10 @@ class ProductoInsumos extends Component
 
     public function mount($productoId)
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para editar insumos del producto.');
+        }
+
         $this->producto = Producto::findOrFail($productoId);
         $this->producto_id = $this->producto->id;
 
@@ -60,6 +64,10 @@ class ProductoInsumos extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para agregar insumos al producto.');
+        }
+
         $this->validate();
 
         ProductoInsumo::create([
@@ -77,6 +85,10 @@ class ProductoInsumos extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para editar insumos del producto.');
+        }
+
         $receta = ProductoInsumo::where('producto_id', $this->producto_id)
             ->findOrFail($id);
 
@@ -89,6 +101,10 @@ class ProductoInsumos extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para actualizar insumos del producto.');
+        }
+
         $this->validate();
 
         $receta = ProductoInsumo::where('producto_id', $this->producto_id)
@@ -108,6 +124,10 @@ class ProductoInsumos extends Component
 
     public function delete($id)
     {
+        if (!auth()->user()->can('editar productos')) {
+            abort(403, 'No tiene permiso para eliminar insumos del producto.');
+        }
+        
         $receta = ProductoInsumo::where('producto_id', $this->producto_id)
             ->findOrFail($id);
 

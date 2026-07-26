@@ -27,6 +27,10 @@ class ServicioInsumos extends Component
 
     public function mount($servicioId)
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para editar insumos del servicio.');
+        }
+
         $this->servicio = Servicio::findOrFail($servicioId);
         $this->servicio_id = $this->servicio->id;
 
@@ -62,6 +66,10 @@ class ServicioInsumos extends Component
 
     public function store()
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para agregar insumos al servicio.');
+        }
+
         $this->validate();
 
         ServicioInsumo::create([
@@ -79,6 +87,10 @@ class ServicioInsumos extends Component
 
     public function edit($id)
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para editar insumos del servicio.');
+        }
+
         $receta = ServicioInsumo::where('servicio_id', $this->servicio_id)
             ->findOrFail($id);
 
@@ -91,6 +103,10 @@ class ServicioInsumos extends Component
 
     public function update()
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para actualizar insumos del servicio.');
+        }
+
         $this->validate();
 
         $receta = ServicioInsumo::where('servicio_id', $this->servicio_id)
@@ -110,6 +126,10 @@ class ServicioInsumos extends Component
 
     public function delete($id)
     {
+        if (!auth()->user()->can('editar servicios')) {
+            abort(403, 'No tiene permiso para eliminar insumos del servicio.');
+        }
+        
         $receta = ServicioInsumo::where('servicio_id', $this->servicio_id)
             ->findOrFail($id);
 

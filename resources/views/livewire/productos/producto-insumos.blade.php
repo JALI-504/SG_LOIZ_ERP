@@ -96,6 +96,7 @@
         </div>
     </div>
 
+    @can('editar productos')
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">{{ $modalTitle }}</h3>
@@ -174,6 +175,7 @@
             </form>
         </div>
     </div>
+    @endcan
 
     <div class="card">
         <div class="card-header">
@@ -192,7 +194,9 @@
                             <th>Costo unitario real</th>
                             <th>Cantidad por producto</th>
                             <th>Subtotal</th>
-                            <th width="130">Acciones</th>
+                            @can('editar productos')
+                                <th width="130">Acciones</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -231,22 +235,24 @@
                                     </strong>
                                 </td>
 
-                                <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $receta->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                @can('editar productos')
+                                    <td>
+                                        <button class="btn btn-warning btn-xs"
+                                                wire:click="edit({{ $receta->id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
-                                    <button class="btn btn-danger btn-xs"
-                                            onclick="confirm('¿Eliminar este insumo de la receta?') || event.stopImmediatePropagation()"
-                                            wire:click="delete({{ $receta->id }})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
+                                        <button class="btn btn-danger btn-xs"
+                                                onclick="confirm('¿Eliminar este insumo de la receta?') || event.stopImmediatePropagation()"
+                                                wire:click="delete({{ $receta->id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar productos') ? 8 : 7 }}" class="text-center">
                                     Este producto todavía no tiene insumos asignados.
                                 </td>
                             </tr>
@@ -256,7 +262,7 @@
                     <tfoot>
                         <tr>
                             <th colspan="6" class="text-right">Costo total:</th>
-                            <th colspan="2">
+                            <th colspan="{{ auth()->user()->can('editar productos') ? 2 : 1 }}">
                                 L {{ number_format($costoTotal, 2) }}
                             </th>
                         </tr>
