@@ -31,8 +31,17 @@ class VentaHistorial extends Component
 
     public $ventaSeleccionadaId = null;
 
+    private function autorizarVerHistorial()
+    {
+        if (!auth()->user()->can('ver historial ventas')) {
+            abort(403, 'No tiene permiso para ver el historial de ventas.');
+        }
+    }
+
     public function mount()
     {
+        $this->autorizarVerHistorial();
+
         $this->estadosVenta = Catalogo::opciones('estado_venta')->pluck('nombre')->toArray();
         $this->metodosPago = Catalogo::opciones('metodo_pago')->pluck('nombre')->toArray();
     }
@@ -69,6 +78,8 @@ class VentaHistorial extends Component
 
     public function verDetalle($ventaId)
     {
+        $this->autorizarVerHistorial();
+
         if ($this->ventaSeleccionadaId == $ventaId) {
             $this->ventaSeleccionadaId = null;
             return;
@@ -79,6 +90,8 @@ class VentaHistorial extends Component
 
     public function cerrarDetalle()
     {
+        $this->autorizarVerHistorial();
+
         $this->ventaSeleccionadaId = null;
     }
 

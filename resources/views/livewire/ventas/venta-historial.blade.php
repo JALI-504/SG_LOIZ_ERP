@@ -1,9 +1,11 @@
 <div>
-    <div class="mb-3">
-        <a href="{{ route('ventas.index') }}" class="btn btn-success btn-sm">
-            <i class="fas fa-cash-register"></i> Ir al POS
-        </a>
-    </div>
+    @can('crear ventas')
+        <div class="mb-3">
+            <a href="{{ route('ventas.index') }}" class="btn btn-success btn-sm">
+                <i class="fas fa-cash-register"></i> Ir al POS
+            </a>
+        </div>
+    @endcan
 
     <div class="row">
         <div class="col-md-3">
@@ -278,24 +280,26 @@
                                         @endif
                                     </button>
 
-                                    <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                    target="_blank"
-                                    class="btn btn-success btn-xs">
-                                        @if ($venta->es_fiscal)
-                                            <i class="fas fa-file-invoice"></i> Factura
-                                        @else
-                                            <i class="fas fa-receipt"></i> Recibo
-                                        @endif
-                                    </a>
+                                    @can('imprimir recibos ventas')
+                                        <a href="{{ route('ventas.recibo', $venta->id) }}"
+                                        target="_blank"
+                                        class="btn btn-success btn-xs">
+                                            @if ($venta->es_fiscal)
+                                                <i class="fas fa-file-invoice"></i> Factura
+                                            @else
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            @endif
+                                        </a>
+                                    @endcan
 
                                     @can('anular ventas')
                                         @if ($venta->estado !== 'Anulada')
                                             <button type="button"
-                                                    class="btn btn-danger btn-sm"
-                                                    wire:click="anularVenta({{ $ventaSeleccionada->id }})"
+                                                    class="btn btn-danger btn-xs"
+                                                    wire:click="anularVenta({{ $venta->id }})"
                                                     onclick="confirm('¿Seguro que desea anular esta venta? Se restaurará el inventario.') || event.stopImmediatePropagation()">
-                                                <i class="fas fa-ban"></i> Anular venta
-                                            </button>                                    
+                                                <i class="fas fa-ban"></i> Anular
+                                            </button>
                                         @endif
                                     @endcan
                                 </td>
@@ -547,11 +551,13 @@
                                             </td>
 
                                             <td>
-                                                <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
-                                                target="_blank"
-                                                class="btn btn-success btn-xs">
-                                                    Recibo abono
-                                                </a>
+                                                @can('imprimir recibos ventas')
+                                                    <a href="{{ route('ventas.pagos.recibo', $pago->id) }}"
+                                                    target="_blank"
+                                                    class="btn btn-success btn-xs">
+                                                        Recibo abono
+                                                    </a>
+                                                @endcan
 
                                                 @if (($pago->estado ?? 'Activo') !== 'Anulado' && $ventaSeleccionada->estado !== 'Anulada')
                                                    @can('anular abonos clientes')
