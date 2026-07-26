@@ -40,6 +40,10 @@ class ProductoMovimientos extends Component
 
     public function mount($productoId)
     {
+        if (!auth()->user()->can('ver inventario')) {
+            abort(403, 'No tiene permiso para ver inventario.');
+        }
+
         $this->producto = Producto::findOrFail($productoId);
         $this->producto_id = $this->producto->id;
 
@@ -91,6 +95,10 @@ class ProductoMovimientos extends Component
 
     public function storeMovimiento()
     {
+        if (!auth()->user()->can('registrar movimientos inventario')) {
+            abort(403, 'No tiene permiso para registrar movimientos de inventario.');
+        }
+        
         $this->validate();
 
         $producto = Producto::findOrFail($this->producto_id);

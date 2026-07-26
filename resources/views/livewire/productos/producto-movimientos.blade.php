@@ -112,103 +112,106 @@
     </div>
 
     {{-- Registrar movimiento --}}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Registrar movimiento</h3>
+    @can('registrar movimientos inventario')
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Registrar movimiento</h3>
+            </div>
+
+            <div class="card-body">
+                <form wire:submit.prevent="storeMovimiento">
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Tipo de movimiento <span class="text-danger">*</span></label>
+
+                            <select class="form-control" wire:model="movimiento_tipo">
+                                @foreach ($tiposMovimiento as $tipo)
+                                    <option value="{{ $tipo }}">{{ $tipo }}</option>
+                                @endforeach
+                            </select>
+
+                            @error('movimiento_tipo')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <label>Cantidad <span class="text-danger">*</span></label>
+
+                            <input type="number"
+                                step="0.01"
+                                min="0.01"
+                                class="form-control"
+                                wire:model.defer="movimiento_cantidad">
+
+                            @error('movimiento_cantidad')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <label>Costo unitario</label>
+
+                            <input type="number"
+                                step="0.0001"
+                                min="0"
+                                class="form-control"
+                                wire:model.defer="movimiento_costo_unitario"
+                                {{ in_array($movimiento_tipo, ['Entrada produccion', 'Salida venta', 'Salida daño', 'Salida ajuste']) ? 'readonly' : '' }}>
+
+                            @error('movimiento_costo_unitario')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+
+                            @if ($movimiento_tipo === 'Entrada produccion')
+                                <small class="text-muted">
+                                    En producción el costo se calcula automáticamente usando la receta y PEPS de insumos.
+                                </small>
+                            @elseif (in_array($movimiento_tipo, ['Salida venta', 'Salida daño', 'Salida ajuste']))
+                                <small class="text-muted">
+                                    En salidas el costo se calcula automáticamente por PEPS.
+                                </small>
+                            @else
+                                <small class="text-muted">
+                                    En entradas este costo crea un nuevo lote.
+                                </small>
+                            @endif
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>Referencia</label>
+
+                            <input type="text"
+                                class="form-control"
+                                placeholder="Factura, recibo, orden, venta..."
+                                wire:model.defer="movimiento_referencia">
+
+                            @error('movimiento_referencia')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Observación</label>
+
+                        <textarea class="form-control"
+                                rows="2"
+                                placeholder="Observación opcional..."
+                                wire:model.defer="movimiento_observacion"></textarea>
+
+                        @error('movimiento_observacion')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar movimiento
+                    </button>
+                </form>
+            </div>
         </div>
-
-        <div class="card-body">
-            <form wire:submit.prevent="storeMovimiento">
-                <div class="form-row">
-                    <div class="form-group col-md-3">
-                        <label>Tipo de movimiento <span class="text-danger">*</span></label>
-
-                        <select class="form-control" wire:model="movimiento_tipo">
-                            @foreach ($tiposMovimiento as $tipo)
-                                <option value="{{ $tipo }}">{{ $tipo }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('movimiento_tipo')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-2">
-                        <label>Cantidad <span class="text-danger">*</span></label>
-
-                        <input type="number"
-                               step="0.01"
-                               min="0.01"
-                               class="form-control"
-                               wire:model.defer="movimiento_cantidad">
-
-                        @error('movimiento_cantidad')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Costo unitario</label>
-
-                        <input type="number"
-                               step="0.0001"
-                               min="0"
-                               class="form-control"
-                               wire:model.defer="movimiento_costo_unitario"
-                            {{ in_array($movimiento_tipo, ['Entrada produccion', 'Salida venta', 'Salida daño', 'Salida ajuste']) ? 'readonly' : '' }}
-                        @error('movimiento_costo_unitario')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-
-                        @if ($movimiento_tipo === 'Entrada produccion')
-                            <small class="text-muted">
-                                En producción el costo se calcula automáticamente usando la receta y PEPS de insumos.
-                            </small>
-                        @elseif (in_array($movimiento_tipo, ['Salida venta', 'Salida daño', 'Salida ajuste']))
-                            <small class="text-muted">
-                                En salidas el costo se calcula automáticamente por PEPS.
-                            </small>
-                        @else
-                            <small class="text-muted">
-                                En entradas este costo crea un nuevo lote.
-                            </small>
-                        @endif
-                    </div>
-
-                    <div class="form-group col-md-4">
-                        <label>Referencia</label>
-
-                        <input type="text"
-                               class="form-control"
-                               placeholder="Factura, recibo, orden, venta..."
-                               wire:model.defer="movimiento_referencia">
-
-                        @error('movimiento_referencia')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Observación</label>
-
-                    <textarea class="form-control"
-                              rows="2"
-                              placeholder="Observación opcional..."
-                              wire:model.defer="movimiento_observacion"></textarea>
-
-                    @error('movimiento_observacion')
-                        <small class="text-danger">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Guardar movimiento
-                </button>
-            </form>
-        </div>
-    </div>
+    @endcan
 
     {{-- Lotes disponibles --}}
     <div class="card">

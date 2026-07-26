@@ -36,6 +36,10 @@ class InsumoMovimientos extends Component
 
     public function mount($insumoId)
     {
+        if (!auth()->user()->can('ver inventario')) {
+            abort(403, 'No tiene permiso para ver inventario.');
+        }
+
         $this->insumo = Insumo::findOrFail($insumoId);
         $this->insumo_id = $this->insumo->id;
     }
