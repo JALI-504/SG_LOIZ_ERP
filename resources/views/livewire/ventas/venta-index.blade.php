@@ -155,10 +155,12 @@
                                             </td>
 
                                             <td>
+                                                @can('crear ventas')
                                                 <button class="btn btn-primary btn-sm"
                                                         wire:click="agregarProducto({{ $producto->id }})">
                                                     Agregar
                                                 </button>
+                                                @endcan
                                             </td>
                                         </tr>
                                     @empty
@@ -215,10 +217,12 @@
                                             </td>
 
                                             <td>
+                                                @can('crear ventas')
                                                 <button class="btn btn-primary btn-sm"
                                                         wire:click="agregarServicio({{ $servicio->id }})">
                                                     Agregar
                                                 </button>
+                                                @endcan
                                             </td>
                                         </tr>
                                     @empty
@@ -606,19 +610,23 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <button type="button"
-                                    class="btn btn-secondary btn-block"
-                                    wire:click="limpiarCarrito">
-                                Limpiar
-                            </button>
+                            @can('crear ventas')
+                                <button type="button"
+                                        class="btn btn-secondary btn-block"
+                                        wire:click="limpiarCarrito">
+                                    Limpiar
+                                </button>
+                            @endcan
                         </div>
 
                         <div class="col-md-6">
-                            <button type="button"
-                                    class="btn btn-success btn-block"
-                                    wire:click="guardarVenta">
-                                Guardar venta
-                            </button>
+                            @can('crear ventas')
+                                <button type="button"
+                                        class="btn btn-success btn-block"
+                                        wire:click="guardarVenta">
+                                    Guardar venta
+                                </button>
+                            @endcan
                         </div>
                     </div>
 

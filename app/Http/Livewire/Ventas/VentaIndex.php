@@ -64,6 +64,8 @@ class VentaIndex extends Component
 
     public function mount()
     {
+        $this->autorizarCrearVenta();
+
         $this->configuracionEmpresa = ConfiguracionEmpresa::actual();
 
         $this->usa_impuestos_config = (bool) $this->configuracionEmpresa->usa_impuestos;
@@ -76,6 +78,13 @@ class VentaIndex extends Component
 
         $this->metodo_pago = $this->metodosPago[0] ?? 'Efectivo';
         $this->estado = 'Pagada';
+    }
+
+    private function autorizarCrearVenta()
+    {
+        if (!auth()->user()->can('crear ventas')) {
+            abort(403, 'No tiene permiso para crear ventas.');
+        }
     }
 
     public function updated($propertyName)
@@ -91,6 +100,8 @@ class VentaIndex extends Component
 
     public function agregarProducto($productoId)
     {
+        $this->autorizarCrearVenta();
+
         $producto = Producto::findOrFail($productoId);
 
         if (!$producto->activo) {
@@ -140,6 +151,8 @@ class VentaIndex extends Component
 
     public function agregarServicio($servicioId)
     {
+        $this->autorizarCrearVenta();
+
         $servicio = Servicio::findOrFail($servicioId);
 
         if (!$servicio->activo) {
@@ -198,6 +211,8 @@ class VentaIndex extends Component
 
     public function aumentarCantidad($index)
     {
+        $this->autorizarCrearVenta();
+
         if (!isset($this->carrito[$index])) {
             return;
         }
@@ -208,6 +223,8 @@ class VentaIndex extends Component
 
     public function disminuirCantidad($index)
     {
+        $this->autorizarCrearVenta();
+
         if (!isset($this->carrito[$index])) {
             return;
         }
@@ -222,6 +239,8 @@ class VentaIndex extends Component
 
     public function eliminarItem($index)
     {
+        $this->autorizarCrearVenta();
+
         if (!isset($this->carrito[$index])) {
             return;
         }
@@ -234,6 +253,8 @@ class VentaIndex extends Component
 
     public function limpiarCarrito()
     {
+        $this->autorizarCrearVenta();
+
         $this->carrito = [];
 
         $this->subtotal = 0;
@@ -465,6 +486,8 @@ class VentaIndex extends Component
 
     public function guardarVenta()
     {
+        $this->autorizarCrearVenta();
+        
         $this->recalcularCarrito();
 
         if (!$this->usa_retenciones_config) {
