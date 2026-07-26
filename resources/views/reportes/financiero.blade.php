@@ -9,20 +9,22 @@
 @section('content')
 
     {{-- Botones --}}
-    <div class="mb-3 no-print">
-        <a href="{{ route('reportes.financiero.excel', [
-            'fecha_desde' => $fechaDesde,
-            'fecha_hasta' => $fechaHasta,
-        ]) }}" class="btn btn-success">
-            <i class="fas fa-file-excel"></i> Exportar Excel
-        </a>
+    @can('ver reporte financiero')
+        <div class="mb-3 no-print">
+            <a href="{{ route('reportes.financiero.excel', [
+                'fecha_desde' => $fechaDesde,
+                'fecha_hasta' => $fechaHasta,
+            ]) }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
 
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="window.print()">
-            <i class="fas fa-print"></i> Imprimir reporte
-        </button>
-    </div>
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir reporte
+            </button>
+        </div>
+    @endcan
 
     {{-- Filtros --}}
     <div class="card no-print">
