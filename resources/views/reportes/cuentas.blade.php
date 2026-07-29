@@ -6,11 +6,13 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Reporte de cuentas</h1>
 
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="window.print()">
-            <i class="fas fa-print"></i> Imprimir
-        </button>
+        @can('ver reporte cuentas')
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        @endcan
     </div>
 @stop
 
@@ -256,7 +258,9 @@
                             <th>Total</th>
                             <th>Aplicado</th>
                             <th>Saldo</th>
-                            <th class="no-print">Acción</th>
+                            @can('imprimir recibos ventas')
+                                <th class="no-print">Acción</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -373,21 +377,23 @@
                                     </strong>
                                 </td>
 
-                                <td class="no-print">
-                                    <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                    target="_blank"
-                                    class="btn btn-success btn-xs">
-                                        @if ($venta->es_fiscal)
-                                            <i class="fas fa-file-invoice"></i> Factura
-                                        @else
-                                            <i class="fas fa-receipt"></i> Recibo
-                                        @endif
-                                    </a>
-                                </td>
+                                @can('imprimir recibos ventas')
+                                    <td class="no-print">
+                                        <a href="{{ route('ventas.recibo', $venta->id) }}"
+                                        target="_blank"
+                                        class="btn btn-success btn-xs">
+                                            @if ($venta->es_fiscal)
+                                                <i class="fas fa-file-invoice"></i> Factura
+                                            @else
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            @endif
+                                        </a>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="{{ auth()->user()->can('imprimir recibos ventas') ? 7 : 6 }}" class="text-center">
                                     No hay cuentas por cobrar pendientes.
                                 </td>
                             </tr>
@@ -410,17 +416,21 @@
                                 @endif
                             </th>
                             <th class="text-right">L {{ number_format($totalPorCobrar, 2) }}</th>
-                            <th class="no-print"></th>
+                            @can('imprimir recibos ventas')
+                                <th class="no-print"></th>
+                            @endcan
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
             <div class="no-print">
-                <a href="{{ route('ventas.cuentas-por-cobrar') }}"
-                   class="btn btn-success">
-                    Ir a cuentas por cobrar
-                </a>
+                @can('ver cuentas por cobrar')
+                    <a href="{{ route('ventas.cuentas-por-cobrar') }}"
+                    class="btn btn-success">
+                        Ir a cuentas por cobrar
+                    </a>
+                @endcan
             </div>
         </div>
     </div>
@@ -442,7 +452,9 @@
                             <th>Total</th>
                             <th>Pagado activo</th>
                             <th>Saldo</th>
-                            <th class="no-print">Acción</th>
+                            @can('ver compras')
+                                <th class="no-print">Acción</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -518,16 +530,18 @@
                                     </strong>
                                 </td>
 
-                                <td class="no-print">
-                                    <a href="{{ route('compras.show', $compra->id) }}"
-                                       class="btn btn-primary btn-xs">
-                                        Ver
-                                    </a>
-                                </td>
+                                @can('ver compras')
+                                    <td class="no-print">
+                                        <a href="{{ route('compras.show', $compra->id) }}"
+                                        class="btn btn-primary btn-xs">
+                                            Ver
+                                        </a>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="{{ auth()->user()->can('ver compras') ? 7 : 6 }}" class="text-center">
                                     No hay cuentas por pagar pendientes.
                                 </td>
                             </tr>
@@ -540,17 +554,21 @@
                             <th class="text-right">L {{ number_format($totalComprasOriginal, 2) }}</th>
                             <th class="text-right">L {{ number_format($totalComprasPagado, 2) }}</th>
                             <th class="text-right">L {{ number_format($totalPorPagar, 2) }}</th>
-                            <th class="no-print"></th>
+                            @can('ver compras')
+                                <th class="no-print"></th>
+                            @endcan
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
             <div class="no-print">
-                <a href="{{ route('compras.cuentas-por-pagar') }}"
-                   class="btn btn-danger">
-                    Ir a cuentas por pagar
-                </a>
+                @can('ver cuentas por pagar')
+                    <a href="{{ route('compras.cuentas-por-pagar') }}"
+                    class="btn btn-danger">
+                        Ir a cuentas por pagar
+                    </a>
+                @endcan
             </div>
         </div>
     </div>
