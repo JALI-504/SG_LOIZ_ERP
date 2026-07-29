@@ -161,4 +161,9 @@ class Insumo extends Model
     {
         return $this->hasMany(ProductoInsumo::class);
     }
+
+    public function produccionInsumos()
+    {
+        return $this->hasMany(ProduccionInsumo::class);
+    }
 }

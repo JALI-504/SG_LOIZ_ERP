@@ -104,6 +104,11 @@ class Producto extends Model
         return $this->maneja_inventario && $this->stock_actual <= $this->stock_minimo;
     }
 
+    public function producciones()
+    {
+        return $this->hasMany(Produccion::class);
+    }
+
     public function movimientos()
     {
         return $this->hasMany(MovimientoProducto::class);
