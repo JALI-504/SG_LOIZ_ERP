@@ -41,7 +41,11 @@ Route::post('/login', function (Request $request) {
 
     $recordar = $request->has('remember');
 
-    if (Auth::attempt($credenciales, $recordar)) {
+    if (Auth::attempt([
+        'email' => $credenciales['email'],
+        'password' => $credenciales['password'],
+        'activo' => true,
+    ], $recordar)) {
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard.index'));
@@ -213,6 +217,18 @@ Route::middleware(['auth'])->group(function () {
         return view('configuracion.empresa');
     })->name('configuracion.empresa')
         ->middleware('permission:ver configuracion|editar configuracion');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Usuarios y roles
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/usuarios', function () {
+        return view('usuarios.index');
+    })->name('usuarios.index')
+        ->middleware('permission:ver usuarios');
 
 
     /*
