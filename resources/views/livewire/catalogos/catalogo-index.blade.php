@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de catálogos</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo catálogo
-                </button>
+                @can('editar configuracion')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo catálogo
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -64,7 +66,9 @@
                             <th>Nombre</th>
                             <th>Descripción</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @can('editar configuracion')
+                                <th width="170">Acciones</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -93,25 +97,27 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $catalogo->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                @can('editar configuracion')
+                                    <td>
+                                        <button class="btn btn-warning btn-xs"
+                                                wire:click="edit({{ $catalogo->id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
-                                    <button class="btn btn-{{ $catalogo->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $catalogo->id }})">
-                                        @if ($catalogo->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
-                                </td>
+                                        <button class="btn btn-{{ $catalogo->activo ? 'secondary' : 'success' }} btn-xs"
+                                                wire:click="cambiarEstado({{ $catalogo->id }})">
+                                            @if ($catalogo->activo)
+                                                Desactivar
+                                            @else
+                                                Activar
+                                            @endif
+                                        </button>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar configuracion') ? 5 : 4 }}" class="text-center">
                                     No hay catálogos registrados.
                                 </td>
                             </tr>
@@ -125,6 +131,7 @@
     </div>
 
     {{-- Modal catálogo --}}
+    @can('editar configuracion')
     <div wire:ignore.self class="modal fade" id="catalogoModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <form wire:submit.prevent="{{ $catalogo_id ? 'update' : 'store' }}" class="modal-content">
@@ -211,4 +218,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </div>

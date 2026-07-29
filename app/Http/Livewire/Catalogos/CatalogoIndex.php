@@ -32,8 +32,27 @@ class CatalogoIndex extends Component
 
     public $tiposCatalogo = [];
 
+    private function autorizarVerConfiguracion()
+    {
+        if (
+            !auth()->user()->can('ver configuracion') &&
+            !auth()->user()->can('editar configuracion')
+        ) {
+            abort(403, 'No tiene permiso para ver catálogos.');
+        }
+    }
+
+    private function autorizarEditarConfiguracion()
+    {
+        if (!auth()->user()->can('editar configuracion')) {
+            abort(403, 'No tiene permiso para editar catálogos.');
+        }
+    }
+
     public function mount()
     {
+        $this->autorizarVerConfiguracion();
+
         $this->cargarTiposCatalogo();
     }
 
@@ -96,6 +115,8 @@ class CatalogoIndex extends Component
 
     public function create()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo catálogo';
@@ -105,6 +126,8 @@ class CatalogoIndex extends Component
 
     public function store()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->validate();
 
         Catalogo::create([
@@ -124,6 +147,8 @@ class CatalogoIndex extends Component
 
     public function edit($id)
     {
+        $this->autorizarEditarConfiguracion();
+
         $catalogo = Catalogo::findOrFail($id);
 
         $this->catalogo_id = $catalogo->id;
@@ -140,6 +165,8 @@ class CatalogoIndex extends Component
 
     public function update()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->validate();
 
         $catalogo = Catalogo::findOrFail($this->catalogo_id);
@@ -161,6 +188,8 @@ class CatalogoIndex extends Component
 
     public function cambiarEstado($id)
     {
+        $this->autorizarEditarConfiguracion();
+
         $catalogo = Catalogo::findOrFail($id);
 
         $catalogo->update([
@@ -174,7 +203,8 @@ class CatalogoIndex extends Component
     {
         $this->catalogo_id = null;
 
-        $this->tipo = array_key_first($this->tiposCatalogo) ?? 'categoria_insumo';        $this->nombre = '';
+        $this->tipo = array_key_first($this->tiposCatalogo) ?? 'categoria_insumo';
+        $this->nombre = '';
         $this->descripcion = '';
         $this->orden = 0;
         $this->activo = true;
@@ -185,6 +215,8 @@ class CatalogoIndex extends Component
 
     public function render()
     {
+        $this->autorizarEditarConfiguracion();
+
         $catalogos = Catalogo::query()
             ->where(function ($query) {
                 $query->where('tipo', 'like', '%' . $this->search . '%')
