@@ -7,6 +7,18 @@ use App\Models\OrdenTrabajo;
 use App\Models\OrdenTrabajoDetalle;
 use App\Models\Producto;
 use App\Models\Servicio;
+use App\Models\Catalogo;
+use App\Models\ConfiguracionEmpresa;
+use App\Models\Insumo;
+use App\Models\LoteInsumo;
+use App\Models\LoteProducto;
+use App\Models\MovimientoInventario;
+use App\Models\MovimientoInventarioLote;
+use App\Models\MovimientoProducto;
+use App\Models\MovimientoProductoLote;
+use App\Models\PagoVenta;
+use App\Models\Venta;
+use App\Models\VentaDetalle;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -55,6 +67,12 @@ class OrdenTrabajoIndex extends Component
     public $mostrarModalAnulacion = false;
     public $ordenAnularId;
     public $motivoAnulacion;
+
+    public $mostrarModalConvertirVenta = false;
+    public $ordenConvertirId;
+    public $metodoPagoConversion = 'Efectivo';
+    public $referenciaPagoConversion;
+    public $metodosPagoVenta = [];
 
     public $estados = [
         'Pendiente',
@@ -105,6 +123,9 @@ class OrdenTrabajoIndex extends Component
         }
 
         $this->fecha = now()->format('Y-m-d');
+
+        $this->metodosPagoVenta = Catalogo::opciones('metodo_pago')->pluck('nombre')->toArray();
+        $this->metodoPagoConversion = $this->metodosPagoVenta[0] ?? 'Efectivo';
     }
 
     public function updatingSearch()
@@ -435,6 +456,557 @@ class OrdenTrabajoIndex extends Component
         $this->cerrarModalAnulacion();
 
         session()->flash('message', 'Orden de trabajo anulada correctamente.');
+    }
+
+    public function abrirConvertirVenta($id)
+    {
+        if (!auth()->user()->can('crear ventas')) {
+            abort(403, 'No tiene permiso para crear ventas.');
+        }
+
+        $orden = OrdenTrabajo::findOrFail($id);
+
+        if ($orden->estado === 'Anulada') {
+            session()->flash('error', 'No se puede convertir una orden anulada.');
+            return;
+        }
+
+        if ($orden->venta_id) {
+            session()->flash('error', 'Esta orden ya fue convertida a venta.');
+            return;
+        }
+
+        $this->ordenConvertirId = $orden->id;
+        $this->metodoPagoConversion = $this->metodosPagoVenta[0] ?? 'Efectivo';
+        $this->referenciaPagoConversion = 'Orden ' . $orden->codigo;
+        $this->mostrarModalConvertirVenta = true;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function cerrarModalConvertirVenta()
+    {
+        $this->mostrarModalConvertirVenta = false;
+        $this->ordenConvertirId = null;
+        $this->metodoPagoConversion = $this->metodosPagoVenta[0] ?? 'Efectivo';
+        $this->referenciaPagoConversion = null;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function confirmarConvertirVenta()
+    {
+        if (!auth()->user()->can('crear ventas')) {
+            abort(403, 'No tiene permiso para crear ventas.');
+        }
+
+        $this->validate([
+            'ordenConvertirId' => 'required|exists:ordenes_trabajo,id',
+            'metodoPagoConversion' => 'required|max:50',
+            'referenciaPagoConversion' => 'nullable|max:100',
+        ]);
+
+        try {
+            DB::transaction(function () {
+                $orden = OrdenTrabajo::with(['detalles.producto', 'detalles.servicio'])
+                    ->lockForUpdate()
+                    ->findOrFail($this->ordenConvertirId);
+
+                if ($orden->estado === 'Anulada') {
+                    throw new \Exception('No se puede convertir una orden anulada.');
+                }
+
+                if ($orden->venta_id) {
+                    throw new \Exception('Esta orden ya fue convertida a venta.');
+                }
+
+                if ($orden->detalles->count() === 0) {
+                    throw new \Exception('La orden no tiene detalles para convertir a venta.');
+                }
+
+                $configuracion = ConfiguracionEmpresa::actual();
+
+                $datosVenta = $this->prepararDetallesVentaDesdeOrden($orden, $configuracion);
+
+                $this->validarDisponibilidadVentaOrden($datosVenta['detalles']);
+
+                $totalVenta = (float) $datosVenta['total'];
+                $abonoOrden = (float) $orden->abono;
+
+                if ($abonoOrden < 0) {
+                    $abonoOrden = 0;
+                }
+
+                if ($abonoOrden > $totalVenta) {
+                    $abonoOrden = $totalVenta;
+                }
+
+                $saldoPendiente = round($totalVenta - $abonoOrden, 2);
+                $estadoVenta = $saldoPendiente <= 0 ? 'Pagada' : 'Pendiente';
+
+                $venta = Venta::create([
+                    'cliente_id' => $orden->cliente_id ?: null,
+                    'metodo_pago' => $this->metodoPagoConversion,
+                    'estado' => $estadoVenta,
+
+                    'subtotal' => $datosVenta['subtotal'],
+                    'descuento' => $datosVenta['descuento'],
+
+                    'subtotal_gravado' => $datosVenta['subtotal_gravado'],
+                    'subtotal_exento' => $datosVenta['subtotal_exento'],
+                    'subtotal_no_sujeto' => $datosVenta['subtotal_no_sujeto'],
+
+                    'impuesto' => $datosVenta['impuesto'],
+                    'isv_15' => $datosVenta['isv_15'],
+
+                    'total' => $totalVenta,
+                    'retencion' => 0,
+                    'neto_recibido' => $totalVenta,
+
+                    'monto_pagado' => $abonoOrden,
+                    'saldo_pendiente' => $saldoPendiente,
+                    'observacion' => 'Venta generada desde orden de trabajo ' . $orden->codigo . '. ' . ($orden->observacion ?? ''),
+                ]);
+
+                if ($abonoOrden > 0) {
+                    PagoVenta::create([
+                        'venta_id' => $venta->id,
+                        'monto' => $abonoOrden,
+                        'metodo_pago' => $this->metodoPagoConversion,
+                        'referencia' => $this->referenciaPagoConversion,
+                        'observacion' => 'Abono trasladado desde orden de trabajo ' . $orden->codigo . '.',
+                        'estado' => 'Activo',
+                    ]);
+                }
+
+                foreach ($datosVenta['detalles'] as $item) {
+                    $costoUnitarioReal = 0;
+
+                    if ($item['tipo_item'] === 'Producto' && $item['item_id']) {
+                        $producto = Producto::findOrFail($item['item_id']);
+                        $costoUnitarioReal = $this->procesarProductoVentaDesdeOrden($producto, $item['cantidad'], $venta);
+                    }
+
+                    if ($item['tipo_item'] === 'Servicio' && $item['item_id']) {
+                        $servicio = Servicio::with('insumos')->findOrFail($item['item_id']);
+                        $costoUnitarioReal = $this->procesarServicioVentaDesdeOrden($servicio, $item['cantidad'], $venta);
+                    }
+
+                    VentaDetalle::create([
+                        'venta_id' => $venta->id,
+                        'tipo_item' => $item['tipo_item'],
+                        'item_id' => $item['item_id'],
+                        'codigo' => $item['codigo'],
+                        'descripcion' => $item['descripcion'],
+                        'cantidad' => $item['cantidad'],
+                        'precio_unitario' => $item['precio_unitario'],
+                        'costo_unitario' => $costoUnitarioReal,
+
+                        'tipo_impuesto' => $item['tipo_impuesto'],
+                        'porcentaje_isv' => $item['porcentaje_isv'],
+
+                        'descuento' => $item['descuento'],
+
+                        'subtotal_gravado' => $item['subtotal_gravado'],
+                        'subtotal_exento' => $item['subtotal_exento'],
+                        'subtotal_no_sujeto' => $item['subtotal_no_sujeto'],
+                        'impuesto' => $item['impuesto'],
+
+                        'subtotal' => $item['subtotal'],
+                        'total' => $item['total'],
+                    ]);
+                }
+
+                $orden->update([
+                    'venta_id' => $venta->id,
+                    'estado' => 'Entregada',
+                ]);
+            });
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+            return;
+        }
+
+        $this->cerrarModalConvertirVenta();
+
+        session()->flash('message', 'Orden convertida a venta correctamente.');
+    }
+
+    private function prepararDetallesVentaDesdeOrden($orden, $configuracion)
+    {
+        $usaImpuestos = (bool) $configuracion->usa_impuestos;
+        $preciosIncluyenIsv = (bool) $configuracion->precios_incluyen_isv;
+
+        $subtotalBruto = 0;
+
+        foreach ($orden->detalles as $detalle) {
+            $subtotalBruto += (float) $detalle->cantidad * (float) $detalle->precio_unitario;
+        }
+
+        $descuentoGeneral = (float) $orden->descuento;
+
+        if ($descuentoGeneral < 0) {
+            $descuentoGeneral = 0;
+        }
+
+        if ($descuentoGeneral > $subtotalBruto) {
+            $descuentoGeneral = $subtotalBruto;
+        }
+
+        $detallesVenta = [];
+
+        $subtotalGravado = 0;
+        $subtotalExento = 0;
+        $subtotalNoSujeto = 0;
+        $isv15 = 0;
+        $totalVenta = 0;
+        $descuentoAsignado = 0;
+
+        $totalDetalles = $orden->detalles->count();
+        $contador = 0;
+
+        foreach ($orden->detalles as $detalle) {
+            $contador++;
+
+            $cantidad = (float) $detalle->cantidad;
+            $precioUnitario = (float) $detalle->precio_unitario;
+            $subtotalItem = round($cantidad * $precioUnitario, 2);
+
+            if ($subtotalBruto > 0) {
+                $descuentoLinea = round($descuentoGeneral * ($subtotalItem / $subtotalBruto), 2);
+            } else {
+                $descuentoLinea = 0;
+            }
+
+            if ($contador === $totalDetalles) {
+                $descuentoLinea = round($descuentoGeneral - $descuentoAsignado, 2);
+            }
+
+            $descuentoAsignado += $descuentoLinea;
+
+            $totalItem = round($subtotalItem - $descuentoLinea, 2);
+
+            if ($totalItem < 0) {
+                $totalItem = 0;
+            }
+
+            $codigo = 'OTRO';
+            $itemId = null;
+            $tipoImpuesto = 'Gravado 15%';
+            $porcentajeIsv = 15;
+
+            if ($detalle->tipo_item === 'Producto' && $detalle->producto) {
+                $codigo = $detalle->producto->codigo;
+                $itemId = $detalle->producto->id;
+                $tipoImpuesto = $detalle->producto->tipo_impuesto ?? 'Gravado 15%';
+                $porcentajeIsv = (float) ($detalle->producto->porcentaje_isv ?? 15);
+            }
+
+            if ($detalle->tipo_item === 'Servicio' && $detalle->servicio) {
+                $codigo = $detalle->servicio->codigo;
+                $itemId = $detalle->servicio->id;
+                $tipoImpuesto = $detalle->servicio->tipo_impuesto ?? 'Gravado 15%';
+                $porcentajeIsv = (float) ($detalle->servicio->porcentaje_isv ?? 15);
+            }
+
+            $subtotalGravadoItem = 0;
+            $subtotalExentoItem = 0;
+            $subtotalNoSujetoItem = 0;
+            $impuestoItem = 0;
+
+            if (!$usaImpuestos) {
+                $tipoImpuesto = 'No aplica';
+                $porcentajeIsv = 0;
+                $impuestoItem = 0;
+            } else {
+                if ($tipoImpuesto === 'Gravado 15%' && $porcentajeIsv > 0) {
+                    $factor = 1 + ($porcentajeIsv / 100);
+
+                    if ($preciosIncluyenIsv) {
+                        $subtotalGravadoItem = round($totalItem / $factor, 2);
+                        $impuestoItem = round($totalItem - $subtotalGravadoItem, 2);
+                    } else {
+                        $subtotalGravadoItem = round($totalItem, 2);
+                        $impuestoItem = round($subtotalGravadoItem * ($porcentajeIsv / 100), 2);
+                        $totalItem = round($subtotalGravadoItem + $impuestoItem, 2);
+                    }
+                } elseif ($tipoImpuesto === 'Exento') {
+                    $subtotalExentoItem = round($totalItem, 2);
+                } else {
+                    $subtotalNoSujetoItem = round($totalItem, 2);
+                }
+            }
+
+            $detallesVenta[] = [
+                'tipo_item' => $detalle->tipo_item,
+                'item_id' => $itemId,
+                'codigo' => $codigo,
+                'descripcion' => $detalle->descripcion,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+                'descuento' => $descuentoLinea,
+                'subtotal' => $subtotalItem,
+                'total' => $totalItem,
+
+                'tipo_impuesto' => $tipoImpuesto,
+                'porcentaje_isv' => $porcentajeIsv,
+                'subtotal_gravado' => $subtotalGravadoItem,
+                'subtotal_exento' => $subtotalExentoItem,
+                'subtotal_no_sujeto' => $subtotalNoSujetoItem,
+                'impuesto' => $impuestoItem,
+            ];
+
+            $subtotalGravado += $subtotalGravadoItem;
+            $subtotalExento += $subtotalExentoItem;
+            $subtotalNoSujeto += $subtotalNoSujetoItem;
+            $isv15 += $impuestoItem;
+            $totalVenta += $totalItem;
+        }
+
+        return [
+            'detalles' => $detallesVenta,
+            'subtotal' => round($subtotalBruto, 2),
+            'descuento' => round($descuentoGeneral, 2),
+            'subtotal_gravado' => round($subtotalGravado, 2),
+            'subtotal_exento' => round($subtotalExento, 2),
+            'subtotal_no_sujeto' => round($subtotalNoSujeto, 2),
+            'impuesto' => round($isv15, 2),
+            'isv_15' => round($isv15, 2),
+            'total' => round($totalVenta, 2),
+        ];
+    }
+
+    private function validarDisponibilidadVentaOrden($detallesVenta)
+    {
+        foreach ($detallesVenta as $item) {
+            if ($item['tipo_item'] === 'Producto' && $item['item_id']) {
+                $producto = Producto::findOrFail($item['item_id']);
+
+                if ($producto->maneja_inventario && $producto->stock_actual < $item['cantidad']) {
+                    throw new \Exception('Stock insuficiente para el producto: ' . $producto->nombre);
+                }
+            }
+
+            if ($item['tipo_item'] === 'Servicio' && $item['item_id']) {
+                $servicio = Servicio::with('insumos')->findOrFail($item['item_id']);
+
+                foreach ($servicio->insumos as $insumo) {
+                    $cantidadNecesaria = (float) $insumo->pivot->cantidad_por_unidad * (float) $item['cantidad'];
+
+                    if ($insumo->stock_actual < $cantidadNecesaria) {
+                        throw new \Exception(
+                            'Stock insuficiente del insumo "' . $insumo->nombre .
+                                '" para vender el servicio "' . $servicio->nombre . '".'
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    private function procesarProductoVentaDesdeOrden(Producto $producto, $cantidad, Venta $venta)
+    {
+        if (!$producto->maneja_inventario) {
+            return (float) $producto->costo_unitario;
+        }
+
+        $movimiento = MovimientoProducto::create([
+            'producto_id' => $producto->id,
+            'tipo_movimiento' => 'Salida venta',
+            'cantidad' => $cantidad,
+            'costo_unitario' => 0,
+            'total' => 0,
+            'referencia' => $venta->numero,
+            'observacion' => 'Salida automática por venta generada desde orden de trabajo.',
+        ]);
+
+        $cantidadPendiente = (float) $cantidad;
+        $totalCostoSalida = 0;
+
+        $lotes = LoteProducto::where('producto_id', $producto->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($lotes as $lote) {
+            if ($cantidadPendiente <= 0) {
+                break;
+            }
+
+            $cantidadTomada = min($cantidadPendiente, (float) $lote->cantidad_disponible);
+            $totalDetalle = round($cantidadTomada * (float) $lote->costo_unitario, 2);
+
+            MovimientoProductoLote::create([
+                'movimiento_producto_id' => $movimiento->id,
+                'lote_producto_id' => $lote->id,
+                'cantidad' => $cantidadTomada,
+                'costo_unitario' => $lote->costo_unitario,
+                'total' => $totalDetalle,
+            ]);
+
+            $nuevaCantidad = round((float) $lote->cantidad_disponible - $cantidadTomada, 4);
+
+            $lote->update([
+                'cantidad_disponible' => $nuevaCantidad,
+                'activo' => $nuevaCantidad > 0,
+            ]);
+
+            $cantidadPendiente = round($cantidadPendiente - $cantidadTomada, 4);
+            $totalCostoSalida += $totalDetalle;
+        }
+
+        if ($cantidadPendiente > 0) {
+            throw new \Exception('No hay lotes suficientes para el producto: ' . $producto->nombre);
+        }
+
+        $costoUnitario = $cantidad > 0 ? round($totalCostoSalida / $cantidad, 4) : 0;
+
+        $movimiento->update([
+            'costo_unitario' => $costoUnitario,
+            'total' => round($totalCostoSalida, 2),
+        ]);
+
+        $this->actualizarCostoActualPepsProductoDesdeOrden($producto);
+
+        return $costoUnitario;
+    }
+
+    private function procesarServicioVentaDesdeOrden(Servicio $servicio, $cantidad, Venta $venta)
+    {
+        if ($servicio->insumos->count() === 0) {
+            return (float) $servicio->costo_unitario;
+        }
+
+        $totalCostoServicio = 0;
+
+        foreach ($servicio->insumos as $insumo) {
+            $cantidadNecesaria = (float) $insumo->pivot->cantidad_por_unidad * (float) $cantidad;
+
+            $totalCostoServicio += $this->descontarInsumoPorServicioDesdeOrden(
+                $insumo,
+                $cantidadNecesaria,
+                $venta,
+                $servicio
+            );
+        }
+
+        return $cantidad > 0 ? round($totalCostoServicio / $cantidad, 4) : 0;
+    }
+
+    private function descontarInsumoPorServicioDesdeOrden(Insumo $insumo, $cantidad, Venta $venta, Servicio $servicio)
+    {
+        $movimiento = MovimientoInventario::create([
+            'insumo_id' => $insumo->id,
+            'tipo_movimiento' => 'Salida venta',
+            'cantidad' => $cantidad,
+            'costo_unitario' => 0,
+            'total' => 0,
+            'referencia' => $venta->numero,
+            'observacion' => 'Salida automática por venta del servicio desde orden de trabajo: ' . $servicio->nombre,
+        ]);
+
+        $cantidadPendiente = (float) $cantidad;
+        $totalCostoSalida = 0;
+
+        $lotes = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($lotes as $lote) {
+            if ($cantidadPendiente <= 0) {
+                break;
+            }
+
+            $cantidadTomada = min($cantidadPendiente, (float) $lote->cantidad_disponible);
+            $totalDetalle = round($cantidadTomada * (float) $lote->costo_unitario, 2);
+
+            MovimientoInventarioLote::create([
+                'movimiento_inventario_id' => $movimiento->id,
+                'lote_insumo_id' => $lote->id,
+                'cantidad' => $cantidadTomada,
+                'costo_unitario' => $lote->costo_unitario,
+                'total' => $totalDetalle,
+            ]);
+
+            $nuevaCantidad = round((float) $lote->cantidad_disponible - $cantidadTomada, 4);
+
+            $lote->update([
+                'cantidad_disponible' => $nuevaCantidad,
+                'activo' => $nuevaCantidad > 0,
+            ]);
+
+            $cantidadPendiente = round($cantidadPendiente - $cantidadTomada, 4);
+            $totalCostoSalida += $totalDetalle;
+        }
+
+        if ($cantidadPendiente > 0) {
+            throw new \Exception('No hay lotes suficientes para el insumo: ' . $insumo->nombre);
+        }
+
+        $costoUnitario = $cantidad > 0 ? round($totalCostoSalida / $cantidad, 4) : 0;
+
+        $movimiento->update([
+            'costo_unitario' => $costoUnitario,
+            'total' => round($totalCostoSalida, 2),
+        ]);
+
+        $this->actualizarCostoActualPepsInsumoDesdeOrden($insumo);
+
+        return round($totalCostoSalida, 2);
+    }
+
+    private function actualizarCostoActualPepsProductoDesdeOrden(Producto $producto)
+    {
+        $stockActual = LoteProducto::where('producto_id', $producto->id)
+            ->where('activo', true)
+            ->sum('cantidad_disponible');
+
+        $proximoLote = LoteProducto::where('producto_id', $producto->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->first();
+
+        $producto->stock_actual = round($stockActual, 2);
+
+        if ($proximoLote) {
+            $producto->costo_unitario = round($proximoLote->costo_unitario, 4);
+        }
+
+        $producto->save();
+    }
+
+    private function actualizarCostoActualPepsInsumoDesdeOrden(Insumo $insumo)
+    {
+        $stockActual = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->sum('cantidad_disponible');
+
+        $proximoLote = LoteInsumo::where('insumo_id', $insumo->id)
+            ->where('activo', true)
+            ->where('cantidad_disponible', '>', 0)
+            ->orderBy('fecha_entrada')
+            ->orderBy('id')
+            ->first();
+
+        $insumo->stock_actual = round($stockActual, 2);
+
+        if ($proximoLote) {
+            $insumo->costo_unitario_base = round($proximoLote->costo_unitario, 4);
+            $insumo->costo_unitario_real = round($proximoLote->costo_unitario, 4);
+        }
+
+        $insumo->save();
     }
 
     private function resetDetalle()

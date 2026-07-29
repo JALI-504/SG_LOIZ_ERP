@@ -442,6 +442,26 @@
                                         <i class="fas fa-eye"></i> Ver
                                     </button>
 
+                                    @can('crear ventas')
+                                        @if (!$orden->venta_id && $orden->estado !== 'Anulada')
+                                            <button type="button"
+                                                    class="btn btn-success btn-xs"
+                                                    wire:click="abrirConvertirVenta({{ $orden->id }})">
+                                                <i class="fas fa-cash-register"></i> Venta
+                                            </button>
+                                        @endif
+                                    @endcan
+
+                                    @can('imprimir recibos ventas')
+                                        @if ($orden->venta_id)
+                                            <a href="{{ route('ventas.recibo', $orden->venta_id) }}"
+                                            target="_blank"
+                                            class="btn btn-primary btn-xs">
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            </a>
+                                        @endif
+                                    @endcan
+
                                     @can('anular ordenes trabajo')
                                         @if ($orden->estado !== 'Anulada')
                                             <button type="button"
@@ -882,6 +902,81 @@
                                 class="btn btn-danger"
                                 wire:loading.attr="disabled">
                             Confirmar anulación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-backdrop fade show"></div>
+    @endif
+    
+    @if ($mostrarModalConvertirVenta)
+        <div class="modal fade show"
+            id="convertirVentaModal"
+            style="display: block;"
+            role="dialog"
+            aria-modal="true">
+
+            <div class="modal-dialog" role="document">
+                <form wire:submit.prevent="confirmarConvertirVenta" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Convertir orden a venta
+                        </h5>
+
+                        <button type="button" class="close" wire:click="cerrarModalConvertirVenta">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            Esta acción generará una venta desde la orden de trabajo.
+                            Si contiene productos o servicios con insumos, se descontará inventario automáticamente.
+                        </div>
+
+                        <div class="form-group">
+                            <label>Método de pago</label>
+                            <select class="form-control" wire:model.defer="metodoPagoConversion">
+                                @foreach ($metodosPagoVenta as $metodo)
+                                    <option value="{{ $metodo }}">{{ $metodo }}</option>
+                                @endforeach
+                            </select>
+
+                            @error('metodoPagoConversion')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>Referencia del pago</label>
+                            <input type="text"
+                                class="form-control"
+                                wire:model.defer="referenciaPagoConversion"
+                                placeholder="Ej. efectivo, transferencia, abono de orden">
+
+                            @error('referenciaPagoConversion')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <small class="text-muted">
+                            Si la orden tiene abono inicial, se registrará como pago activo de la venta.
+                        </small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                wire:click="cerrarModalConvertirVenta">
+                            Cancelar
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-success"
+                                wire:loading.attr="disabled">
+                            <i class="fas fa-cash-register"></i> Confirmar venta
                         </button>
                     </div>
                 </form>
