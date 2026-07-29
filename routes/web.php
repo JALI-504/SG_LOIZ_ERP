@@ -116,12 +116,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catalogos', function () {
         return view('catalogos.index');
     })->name('catalogos.index')
-        ->middleware('permission:editar configuracion');
+        ->middleware('permission:ver configuracion|editar configuracion');
 
     Route::get('/catalogos/tipos', function () {
         return view('catalogos.tipos');
     })->name('catalogos.tipos')
-        ->middleware('permission:editar configuracion');
+        ->middleware('permission:ver configuracion|editar configuracion');
 
 
     /*
@@ -212,7 +212,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/configuracion/empresa', function () {
         return view('configuracion.empresa');
     })->name('configuracion.empresa')
-        ->middleware('permission:editar configuracion');
+        ->middleware('permission:ver configuracion|editar configuracion');
 
 
     /*
@@ -356,5 +356,3 @@ Route::middleware(['auth'])->group(function () {
         ->name('compras.anular')
         ->middleware('permission:anular compras');
 });
-
-
