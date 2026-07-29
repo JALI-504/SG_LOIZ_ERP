@@ -230,6 +230,16 @@ Route::middleware(['auth'])->group(function () {
     })->name('usuarios.index')
         ->middleware('permission:ver usuarios');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Roles y permisos
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/roles', function () {
+        return view('roles.index');
+    })->name('roles.index')
+        ->middleware('permission:ver roles');
 
     /*
     |--------------------------------------------------------------------------

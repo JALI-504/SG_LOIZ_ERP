@@ -514,6 +514,27 @@ return [
                     'icon' => 'fas fa-fw fa-list',
                     'can'  => 'editar configuracion',
                 ],
+   
+            ],
+        ],
+
+        [
+            'text' => 'Seguridad',
+            'icon' => 'fas fa-shield-alt',
+            'can' => 'ver usuarios',
+            'submenu' => [
+                [
+                    'text' => 'Usuarios y roles',
+                    'route' => 'usuarios.index',
+                    'icon' => 'fas fa-users-cog',
+                    'can' => 'ver usuarios',
+                ],
+                [
+                    'text' => 'Roles y permisos',
+                    'route' => 'roles.index',
+                    'icon' => 'fas fa-user-shield',
+                    'can' => 'ver roles',
+                ],
             ],
         ],
 

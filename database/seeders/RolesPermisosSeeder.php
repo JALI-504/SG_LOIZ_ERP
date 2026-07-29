@@ -94,6 +94,13 @@ class RolesPermisosSeeder extends Seeder
             'desactivar usuarios',
             'cambiar password usuarios',
             'asignar roles usuarios',
+
+            // Roles y permisos
+            'ver roles',
+            'crear roles',
+            'editar roles',
+            'eliminar roles',
+            'asignar permisos roles',
         ];
 
         foreach ($permisos as $permiso) {
