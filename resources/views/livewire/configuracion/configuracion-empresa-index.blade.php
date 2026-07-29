@@ -442,12 +442,14 @@
 
                             <br>
 
-                            <button type="button"
-                                    class="btn btn-danger btn-sm mt-2"
-                                    wire:click="eliminarLogo"
-                                    wire:loading.attr="disabled">
-                                <i class="fas fa-trash"></i> Eliminar logo
-                            </button>
+                            @can('editar configuracion')
+                                <button type="button"
+                                        class="btn btn-danger btn-sm mt-2"
+                                        wire:click="eliminarLogo"
+                                        wire:loading.attr="disabled">
+                                    <i class="fas fa-trash"></i> Eliminar logo
+                                </button>
+                            @endcan
                         @else
                             <div class="alert alert-secondary mb-0">
                                 No hay logo cargado.
@@ -523,22 +525,28 @@
             </div>
         </div>
 
-        <div class="mb-4">
-            <button type="button"
-                    class="btn btn-primary"
-                    wire:click="guardar"
-                    wire:loading.attr="disabled"
-                    wire:target="guardar,logoNuevo">
-                <i class="fas fa-save"></i> Guardar configuración
-            </button>
+        @can('editar configuracion')
+            <div class="mb-4">
+                <button type="button"
+                        class="btn btn-primary"
+                        wire:click="guardar"
+                        wire:loading.attr="disabled"
+                        wire:target="guardar,logoNuevo">
+                    <i class="fas fa-save"></i> Guardar configuración
+                </button>
 
-            <span wire:loading wire:target="guardar" class="text-info ml-2">
-                Guardando...
-            </span>
+                <span wire:loading wire:target="guardar" class="text-info ml-2">
+                    Guardando...
+                </span>
 
-            <span wire:loading wire:target="logoNuevo" class="text-info ml-2">
-                Cargando logo...
-            </span>
-        </div>
+                <span wire:loading wire:target="logoNuevo" class="text-info ml-2">
+                    Cargando logo...
+                </span>
+            </div>
+        @else
+            <div class="alert alert-warning">
+                Puede ver la configuración, pero no tiene permiso para modificarla.
+            </div>
+        @endcan
     </div>
 </div>

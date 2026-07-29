@@ -63,10 +63,28 @@ class ConfiguracionEmpresaIndex extends Component
         'Recibo interno',
         'Factura',
     ];
-    
+
+    private function autorizarVerConfiguracion()
+    {
+        if (
+            !auth()->user()->can('ver configuracion') &&
+            !auth()->user()->can('editar configuracion')
+        ) {
+            abort(403, 'No tiene permiso para ver la configuración.');
+        }
+    }
+
+    private function autorizarEditarConfiguracion()
+    {
+        if (!auth()->user()->can('editar configuracion')) {
+            abort(403, 'No tiene permiso para editar la configuración.');
+        }
+    }    
 
     public function mount()
     {
+        $this->autorizarVerConfiguracion();
+
         $configuracion = ConfiguracionEmpresa::actual();
 
         // $this->configuracion = $configuracion;
@@ -194,6 +212,7 @@ class ConfiguracionEmpresaIndex extends Component
 
     public function guardar()
     {
+        $this->autorizarEditarConfiguracion();
 
         $this->validate();
 
@@ -280,6 +299,8 @@ class ConfiguracionEmpresaIndex extends Component
 
     public function eliminarLogo()
     {
+        $this->autorizarEditarConfiguracion();
+
         $configuracion = ConfiguracionEmpresa::findOrFail($this->configuracion_id);
 
         if ($configuracion->logo && Storage::disk('public')->exists($configuracion->logo)) {
@@ -367,11 +388,15 @@ class ConfiguracionEmpresaIndex extends Component
 
     public function render()
     {
+        $this->autorizarVerConfiguracion();
+
         return view('livewire.configuracion.configuracion-empresa-index');
     }
 
     public function updatedModoFiscal()
     {
+        $this->autorizarEditarConfiguracion();
+        
         if ($this->modo_fiscal === 'Fiscal') {
             $this->usa_facturacion_fiscal = true;
             $this->documento_venta_activo = 'Factura';
