@@ -6,11 +6,13 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Reporte de inventario</h1>
 
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="window.print()">
-            <i class="fas fa-print"></i> Imprimir
-        </button>
+        <@can('ver reporte inventario')
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        @endcan
     </div>
 @stop
 

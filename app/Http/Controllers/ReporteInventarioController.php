@@ -15,9 +15,7 @@ class ReporteInventarioController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->can('ver reporte inventario')) {
-            abort(403, 'No tiene permiso para ver el reporte de inventario.');
-        }
+        $this->autorizarVerReporteInventario();
         
         $tipo = $request->tipo ?: 'todos';
         $fechaDesde = $request->fecha_desde;
@@ -169,5 +167,13 @@ class ReporteInventarioController extends Controller
             'valorMovimientosInsumos' => $valorMovimientosInsumos,
             'valorMovimientosProductos' => $valorMovimientosProductos,
         ]);
+        
+    }
+
+    private function autorizarVerReporteInventario()
+    {
+        if (!auth()->user()->can('ver reporte inventario')) {
+            abort(403, 'No tiene permiso para ver el reporte de inventario.');
+        }
     }
 }
