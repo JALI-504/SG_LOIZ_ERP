@@ -179,6 +179,17 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Órdenes de trabajo
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/ordenes-trabajo', function () {
+        return view('ordenes-trabajo.index');
+    })->name('ordenes-trabajo.index')
+        ->middleware('permission:ver ordenes trabajo');
+
+    /*
+    |--------------------------------------------------------------------------
     | Ventas
     |--------------------------------------------------------------------------
     */

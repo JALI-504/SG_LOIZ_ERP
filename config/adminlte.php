@@ -404,11 +404,24 @@ return [
                     'icon' => 'fas fa-fw fa-boxes',
                     'can'  => 'ver insumos',
                 ],
+            ],
+        ],
+        [
+            'text' => 'Operaciones',
+            'icon' => 'fas fa-tasks',
+            'can' => 'ver ordenes trabajo',
+            'submenu' => [
+                [
+                    'text' => 'Órdenes de trabajo',
+                    'route' => 'ordenes-trabajo.index',
+                    'icon' => 'fas fa-clipboard-list',
+                    'can' => 'ver ordenes trabajo',
+                ],
                 [
                     'text' => 'Producción',
-                    'url'  => 'produccion',
-                    'icon' => 'fas fa-fw fa-industry',
-                    'can'  => 'ver produccion',
+                    'route' => 'produccion.index',
+                    'icon' => 'fas fa-industry',
+                    'can' => 'ver produccion',
                 ],
             ],
         ],
