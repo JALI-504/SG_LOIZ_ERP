@@ -73,6 +73,13 @@ class RolesPermisosSeeder extends Seeder
             'editar proveedores',
             'eliminar proveedores',
 
+            // Órdenes de trabajo
+            'ver ordenes trabajo',
+            'crear ordenes trabajo',
+            'editar ordenes trabajo',
+            'cambiar estado ordenes trabajo',
+            'anular ordenes trabajo',
+
             // Gastos
             'ver gastos',
             'crear gastos',
@@ -104,6 +111,7 @@ class RolesPermisosSeeder extends Seeder
             'editar roles',
             'eliminar roles',
             'asignar permisos roles',
+            
         ];
 
         foreach ($permisos as $permiso) {

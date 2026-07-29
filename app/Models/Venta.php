@@ -257,4 +257,9 @@ class Venta extends Model
     {
         return $this->saldo_pendiente > 0 && $this->estado !== 'Anulada';
     }
+
+    public function ordenesTrabajo()
+    {
+        return $this->hasMany(OrdenTrabajo::class);
+    }
 }
