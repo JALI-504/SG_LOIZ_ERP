@@ -13,9 +13,11 @@
             <h3 class="card-title">Listado de tipos de catálogo</h3>
 
             <div class="card-tools">
-                <button class="btn btn-primary btn-sm" wire:click="create">
-                    <i class="fas fa-plus"></i> Nuevo tipo
-                </button>
+                @can('editar configuracion')
+                    <button class="btn btn-primary btn-sm" wire:click="create">
+                        <i class="fas fa-plus"></i> Nuevo tipo
+                    </button>
+                @endcan
             </div>
         </div>
 
@@ -56,7 +58,9 @@
                             <th>Descripción</th>
                             <th>Opciones</th>
                             <th>Estado</th>
-                            <th width="170">Acciones</th>
+                            @can('editar configuracion')
+                                <th width="170">Acciones</th>
+                            @endcan
                         </tr>
                     </thead>
 
@@ -89,25 +93,27 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <button class="btn btn-warning btn-xs"
-                                            wire:click="edit({{ $tipoCatalogo->id }})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                               @can('editar configuracion')
+                                    <td>
+                                        <button class="btn btn-warning btn-xs"
+                                                wire:click="edit({{ $tipoCatalogo->id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
-                                    <button class="btn btn-{{ $tipoCatalogo->activo ? 'secondary' : 'success' }} btn-xs"
-                                            wire:click="cambiarEstado({{ $tipoCatalogo->id }})">
-                                        @if ($tipoCatalogo->activo)
-                                            Desactivar
-                                        @else
-                                            Activar
-                                        @endif
-                                    </button>
-                                </td>
+                                        <button class="btn btn-{{ $tipoCatalogo->activo ? 'secondary' : 'success' }} btn-xs"
+                                                wire:click="cambiarEstado({{ $tipoCatalogo->id }})">
+                                            @if ($tipoCatalogo->activo)
+                                                Desactivar
+                                            @else
+                                                Activar
+                                            @endif
+                                        </button>
+                                    </td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="{{ auth()->user()->can('editar configuracion') ? 6 : 5 }}" class="text-center">
                                     No hay tipos de catálogo registrados.
                                 </td>
                             </tr>
@@ -121,6 +127,7 @@
     </div>
 
     {{-- Modal tipo catálogo --}}
+    @can('editar configuracion')
     <div wire:ignore.self class="modal fade" id="tipoCatalogoModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <form wire:submit.prevent="{{ $tipo_catalogo_id ? 'update' : 'store' }}" class="modal-content">
@@ -226,4 +233,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </div>

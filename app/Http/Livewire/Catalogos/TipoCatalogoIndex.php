@@ -27,6 +27,11 @@ class TipoCatalogoIndex extends Component
 
     public $modalTitle = 'Nuevo tipo de catálogo';
 
+    public function mount()
+    {
+        $this->autorizarVerConfiguracion();
+    }
+
     protected function rules()
     {
         $rules = [
@@ -71,6 +76,8 @@ class TipoCatalogoIndex extends Component
 
     public function create()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->resetInput();
 
         $this->modalTitle = 'Nuevo tipo de catálogo';
@@ -80,6 +87,8 @@ class TipoCatalogoIndex extends Component
 
     public function store()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->codigo = strtolower(trim($this->codigo));
 
         $this->validate();
@@ -101,6 +110,8 @@ class TipoCatalogoIndex extends Component
 
     public function edit($id)
     {
+        $this->autorizarEditarConfiguracion();
+
         $tipoCatalogo = TipoCatalogo::findOrFail($id);
 
         $this->tipo_catalogo_id = $tipoCatalogo->id;
@@ -118,6 +129,8 @@ class TipoCatalogoIndex extends Component
 
     public function update()
     {
+        $this->autorizarEditarConfiguracion();
+
         $this->validate();
 
         $tipoCatalogo = TipoCatalogo::findOrFail($this->tipo_catalogo_id);
@@ -139,6 +152,8 @@ class TipoCatalogoIndex extends Component
 
     public function cambiarEstado($id)
     {
+        $this->autorizarEditarConfiguracion();
+
         $tipoCatalogo = TipoCatalogo::findOrFail($id);
 
         $tipoCatalogo->update([
@@ -164,6 +179,8 @@ class TipoCatalogoIndex extends Component
 
     public function render()
     {
+        $this->autorizarVerConfiguracion();
+
         $tiposCatalogo = TipoCatalogo::query()
             ->withCount('catalogos')
             ->where(function ($query) {
@@ -184,5 +201,22 @@ class TipoCatalogoIndex extends Component
         return view('livewire.catalogos.tipo-catalogo-index', [
             'tiposCatalogo' => $tiposCatalogo,
         ]);
+    }
+
+    private function autorizarVerConfiguracion()
+    {
+        if (
+            !auth()->user()->can('ver configuracion') &&
+            !auth()->user()->can('editar configuracion')
+        ) {
+            abort(403, 'No tiene permiso para ver tipos de catálogo.');
+        }
+    }
+
+    private function autorizarEditarConfiguracion()
+    {
+        if (!auth()->user()->can('editar configuracion')) {
+            abort(403, 'No tiene permiso para editar tipos de catálogo.');
+        }
     }
 }
