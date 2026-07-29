@@ -20,6 +20,9 @@ class Produccion extends Model
         'costo_unitario',
         'movimiento_producto_id',
         'estado',
+        'fecha_anulacion',
+        'anulado_por',
+        'motivo_anulacion',
         'observacion',
         'user_id',
     ];
@@ -65,5 +68,10 @@ class Produccion extends Model
     public function getEstaAnuladaAttribute()
     {
         return $this->estado === 'Anulada';
+    }
+
+    public function usuarioAnulacion()
+    {
+        return $this->belongsTo(User::class, 'anulado_por');
     }
 }

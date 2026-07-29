@@ -32,6 +32,10 @@ class ProduccionIndex extends Component
     public $mostrarModalDetalle = false;
     public $produccionDetalle = null;
 
+    public $mostrarModalAnulacion = false;
+    public $produccionAnularId;
+    public $motivoAnulacion;
+
     public $search = '';
     public $perPage = 10;
 
@@ -391,6 +395,15 @@ class ProduccionIndex extends Component
             'movimientoProducto',
         ])->findOrFail($id);
 
+        $this->produccionDetalle = Produccion::with([
+            'producto',
+            'usuario',
+            'usuarioAnulacion',
+            'insumos.insumo',
+            'insumos.movimientoInventario',
+            'movimientoProducto',
+        ])->findOrFail($id);
+
         $this->mostrarModalDetalle = true;
     }
 
@@ -398,6 +411,221 @@ class ProduccionIndex extends Component
     {
         $this->mostrarModalDetalle = false;
         $this->produccionDetalle = null;
+    }
+
+    public function abrirAnularProduccion($id)
+    {
+        if (!auth()->user()->can('anular produccion')) {
+            abort(403, 'No tiene permiso para anular producción.');
+        }
+
+        $produccion = Produccion::findOrFail($id);
+
+        if ($produccion->estado === 'Anulada') {
+            session()->flash('error', 'Esta producción ya está anulada.');
+            return;
+        }
+
+        $this->produccionAnularId = $produccion->id;
+        $this->motivoAnulacion = '';
+        $this->mostrarModalAnulacion = true;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function cerrarModalAnulacion()
+    {
+        $this->mostrarModalAnulacion = false;
+        $this->produccionAnularId = null;
+        $this->motivoAnulacion = '';
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function confirmarAnularProduccion()
+    {
+        if (!auth()->user()->can('anular produccion')) {
+            abort(403, 'No tiene permiso para anular producción.');
+        }
+
+        $this->validate([
+            'produccionAnularId' => 'required|exists:producciones,id',
+            'motivoAnulacion' => 'required|min:5|max:500',
+        ], [
+            'motivoAnulacion.required' => 'Debe ingresar el motivo de anulación.',
+            'motivoAnulacion.min' => 'El motivo debe tener al menos 5 caracteres.',
+            'motivoAnulacion.max' => 'El motivo no debe superar los 500 caracteres.',
+        ]);
+
+        try {
+            DB::transaction(function () {
+                $produccion = Produccion::with([
+                    'producto',
+                    'insumos.insumo',
+                    'insumos.movimientoInventario.detalleLotes',
+                    'movimientoProducto.detalleLotes',
+                ])->lockForUpdate()->findOrFail($this->produccionAnularId);
+
+                if ($produccion->estado === 'Anulada') {
+                    throw new \Exception('Esta producción ya está anulada.');
+                }
+
+                if (!$produccion->movimientoProducto) {
+                    throw new \Exception('No se encontró el movimiento de producto relacionado.');
+                }
+
+                $producto = $produccion->producto;
+                $referencia = 'Anulación ' . $produccion->codigo;
+
+                /*
+             * 1. Validar que el lote producido todavía tenga stock suficiente.
+             */
+                foreach ($produccion->movimientoProducto->detalleLotes as $detalleProductoLote) {
+                    $loteProducto = LoteProducto::where('id', $detalleProductoLote->lote_producto_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$loteProducto) {
+                        throw new \Exception('No se encontró el lote de producto producido.');
+                    }
+
+                    if ((float) $loteProducto->cantidad_disponible < (float) $detalleProductoLote->cantidad) {
+                        throw new \Exception(
+                            'No se puede anular esta producción porque el producto terminado ya fue vendido o consumido parcialmente.'
+                        );
+                    }
+                }
+
+                /*
+             * 2. Sacar del inventario el producto terminado producido.
+             */
+                $movimientoSalidaProducto = MovimientoProducto::create([
+                    'producto_id' => $producto->id,
+                    'tipo_movimiento' => 'Salida ajuste',
+                    'cantidad' => $produccion->cantidad,
+                    'costo_unitario' => $produccion->costo_unitario,
+                    'total' => $produccion->costo_total,
+                    'referencia' => $referencia,
+                    'observacion' => 'Salida por anulación de producción. Motivo: ' . $this->motivoAnulacion,
+                ]);
+
+                foreach ($produccion->movimientoProducto->detalleLotes as $detalleProductoLote) {
+                    $loteProducto = LoteProducto::where('id', $detalleProductoLote->lote_producto_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    $cantidad = (float) $detalleProductoLote->cantidad;
+                    $costoUnitario = (float) $detalleProductoLote->costo_unitario;
+                    $total = round($cantidad * $costoUnitario, 2);
+
+                    MovimientoProductoLote::create([
+                        'movimiento_producto_id' => $movimientoSalidaProducto->id,
+                        'lote_producto_id' => $loteProducto->id,
+                        'cantidad' => $cantidad,
+                        'costo_unitario' => $costoUnitario,
+                        'total' => $total,
+                    ]);
+
+                    $nuevaCantidad = round((float) $loteProducto->cantidad_disponible - $cantidad, 4);
+
+                    $loteProducto->update([
+                        'cantidad_disponible' => $nuevaCantidad,
+                        'activo' => $nuevaCantidad > 0,
+                    ]);
+                }
+
+                $this->actualizarCostoActualPepsProducto($producto);
+
+                /*
+             * 3. Devolver los insumos consumidos.
+             */
+                foreach ($produccion->insumos as $detalleInsumo) {
+                    $insumo = $detalleInsumo->insumo;
+                    $movimientoOriginal = $detalleInsumo->movimientoInventario;
+
+                    $movimientoDevolucion = MovimientoInventario::create([
+                        'insumo_id' => $insumo->id,
+                        'tipo_movimiento' => 'Devolucion',
+                        'cantidad' => $detalleInsumo->cantidad_total,
+                        'costo_unitario' => $detalleInsumo->costo_unitario,
+                        'total' => $detalleInsumo->costo_total,
+                        'referencia' => $referencia,
+                        'observacion' => 'Devolución por anulación de producción. Motivo: ' . $this->motivoAnulacion,
+                    ]);
+
+                    if ($movimientoOriginal && $movimientoOriginal->detalleLotes->count() > 0) {
+                        foreach ($movimientoOriginal->detalleLotes as $detalleLoteInsumo) {
+                            $loteInsumo = LoteInsumo::where('id', $detalleLoteInsumo->lote_insumo_id)
+                                ->lockForUpdate()
+                                ->first();
+
+                            if (!$loteInsumo) {
+                                throw new \Exception('No se encontró uno de los lotes de insumo a devolver.');
+                            }
+
+                            $cantidadDevuelta = (float) $detalleLoteInsumo->cantidad;
+                            $costoUnitario = (float) $detalleLoteInsumo->costo_unitario;
+                            $total = round($cantidadDevuelta * $costoUnitario, 2);
+
+                            MovimientoInventarioLote::create([
+                                'movimiento_inventario_id' => $movimientoDevolucion->id,
+                                'lote_insumo_id' => $loteInsumo->id,
+                                'cantidad' => $cantidadDevuelta,
+                                'costo_unitario' => $costoUnitario,
+                                'total' => $total,
+                            ]);
+
+                            $loteInsumo->update([
+                                'cantidad_disponible' => round((float) $loteInsumo->cantidad_disponible + $cantidadDevuelta, 4),
+                                'activo' => true,
+                            ]);
+                        }
+                    } else {
+                        $loteInsumo = LoteInsumo::create([
+                            'insumo_id' => $insumo->id,
+                            'codigo_lote' => 'DEV-' . $insumo->id . '-' . now()->format('YmdHis'),
+                            'fecha_entrada' => now()->format('Y-m-d'),
+                            'cantidad_inicial' => $detalleInsumo->cantidad_total,
+                            'cantidad_disponible' => $detalleInsumo->cantidad_total,
+                            'costo_unitario' => $detalleInsumo->costo_unitario,
+                            'total' => $detalleInsumo->costo_total,
+                            'referencia' => $referencia,
+                            'observacion' => 'Lote creado por anulación de producción.',
+                            'activo' => true,
+                        ]);
+
+                        MovimientoInventarioLote::create([
+                            'movimiento_inventario_id' => $movimientoDevolucion->id,
+                            'lote_insumo_id' => $loteInsumo->id,
+                            'cantidad' => $detalleInsumo->cantidad_total,
+                            'costo_unitario' => $detalleInsumo->costo_unitario,
+                            'total' => $detalleInsumo->costo_total,
+                        ]);
+                    }
+
+                    $this->actualizarCostoActualPepsInsumo($insumo);
+                }
+
+                /*
+             * 4. Marcar producción como anulada.
+             */
+                $produccion->update([
+                    'estado' => 'Anulada',
+                    'fecha_anulacion' => now(),
+                    'anulado_por' => auth()->id(),
+                    'motivo_anulacion' => $this->motivoAnulacion,
+                ]);
+            });
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+            return;
+        }
+
+        $this->cerrarModalAnulacion();
+
+        session()->flash('message', 'Producción anulada correctamente.');
     }
 
     private function resetFormulario()

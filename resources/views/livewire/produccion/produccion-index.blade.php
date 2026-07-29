@@ -229,6 +229,16 @@
                                             wire:click="verDetalle({{ $produccion->id }})">
                                         <i class="fas fa-eye"></i> Ver
                                     </button>
+
+                                    @can('anular produccion')
+                                        @if ($produccion->estado === 'Registrada')
+                                            <button type="button"
+                                                    class="btn btn-danger btn-xs"
+                                                    wire:click="abrirAnularProduccion({{ $produccion->id }})">
+                                                <i class="fas fa-ban"></i> Anular
+                                            </button>
+                                        @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -255,10 +265,16 @@
 
             <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            Detalle de producción {{ $produccionDetalle->codigo }}
-                        </h5>
+                    <div class="modal-header bg-light">
+                        <div>
+                            <h5 class="modal-title mb-0">
+                                <i class="fas fa-industry"></i>
+                                Detalle de producción
+                            </h5>
+                            <small class="text-muted">
+                                Código: {{ $produccionDetalle->codigo }}
+                            </small>
+                        </div>
 
                         <button type="button" class="close" wire:click="cerrarModalDetalle">
                             <span>&times;</span>
@@ -266,130 +282,269 @@
                     </div>
 
                     <div class="modal-body" style="max-height: calc(100vh - 220px); overflow-y: auto;">
+
+                        {{-- Resumen principal --}}
                         <div class="row">
-                            <div class="col-md-4">
-                                <strong>Código:</strong>
-                                <p>{{ $produccionDetalle->codigo }}</p>
-                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box mb-3">
+                                    <span class="info-box-icon bg-info">
+                                        <i class="fas fa-barcode"></i>
+                                    </span>
 
-                            <div class="col-md-4">
-                                <strong>Fecha:</strong>
-                                <p>{{ \Carbon\Carbon::parse($produccionDetalle->fecha)->format('d/m/Y') }}</p>
-                            </div>
-
-                            <div class="col-md-4">
-                                <strong>Estado:</strong>
-                                <p>
-                                    @if ($produccionDetalle->estado === 'Registrada')
-                                        <span class="badge badge-success">Registrada</span>
-                                    @else
-                                        <span class="badge badge-danger">{{ $produccionDetalle->estado }}</span>
-                                    @endif
-                                </p>
-                            </div>
-
-                            <div class="col-md-6">
-                                <strong>Producto producido:</strong>
-                                <p>{{ $produccionDetalle->producto->nombre ?? '' }}</p>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Código</span>
+                                        <span class="info-box-number">
+                                            {{ $produccionDetalle->codigo }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-md-3">
-                                <strong>Cantidad producida:</strong>
-                                <p>{{ number_format($produccionDetalle->cantidad, 2) }}</p>
+                                <div class="info-box mb-3">
+                                    <span class="info-box-icon bg-primary">
+                                        <i class="far fa-calendar-alt"></i>
+                                    </span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Fecha</span>
+                                        <span class="info-box-number">
+                                            {{ \Carbon\Carbon::parse($produccionDetalle->fecha)->format('d/m/Y') }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-md-3">
-                                <strong>Usuario:</strong>
-                                <p>{{ $produccionDetalle->usuario->name ?? 'Sistema' }}</p>
+                                <div class="info-box mb-3">
+                                    <span class="info-box-icon {{ $produccionDetalle->estado === 'Registrada' ? 'bg-success' : 'bg-danger' }}">
+                                        <i class="fas {{ $produccionDetalle->estado === 'Registrada' ? 'fa-check-circle' : 'fa-ban' }}"></i>
+                                    </span>
+
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Estado</span>
+                                        <span class="info-box-number">
+                                            {{ $produccionDetalle->estado }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <strong>Costo unitario:</strong>
-                                <p>L {{ number_format($produccionDetalle->costo_unitario, 4) }}</p>
-                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box mb-3">
+                                    <span class="info-box-icon bg-secondary">
+                                        <i class="fas fa-user"></i>
+                                    </span>
 
-                            <div class="col-md-4">
-                                <strong>Costo total:</strong>
-                                <p>L {{ number_format($produccionDetalle->costo_total, 2) }}</p>
-                            </div>
-
-                            <div class="col-md-4">
-                                <strong>Movimiento producto:</strong>
-                                <p>
-                                    @if ($produccionDetalle->movimientoProducto)
-                                        #{{ $produccionDetalle->movimientoProducto->id }}
-                                        - {{ $produccionDetalle->movimientoProducto->tipo_movimiento }}
-                                    @else
-                                        Sin movimiento relacionado
-                                    @endif
-                                </p>
-                            </div>
-
-                            <div class="col-md-12">
-                                <strong>Observación:</strong>
-                                <p>{{ $produccionDetalle->observacion ?: 'Sin observación' }}</p>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Registrado por</span>
+                                        <span class="info-box-number">
+                                            {{ $produccionDetalle->usuario->name ?? 'Sistema' }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <hr>
+                        {{-- Datos de anulación --}}
+                        @if ($produccionDetalle->estado === 'Anulada')
+                            <div class="alert alert-danger">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-ban"></i>
+                                    Producción anulada
+                                </h6>
 
-                        <h5>Insumos consumidos</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Fecha de anulación:</strong><br>
+                                        {{ $produccionDetalle->fecha_anulacion ? \Carbon\Carbon::parse($produccionDetalle->fecha_anulacion)->format('d/m/Y H:i') : 'No registrada' }}
+                                    </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-sm">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Insumo</th>
-                                        <th>Cantidad por unidad</th>
-                                        <th>Cantidad total</th>
-                                        <th>Costo unitario</th>
-                                        <th>Costo total</th>
-                                        <th>Movimiento inventario</th>
-                                    </tr>
-                                </thead>
+                                    <div class="col-md-4">
+                                        <strong>Anulado por:</strong><br>
+                                        {{ $produccionDetalle->usuarioAnulacion->name ?? 'Sistema' }}
+                                    </div>
 
-                                <tbody>
-                                    @forelse ($produccionDetalle->insumos as $detalle)
-                                        <tr>
-                                            <td>{{ $detalle->insumo->nombre ?? '' }}</td>
+                                    <div class="col-md-4">
+                                        <strong>Motivo:</strong><br>
+                                        {{ $produccionDetalle->motivo_anulacion ?: 'Sin motivo registrado' }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
-                                            <td>
-                                                {{ number_format($detalle->cantidad_por_unidad, 4) }}
-                                                {{ $detalle->insumo->unidad_consumo ?? '' }}
-                                            </td>
+                        {{-- Producto y costos --}}
+                        <div class="row">
+                            <div class="col-md-7">
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header py-2">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-box"></i>
+                                            Producto producido
+                                        </h3>
+                                    </div>
 
-                                            <td>
-                                                {{ number_format($detalle->cantidad_total, 4) }}
-                                                {{ $detalle->insumo->unidad_consumo ?? '' }}
-                                            </td>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <strong>Producto:</strong>
+                                                <p class="mb-2">
+                                                    {{ $produccionDetalle->producto->nombre ?? '' }}
+                                                </p>
+                                            </div>
 
-                                            <td>
-                                                L {{ number_format($detalle->costo_unitario, 4) }}
-                                            </td>
+                                            <div class="col-md-4">
+                                                <strong>Cantidad producida:</strong>
+                                                <p class="mb-2">
+                                                    {{ number_format($produccionDetalle->cantidad, 2) }}
+                                                </p>
+                                            </div>
 
-                                            <td>
-                                                <strong>L {{ number_format($detalle->costo_total, 2) }}</strong>
-                                            </td>
+                                            <div class="col-md-12">
+                                                <strong>Movimiento de producto:</strong>
+                                                <p class="mb-0">
+                                                    @if ($produccionDetalle->movimientoProducto)
+                                                        #{{ $produccionDetalle->movimientoProducto->id }}
+                                                        - {{ $produccionDetalle->movimientoProducto->tipo_movimiento }}
+                                                    @else
+                                                        Sin movimiento relacionado
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                                            <td>
-                                                @if ($detalle->movimientoInventario)
-                                                    #{{ $detalle->movimientoInventario->id }}
-                                                    - {{ $detalle->movimientoInventario->tipo_movimiento }}
-                                                @else
-                                                    Sin movimiento
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center">
-                                                No hay insumos registrados para esta producción.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                            <div class="col-md-5">
+                                <div class="card card-outline card-success">
+                                    <div class="card-header py-2">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-coins"></i>
+                                            Costos de producción
+                                        </h3>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Costo unitario:</strong>
+                                                <h5 class="mt-1">
+                                                    L {{ number_format($produccionDetalle->costo_unitario, 4) }}
+                                                </h5>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <strong>Costo total:</strong>
+                                                <h5 class="mt-1 text-success">
+                                                    L {{ number_format($produccionDetalle->costo_total, 2) }}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        {{-- Observación --}}
+                        <div class="card card-outline card-secondary">
+                            <div class="card-header py-2">
+                                <h3 class="card-title">
+                                    <i class="fas fa-comment-alt"></i>
+                                    Observación
+                                </h3>
+                            </div>
+
+                            <div class="card-body">
+                                {{ $produccionDetalle->observacion ?: 'Sin observación' }}
+                            </div>
+                        </div>
+
+                        {{-- Insumos consumidos --}}
+                        <div class="card card-outline card-warning">
+                            <div class="card-header py-2">
+                                <h3 class="card-title">
+                                    <i class="fas fa-boxes"></i>
+                                    Insumos consumidos
+                                </h3>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-sm mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Insumo</th>
+                                                <th class="text-right">Cantidad por unidad</th>
+                                                <th class="text-right">Cantidad total</th>
+                                                <th class="text-right">Costo unitario</th>
+                                                <th class="text-right">Costo total</th>
+                                                <th>Movimiento inventario</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            @forelse ($produccionDetalle->insumos as $detalle)
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ $detalle->insumo->nombre ?? '' }}</strong>
+                                                        <div class="small text-muted">
+                                                            {{ $detalle->insumo->codigo ?? '' }}
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="text-right">
+                                                        {{ number_format($detalle->cantidad_por_unidad, 4) }}
+                                                        {{ $detalle->insumo->unidad_consumo ?? '' }}
+                                                    </td>
+
+                                                    <td class="text-right">
+                                                        {{ number_format($detalle->cantidad_total, 4) }}
+                                                        {{ $detalle->insumo->unidad_consumo ?? '' }}
+                                                    </td>
+
+                                                    <td class="text-right">
+                                                        L {{ number_format($detalle->costo_unitario, 4) }}
+                                                    </td>
+
+                                                    <td class="text-right">
+                                                        <strong>L {{ number_format($detalle->costo_total, 2) }}</strong>
+                                                    </td>
+
+                                                    <td>
+                                                        @if ($detalle->movimientoInventario)
+                                                            #{{ $detalle->movimientoInventario->id }}
+                                                            - {{ $detalle->movimientoInventario->tipo_movimiento }}
+                                                        @else
+                                                            <span class="text-muted">Sin movimiento</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center">
+                                                        No hay insumos registrados para esta producción.
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="4" class="text-right">
+                                                    Total consumido:
+                                                </th>
+                                                <th class="text-right">
+                                                    L {{ number_format($produccionDetalle->insumos->sum('costo_total'), 2) }}
+                                                </th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="modal-footer">
@@ -400,6 +555,62 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="modal-backdrop fade show"></div>
+    @endif
+    @if ($mostrarModalAnulacion)
+        <div class="modal fade show"
+            id="anularProduccionModal"
+            tabindex="-1"
+            role="dialog"
+            style="display: block;"
+            aria-modal="true">
+
+            <div class="modal-dialog" role="document">
+                <form wire:submit.prevent="confirmarAnularProduccion" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Anular producción</h5>
+
+                        <button type="button" class="close" wire:click="cerrarModalAnulacion">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            Esta acción intentará revertir el producto terminado y devolver los insumos consumidos.
+                            Si el producto producido ya fue vendido o consumido parcialmente, el sistema no permitirá la anulación.
+                        </div>
+
+                        <div class="form-group">
+                            <label>Motivo de anulación <span class="text-danger">*</span></label>
+                            <textarea class="form-control"
+                                    rows="3"
+                                    wire:model.defer="motivoAnulacion"
+                                    placeholder="Explique por qué se anula esta producción"></textarea>
+
+                            @error('motivoAnulacion')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                wire:click="cerrarModalAnulacion">
+                            Cancelar
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-danger"
+                                wire:loading.attr="disabled">
+                            <i class="fas fa-ban"></i> Confirmar anulación
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 

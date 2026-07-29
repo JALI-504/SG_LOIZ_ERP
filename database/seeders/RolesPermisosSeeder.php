@@ -55,6 +55,9 @@ class RolesPermisosSeeder extends Seeder
             // Producción
             'ver produccion',
             'crear produccion',
+            'ver produccion',
+            'crear produccion',
+            'anular produccion',
 
             // Compras
             'ver compras',
