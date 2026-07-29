@@ -166,6 +166,16 @@ Route::middleware(['auth'])->group(function () {
     })->name('insumos.movimientos')
         ->middleware('permission:ver inventario');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Producción
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/produccion', function () {
+        return view('produccion.index');
+    })->name('produccion.index')
+        ->middleware('permission:ver produccion');
 
     /*
     |--------------------------------------------------------------------------
