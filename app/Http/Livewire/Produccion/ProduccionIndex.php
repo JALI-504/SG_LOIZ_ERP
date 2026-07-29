@@ -29,6 +29,9 @@ class ProduccionIndex extends Component
 
     public $recetaCalculada = [];
 
+    public $mostrarModalDetalle = false;
+    public $produccionDetalle = null;
+
     public $search = '';
     public $perPage = 10;
 
@@ -372,6 +375,29 @@ class ProduccionIndex extends Component
                 'suficiente' => $cantidadNecesaria <= $stockDisponible,
             ];
         }
+    }
+
+    public function verDetalle($id)
+    {
+        if (!auth()->user()->can('ver produccion')) {
+            abort(403, 'No tiene permiso para ver producción.');
+        }
+
+        $this->produccionDetalle = Produccion::with([
+            'producto',
+            'usuario',
+            'insumos.insumo',
+            'insumos.movimientoInventario',
+            'movimientoProducto',
+        ])->findOrFail($id);
+
+        $this->mostrarModalDetalle = true;
+    }
+
+    public function cerrarModalDetalle()
+    {
+        $this->mostrarModalDetalle = false;
+        $this->produccionDetalle = null;
     }
 
     private function resetFormulario()
