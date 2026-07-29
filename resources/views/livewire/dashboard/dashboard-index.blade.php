@@ -6,25 +6,35 @@
 
     {{-- Accesos rápidos --}}
     <div class="mb-3">
-        <a href="{{ route('ventas.index') }}" class="btn btn-success">
-            <i class="fas fa-cash-register"></i> Nueva venta
-        </a>
+        @can('crear ventas')
+            <a href="{{ route('ventas.index') }}" class="btn btn-success">
+                <i class="fas fa-cash-register"></i> Nueva venta
+            </a>
+        @endcan
 
-        <a href="{{ route('ventas.historial') }}" class="btn btn-primary">
-            <i class="fas fa-receipt"></i> Historial ventas
-        </a>
+        @can('ver historial ventas')
+            <a href="{{ route('ventas.historial') }}" class="btn btn-primary">
+                <i class="fas fa-receipt"></i> Historial ventas
+            </a>
+        @endcan
 
-        <a href="{{ route('reportes.ventas') }}" class="btn btn-info">
-            <i class="fas fa-chart-line"></i> Reporte ventas
-        </a>
+        @can('ver reporte ventas')
+            <a href="{{ route('reportes.ventas') }}" class="btn btn-info">
+                <i class="fas fa-chart-line"></i> Reporte ventas
+            </a>
+        @endcan
 
-        <a href="{{ route('productos.index') }}" class="btn btn-secondary">
-            <i class="fas fa-cube"></i> Productos
-        </a>
+        @can('ver productos')
+            <a href="{{ route('productos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-cube"></i> Productos
+            </a>
+        @endcan
 
-        <a href="{{ route('insumos.index') }}" class="btn btn-secondary">
-            <i class="fas fa-boxes"></i> Insumos
-        </a>
+        @can('ver insumos')
+            <a href="{{ route('insumos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-boxes"></i> Insumos
+            </a>
+        @endcan
     </div>
 
     {{-- Resumen principal --}}
@@ -232,6 +242,7 @@
     </div>
 
     {{-- Cuentas pendientes --}}
+    @can('ver cuentas por pagar')
     <div class="row">
         <div class="col-md-3">
             <div class="small-box bg-danger">
@@ -257,6 +268,7 @@
             </div>
         </div>
     </div>
+    @endcan
 
 
     {{-- Gráficas del Dashboard --}}
@@ -348,7 +360,9 @@
                                     <th>Cliente</th>
                                     <th>Estado</th>
                                     <th>Total</th>
-                                    <th width="90">Acción</th>
+                                    @can('imprimir recibos ventas')
+                                        <th width="90">Acción</th>
+                                    @endcan
                                 </tr>
                             </thead>
 
@@ -404,21 +418,23 @@
                                             <strong>L {{ number_format($venta->total, 2) }}</strong>
                                         </td>
 
+                                        @can('imprimir recibos ventas')
                                         <td>
                                             <a href="{{ route('ventas.recibo', $venta->id) }}"
-                                        target="_blank"
-                                        class="btn btn-success btn-xs">
-                                            @if ($venta->es_fiscal)
-                                                <i class="fas fa-file-invoice"></i> Factura
-                                            @else
-                                                <i class="fas fa-receipt"></i> Recibo
-                                            @endif
-                                        </a>
+                                            target="_blank"
+                                            class="btn btn-success btn-xs">
+                                                @if ($venta->es_fiscal)
+                                                    <i class="fas fa-file-invoice"></i> Factura
+                                                @else
+                                                    <i class="fas fa-receipt"></i> Recibo
+                                                @endif
+                                            </a>
                                         </td>
+                                        @endcan
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center">
+                                        <td colspan="{{ auth()->user()->can('imprimir recibos ventas') ? 6 : 5 }}" class="text-center">
                                             No hay ventas registradas.
                                         </td>
                                     </tr>
@@ -427,9 +443,11 @@
                         </table>
                     </div>
 
-                    <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
-                        Ver historial completo
-                    </a>
+                    @can('ver historial ventas')
+                        <a href="{{ route('ventas.historial') }}" class="btn btn-primary btn-sm">
+                            Ver historial completo
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -528,13 +546,17 @@
                         </table>
                     </div>
 
-                    <a href="{{ route('insumos.index') }}" class="btn btn-secondary btn-sm">
-                        Ver insumos
-                    </a>
+                    @can('ver insumos')
+                        <a href="{{ route('insumos.index') }}" class="btn btn-secondary btn-sm">
+                            Ver insumos
+                        </a>
+                    @endcan
 
-                    <a href="{{ route('productos.index') }}" class="btn btn-secondary btn-sm">
-                        Ver productos
-                    </a>
+                    @can('ver productos')
+                        <a href="{{ route('productos.index') }}" class="btn btn-secondary btn-sm">
+                            Ver productos
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>

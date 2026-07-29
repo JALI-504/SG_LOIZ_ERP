@@ -14,8 +14,22 @@ use Livewire\Component;
 
 class DashboardIndex extends Component
 {
+    private function autorizarVerDashboard()
+    {
+        if (!auth()->user()->can('ver dashboard')) {
+            abort(403, 'No tiene permiso para ver el dashboard.');
+        }
+    }
+
+    public function mount()
+    {
+        $this->autorizarVerDashboard();
+    }
+
     public function render()
     {
+        $this->autorizarVerDashboard();
+
         $hoy = now()->format('Y-m-d');
 
         $ventasHoyQuery = Venta::whereDate('fecha', $hoy);
