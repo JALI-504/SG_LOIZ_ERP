@@ -188,6 +188,29 @@ Route::middleware(['auth'])->group(function () {
     })->name('ordenes-trabajo.index')
         ->middleware('permission:ver ordenes trabajo');
 
+    Route::get('/ordenes-trabajo/{orden}/imprimir', function (\App\Models\OrdenTrabajo $orden) {
+        if (!auth()->user()->can('ver ordenes trabajo')) {
+            abort(403, 'No tiene permiso para imprimir órdenes de trabajo.');
+        }
+
+        $orden->load([
+            'cliente',
+            'detalles.producto',
+            'detalles.servicio',
+            'usuario',
+            'usuarioAnulacion',
+            'venta',
+        ]);
+
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+        return view('ordenes-trabajo.imprimir', [
+            'orden' => $orden,
+            'configuracion' => $configuracion,
+        ]);
+    })->name('ordenes-trabajo.imprimir')
+        ->middleware('permission:ver ordenes trabajo');
+
     /*
     |--------------------------------------------------------------------------
     | Ventas

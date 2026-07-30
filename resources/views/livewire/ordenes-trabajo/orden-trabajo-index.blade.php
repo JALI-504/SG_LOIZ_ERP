@@ -442,6 +442,12 @@
                                         <i class="fas fa-eye"></i> Ver
                                     </button>
 
+                                    <a href="{{ route('ordenes-trabajo.imprimir', $orden->id) }}"
+                                    target="_blank"
+                                    class="btn btn-secondary btn-xs">
+                                        <i class="fas fa-print"></i> Imprimir
+                                    </a>
+
                                     @can('crear ventas')
                                         @if (!$orden->venta_id && $orden->estado !== 'Anulada')
                                             <button type="button"
@@ -846,6 +852,12 @@
                     </div>
 
                     <div class="modal-footer">
+                        <a href="{{ route('ordenes-trabajo.imprimir', $ordenDetalle->id) }}"
+                        target="_blank"
+                        class="btn btn-secondary">
+                            <i class="fas fa-print"></i> Imprimir orden
+                        </a>
+                        
                         <button type="button"
                                 class="btn btn-secondary"
                                 wire:click="cerrarModalDetalle">
