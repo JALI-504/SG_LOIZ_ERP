@@ -396,20 +396,29 @@
                 <tr>
                     <td colspan="2">
                         <strong>Cliente:</strong>
-
                         @if ($venta->cliente)
-                            {{ trim($venta->cliente->primer_nombre . ' ' . $venta->cliente->segundo_nombre . ' ' . $venta->cliente->primer_apellido . ' ' . $venta->cliente->segundo_apellido) }}
+                            @php
+                                $clienteEsAutomatico = $venta->cliente->notas
+                                    && strpos($venta->cliente->notas, 'Cliente creado automáticamente desde orden de trabajo') !== false;
 
-                            @if ($venta->cliente->dni)
-                                | DNI: {{ $venta->cliente->dni }}
+                                $nombreCliente = trim(str_replace('No definido', '', $venta->cliente->nombre_completo));
+
+                                $dniCliente = $clienteEsAutomatico ? null : $venta->cliente->dni;
+                                $telefonoCliente = $clienteEsAutomatico ? null : $venta->cliente->telefono;
+                            @endphp
+
+                            {{ $nombreCliente ?: 'Cliente' }}
+
+                            @if ($dniCliente)
+                                | DNI: {{ $dniCliente }}
                             @endif
 
-                            @if ($venta->cliente->rtn)
+                            @if ($venta->cliente->rtn && !$clienteEsAutomatico)
                                 | RTN: {{ $venta->cliente->rtn }}
                             @endif
 
-                            @if ($venta->cliente->telefono)
-                                | Tel: {{ $venta->cliente->telefono }}
+                            @if ($telefonoCliente)
+                                | Tel: {{ $telefonoCliente }}
                             @endif
                         @else
                             Consumidor final

@@ -33,11 +33,11 @@
 
                                 @foreach ($clientes as $cliente)
                                     <option value="{{ $cliente->id }}">
-                                        {{ $cliente->nombre_cliente
-                                            ?? $cliente->nombre_completo
-                                            ?? $cliente->razon_social
-                                            ?? $cliente->cliente
-                                            ?? 'Cliente #' . $cliente->id }}
+                                        {{ $cliente->nombre_completo ?: 'Cliente #' . $cliente->id }}
+
+                                        @if ($cliente->telefono)
+                                            - Tel: {{ $cliente->telefono }}
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
@@ -935,6 +935,13 @@
                             Esta acción generará una venta desde la orden de trabajo.
                             Si contiene productos o servicios con insumos, se descontará inventario automáticamente.
                         </div>
+
+                        @if ($errorConversionVenta)
+                            <div class="alert alert-danger">
+                                <strong>No se pudo generar la venta.</strong><br>
+                                {{ $errorConversionVenta }}
+                            </div>
+                        @endif
 
                         <div class="form-group">
                             <label>Método de pago</label>

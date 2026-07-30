@@ -19,6 +19,8 @@ use App\Models\MovimientoProductoLote;
 use App\Models\PagoVenta;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\Departamento;
+use App\Models\Municipio;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -36,6 +38,8 @@ class OrdenTrabajoIndex extends Component
     public $cliente_id;
     public $cliente_nombre;
     public $cliente_telefono;
+
+    public $errorConversionVenta = null;
 
     public $fecha;
     public $fecha_entrega;
@@ -149,16 +153,8 @@ class OrdenTrabajoIndex extends Component
         $cliente = Cliente::find($this->cliente_id);
 
         if ($cliente) {
-            $this->cliente_nombre = $cliente->nombre_cliente
-                ?? $cliente->nombre_completo
-                ?? $cliente->razon_social
-                ?? $cliente->cliente
-                ?? 'Cliente #' . $cliente->id;
-
-            $this->cliente_telefono = $cliente->telefono
-                ?? $cliente->celular
-                ?? $cliente->telefono_cliente
-                ?? '';
+            $this->cliente_nombre = $cliente->nombre_completo ?: 'Cliente #' . $cliente->id;
+            $this->cliente_telefono = $cliente->telefono ?? '';
         }
     }
 
@@ -480,6 +476,7 @@ class OrdenTrabajoIndex extends Component
         $this->metodoPagoConversion = $this->metodosPagoVenta[0] ?? 'Efectivo';
         $this->referenciaPagoConversion = 'Orden ' . $orden->codigo;
         $this->mostrarModalConvertirVenta = true;
+        $this->errorConversionVenta = null;
 
         $this->resetErrorBag();
         $this->resetValidation();
@@ -531,6 +528,8 @@ class OrdenTrabajoIndex extends Component
                 $datosVenta = $this->prepararDetallesVentaDesdeOrden($orden, $configuracion);
 
                 $this->validarDisponibilidadVentaOrden($datosVenta['detalles']);
+
+                $clienteIdVenta = $this->crearClienteDesdeOrdenManual($orden);
 
                 $totalVenta = (float) $datosVenta['total'];
                 $abonoOrden = (float) $orden->abono;
@@ -625,6 +624,7 @@ class OrdenTrabajoIndex extends Component
                 ]);
             });
         } catch (\Exception $e) {
+            $this->errorConversionVenta = $e->getMessage();
             session()->flash('error', $e->getMessage());
             return;
         }
@@ -1009,6 +1009,134 @@ class OrdenTrabajoIndex extends Component
         $insumo->save();
     }
 
+    private function crearClienteDesdeOrdenManual(OrdenTrabajo $orden)
+    {
+        if ($orden->cliente_id) {
+            return $orden->cliente_id;
+        }
+
+        $nombreCompleto = trim((string) $orden->cliente_nombre);
+
+        if ($nombreCompleto === '') {
+            return null;
+        }
+
+        $telefono = preg_replace('/\D/', '', (string) $orden->cliente_telefono);
+
+        /*
+    |--------------------------------------------------------------------------
+    | Teléfono obligatorio
+    |--------------------------------------------------------------------------
+    | En tu tabla clientes, telefono no permite NULL ni valor por defecto.
+    | Si la orden manual no tiene teléfono, asignamos un número interno único.
+    */
+        if ($telefono === '') {
+            $telefono = '99' . str_pad($orden->id, 6, '0', STR_PAD_LEFT);
+        }
+
+        $clienteExistente = Cliente::where('telefono', $telefono)->first();
+
+        if ($clienteExistente) {
+            $orden->update([
+                'cliente_id' => $clienteExistente->id,
+            ]);
+
+            return $clienteExistente->id;
+        }
+
+        $departamento = Departamento::orderBy('id')->first();
+
+        if (!$departamento) {
+            throw new \Exception('No se puede crear el cliente automático porque no hay departamentos registrados.');
+        }
+
+        $municipio = Municipio::where('departamento_id', $departamento->id)
+            ->orderBy('id')
+            ->first();
+
+        if (!$municipio) {
+            $municipio = Municipio::orderBy('id')->first();
+        }
+
+        if (!$municipio) {
+            throw new \Exception('No se puede crear el cliente automático porque no hay municipios registrados.');
+        }
+
+        $partes = preg_split('/\s+/', $nombreCompleto);
+
+        $primerNombre = $partes[0] ?? 'Cliente';
+        $segundoNombre = null;
+        $primerApellido = 'No definido';
+        $segundoApellido = null;
+
+        if (count($partes) === 2) {
+            $primerApellido = $partes[1];
+        }
+
+        if (count($partes) === 3) {
+            $segundoNombre = $partes[1];
+            $primerApellido = $partes[2];
+        }
+
+        if (count($partes) >= 4) {
+            $segundoNombre = $partes[1];
+            $primerApellido = $partes[count($partes) - 2];
+            $segundoApellido = $partes[count($partes) - 1];
+        }
+
+        $dniInterno = '9999' . str_pad($orden->id, 9, '0', STR_PAD_LEFT);
+        
+        $cliente = Cliente::create([
+            'primer_nombre' => $primerNombre,
+            'segundo_nombre' => $segundoNombre,
+            'primer_apellido' => $primerApellido,
+            'segundo_apellido' => $segundoApellido,
+            'codigo_pais' => '+504',
+            'telefono' => $telefono,
+            'correo' => null,
+            'dni' => $dniInterno,
+            'rtn' => null,
+            'tipo_cliente' => 'Natural',
+            'departamento_id' => $departamento->id,
+            'municipio_id' => $municipio->id,
+            'direccion_referencia' => 'No especificada',
+            'notas' => 'Cliente creado automáticamente desde orden de trabajo ' . $orden->codigo . '.',
+            'activo' => true,
+        ]);
+
+        $orden->update([
+            'cliente_id' => $cliente->id,
+        ]);
+
+        return $cliente->id;
+    }
+
+    public function convertirOrdenAVenta($id)
+    {
+        if (!auth()->user()->can('crear ventas')) {
+            abort(403, 'No tiene permiso para crear ventas.');
+        }
+
+        $orden = OrdenTrabajo::findOrFail($id);
+
+        if ($orden->estado === 'Anulada') {
+            session()->flash('error', 'No se puede convertir una orden anulada.');
+            return;
+        }
+
+        if ($orden->venta_id) {
+            session()->flash('error', 'Esta orden ya fue convertida a venta.');
+            return;
+        }
+
+        $this->ordenConvertirId = $orden->id;
+        $this->metodoPagoConversion = $this->metodosPagoVenta[0] ?? 'Efectivo';
+        $this->referenciaPagoConversion = 'Orden ' . $orden->codigo;
+        $this->mostrarModalConvertirVenta = false;
+
+        $this->confirmarConvertirVenta();
+    }
+
     private function resetDetalle()
     {
         $this->detalle_tipo_item = 'Servicio';
@@ -1055,7 +1183,8 @@ class OrdenTrabajoIndex extends Component
         }
 
         $clientes = Cliente::where('activo', true)
-            ->orderBy('id')
+            ->orderBy('primer_nombre')
+            ->orderBy('primer_apellido')
             ->get();
 
         $productos = Producto::where('activo', true)

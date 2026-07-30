@@ -77,7 +77,9 @@ class Cliente extends Model
 
     public function setDniAttribute($value)
     {
-        $this->attributes['dni'] = preg_replace('/\D/', '', $value);
+        $dni = preg_replace('/\D/', '', (string) $value);
+
+        $this->attributes['dni'] = $dni !== '' ? $dni : null;
     }
 
     public function setTelefonoAttribute($value)
@@ -87,7 +89,9 @@ class Cliente extends Model
 
     public function setRtnAttribute($value)
     {
-        $this->attributes['rtn'] = $value ? preg_replace('/\D/', '', $value) : null;
+        $rtn = preg_replace('/\D/', '', (string) $value);
+
+        $this->attributes['rtn'] = $rtn !== '' ? $rtn : null;
     }
 
     public function ventas()
