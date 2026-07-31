@@ -5,30 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrdenTrabajo extends Model
+class Cotizacion extends Model
 {
     use HasFactory;
 
-    protected $table = 'ordenes_trabajo';
+    protected $table = 'cotizaciones';
 
     protected $fillable = [
         'codigo',
         'fecha',
-        'fecha_entrega',
+        'fecha_validez',
         'cliente_id',
         'cliente_nombre',
         'cliente_telefono',
         'titulo',
         'descripcion',
         'estado',
-        'prioridad',
         'subtotal',
         'descuento',
         'total',
-        'abono',
-        'saldo',
-        'venta_id',
+        'condiciones',
         'observacion',
+        'orden_trabajo_id',
         'user_id',
         'fecha_anulacion',
         'anulado_por',
@@ -37,9 +35,17 @@ class OrdenTrabajo extends Model
 
     protected static function booted()
     {
-        static::creating(function ($orden) {
-            if (empty($orden->codigo)) {
-                $orden->codigo = self::generarCodigo();
+        static::creating(function ($cotizacion) {
+            if (empty($cotizacion->codigo)) {
+                $cotizacion->codigo = self::generarCodigo();
+            }
+
+            if (empty($cotizacion->fecha)) {
+                $cotizacion->fecha = now()->format('Y-m-d');
+            }
+
+            if (empty($cotizacion->estado)) {
+                $cotizacion->estado = 'Pendiente';
             }
         });
     }
@@ -50,7 +56,7 @@ class OrdenTrabajo extends Model
 
         $numero = $ultimo ? $ultimo->id + 1 : 1;
 
-        return 'OT-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
+        return 'COT-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
     }
 
     public function cliente()
@@ -60,12 +66,12 @@ class OrdenTrabajo extends Model
 
     public function detalles()
     {
-        return $this->hasMany(OrdenTrabajoDetalle::class);
+        return $this->hasMany(CotizacionDetalle::class);
     }
 
-    public function venta()
+    public function ordenTrabajo()
     {
-        return $this->belongsTo(Venta::class);
+        return $this->belongsTo(OrdenTrabajo::class, 'orden_trabajo_id');
     }
 
     public function usuario()
@@ -83,13 +89,8 @@ class OrdenTrabajo extends Model
         return $this->estado === 'Anulada';
     }
 
-    public function getEstaEntregadaAttribute()
+    public function getEstaConvertidaAttribute()
     {
-        return $this->estado === 'Entregada';
-    }
-
-    public function cotizacion()
-    {
-        return $this->hasOne(Cotizacion::class, 'orden_trabajo_id');
+        return $this->orden_trabajo_id !== null;
     }
 }

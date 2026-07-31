@@ -103,4 +103,9 @@ class Cliente extends Model
     {
         return $this->hasMany(OrdenTrabajo::class);
     }
+
+    public function cotizaciones()
+    {
+        return $this->hasMany(Cotizacion::class);
+    }
 }

@@ -213,6 +213,40 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Cotizaciones
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/cotizaciones', function () {
+        return view('cotizaciones.index');
+    })->name('cotizaciones.index')
+        ->middleware('permission:ver cotizaciones');
+
+    Route::get('/cotizaciones/{cotizacion}/imprimir', function (\App\Models\Cotizacion $cotizacion) {
+        if (!auth()->user()->can('imprimir cotizaciones')) {
+            abort(403, 'No tiene permiso para imprimir cotizaciones.');
+        }
+
+        $cotizacion->load([
+            'cliente',
+            'detalles.producto',
+            'detalles.servicio',
+            'usuario',
+            'usuarioAnulacion',
+            'ordenTrabajo',
+        ]);
+
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+        return view('cotizaciones.imprimir', [
+            'cotizacion' => $cotizacion,
+            'configuracion' => $configuracion,
+        ]);
+    })->name('cotizaciones.imprimir')
+        ->middleware('permission:imprimir cotizaciones');
+
+    /*
+    |--------------------------------------------------------------------------
     | Ventas
     |--------------------------------------------------------------------------
     */

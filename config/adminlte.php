@@ -412,6 +412,12 @@ return [
             'can' => 'ver ordenes trabajo',
             'submenu' => [
                 [
+                    'text' => 'Cotizaciones',
+                    'route' => 'cotizaciones.index',
+                    'icon' => 'fas fa-file-invoice-dollar',
+                    'can' => 'ver cotizaciones',
+                ],
+                [
                     'text' => 'Órdenes de trabajo',
                     'route' => 'ordenes-trabajo.index',
                     'icon' => 'fas fa-clipboard-list',

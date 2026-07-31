@@ -93,6 +93,14 @@ class RolesPermisosSeeder extends Seeder
             'ver reporte inventario',
             'ver reporte cuentas',
 
+            // Cotizaciones
+            'ver cotizaciones',
+            'crear cotizaciones',
+            'editar cotizaciones',
+            'anular cotizaciones',
+            'convertir cotizaciones',
+            'imprimir cotizaciones',
+
             // Configuración
             'ver configuracion',
             'editar configuracion',
