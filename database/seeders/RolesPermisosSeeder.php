@@ -101,6 +101,12 @@ class RolesPermisosSeeder extends Seeder
             'convertir cotizaciones',
             'imprimir cotizaciones',
 
+            // Cierre de caja
+            'ver cierres caja',
+            'crear cierres caja',
+            'anular cierres caja',
+            'imprimir cierres caja',
+
             // Configuración
             'ver configuracion',
             'editar configuracion',
@@ -144,6 +150,9 @@ class RolesPermisosSeeder extends Seeder
             'ver clientes',
             'crear clientes',
             'editar clientes',
+            'ver cierres caja',
+            'crear cierres caja',
+            'imprimir cierres caja',
         ]);
 
         $inventario->syncPermissions([

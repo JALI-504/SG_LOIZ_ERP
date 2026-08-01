@@ -284,6 +284,36 @@ Route::middleware(['auth'])->group(function () {
     })->name('ventas.recibo')
         ->middleware('permission:imprimir recibos ventas');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cierre de caja
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/cierres-caja', function () {
+        return view('cierres-caja.index');
+    })->name('cierres-caja.index')
+        ->middleware('permission:ver cierres caja');
+
+    Route::get('/cierres-caja/{cierre}/imprimir', function (\App\Models\CierreCaja $cierre) {
+        if (!auth()->user()->can('imprimir cierres caja')) {
+            abort(403, 'No tiene permiso para imprimir cierres de caja.');
+        }
+
+        $cierre->load([
+            'usuario',
+            'usuarioAnulacion',
+        ]);
+
+        $configuracion = \App\Models\ConfiguracionEmpresa::actual();
+
+        return view('cierres-caja.imprimir', [
+            'cierre' => $cierre,
+            'configuracion' => $configuracion,
+        ]);
+    })->name('cierres-caja.imprimir')
+        ->middleware('permission:imprimir cierres caja');
+
 
     /*
     |--------------------------------------------------------------------------

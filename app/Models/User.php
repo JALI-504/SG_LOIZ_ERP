@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\CierreCaja;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -30,4 +31,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'activo' => 'boolean',
     ];
+
+    public function cierresCaja()
+    {
+        return $this->hasMany(CierreCaja::class, 'user_id');
+    }
+
+    public function cierresCajaAnulados()
+    {
+        return $this->hasMany(CierreCaja::class, 'anulado_por');
+    }
 }

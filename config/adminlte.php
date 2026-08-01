@@ -344,6 +344,12 @@ return [
                     'icon' => 'fas fa-fw fa-hand-holding-usd',
                     'can'  => 'ver cuentas por cobrar',
                 ],
+                [
+                    'text' => 'Cierre de caja',
+                    'route' => 'cierres-caja.index',
+                    'icon' => 'fas fa-cash-register',
+                    'can' => 'ver cierres caja',
+                ],
             ],
         ],
 
