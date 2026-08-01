@@ -12,6 +12,18 @@
             </a>
         @endcan
 
+        @can('ver cotizaciones')
+            <a href="{{ route('cotizaciones.index') }}" class="btn btn-warning">
+                <i class="fas fa-file-invoice-dollar"></i> Cotizaciones
+            </a>
+        @endcan
+
+        @can('ver ordenes trabajo')
+            <a href="{{ route('ordenes-trabajo.index') }}" class="btn btn-dark">
+                <i class="fas fa-clipboard-list"></i> Órdenes
+            </a>
+        @endcan
+
         @can('ver historial ventas')
             <a href="{{ route('ventas.historial') }}" class="btn btn-primary">
                 <i class="fas fa-receipt"></i> Historial ventas
@@ -270,6 +282,147 @@
     </div>
     @endcan
 
+    {{-- Cuentas por cobrar --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>L {{ number_format($cuentasPorCobrarPendientes, 2) }}</h4>
+                    <p>Cuentas por cobrar</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h4>{{ number_format($cantidadCuentasPorCobrarPendientes, 0) }}</h4>
+                    <p>Ventas pendientes de cobro</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Cotizaciones y órdenes --}}
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h4>{{ number_format($cotizacionesPendientes, 0) }}</h4>
+                    <p>Cotizaciones pendientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h4>{{ number_format($cotizacionesAprobadas, 0) }}</h4>
+                    <p>Cotizaciones aprobadas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box {{ $cotizacionesPorVencer > 0 ? 'bg-warning' : 'bg-secondary' }}">
+                <div class="inner">
+                    <h4>{{ number_format($cotizacionesPorVencer, 0) }}</h4>
+                    <p>Cotizaciones por vencer</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box {{ $cotizacionesVencidas > 0 ? 'bg-danger' : 'bg-secondary' }}">
+                <div class="inner">
+                    <h4>{{ number_format($cotizacionesVencidas, 0) }}</h4>
+                    <p>Cotizaciones vencidas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h4>{{ number_format($ordenesPendientes, 0) }}</h4>
+                    <p>Órdenes pendientes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h4>{{ number_format($ordenesEnProceso, 0) }}</h4>
+                    <p>Órdenes en proceso</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h4>{{ number_format($ordenesTerminadas, 0) }}</h4>
+                    <p>Órdenes terminadas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box {{ $ordenesVencidas > 0 ? 'bg-danger' : 'bg-secondary' }}">
+                <div class="inner">
+                    <h4>{{ number_format($ordenesVencidas, 0) }}</h4>
+                    <p>Órdenes vencidas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box {{ $ordenesParaEntregarHoy > 0 ? 'bg-success' : 'bg-secondary' }}">
+                <div class="inner">
+                    <h4>{{ number_format($ordenesParaEntregarHoy, 0) }}</h4>
+                    <p>Órdenes para entregar hoy</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- Gráficas del Dashboard --}}
     <div class="row">
@@ -335,6 +488,170 @@
                     <div style="height: 300px;">
                         <canvas id="graficaServiciosHoy"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Seguimiento operativo --}}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-outline card-warning">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Cotizaciones pendientes
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Cliente</th>
+                                    <th>Validez</th>
+                                    <th>Total</th>
+                                    <th width="90">Acción</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($ultimasCotizacionesPendientes as $cotizacion)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $cotizacion->codigo }}</strong>
+                                        </td>
+
+                                        <td>
+                                            {{ $cotizacion->cliente_nombre ?: ($cotizacion->cliente->nombre_completo ?? 'Cliente no registrado') }}
+                                        </td>
+
+                                        <td>
+                                            @if ($cotizacion->fecha_validez)
+                                                {{ \Carbon\Carbon::parse($cotizacion->fecha_validez)->format('d/m/Y') }}
+
+                                                @if ($cotizacion->fecha_validez < $hoy)
+                                                    <br>
+                                                    <span class="badge badge-danger">Vencida</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">Sin fecha</span>
+                                            @endif
+                                        </td>
+
+                                        <td>
+                                            <strong>L {{ number_format($cotizacion->total, 2) }}</strong>
+                                        </td>
+
+                                        <td>
+                                            @can('imprimir cotizaciones')
+                                                <a href="{{ route('cotizaciones.imprimir', $cotizacion->id) }}"
+                                                target="_blank"
+                                                class="btn btn-secondary btn-xs">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay cotizaciones pendientes.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @can('ver cotizaciones')
+                        <a href="{{ route('cotizaciones.index') }}" class="btn btn-warning btn-sm">
+                            Ver cotizaciones
+                        </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Órdenes próximas a entregar
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Cliente</th>
+                                    <th>Entrega</th>
+                                    <th>Estado</th>
+                                    <th width="90">Acción</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($ordenesProximasEntrega as $orden)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $orden->codigo }}</strong>
+                                        </td>
+
+                                        <td>
+                                            {{ $orden->cliente_nombre ?: ($orden->cliente->nombre_completo ?? 'Cliente no registrado') }}
+                                        </td>
+
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($orden->fecha_entrega)->format('d/m/Y') }}
+
+                                            @if ($orden->fecha_entrega < $hoy)
+                                                <br>
+                                                <span class="badge badge-danger">Vencida</span>
+                                            @elseif ($orden->fecha_entrega == $hoy)
+                                                <br>
+                                                <span class="badge badge-success">Hoy</span>
+                                            @endif
+                                        </td>
+
+                                        <td>
+                                            <span class="badge badge-warning">
+                                                {{ $orden->estado }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            @can('ver ordenes trabajo')
+                                                <a href="{{ route('ordenes-trabajo.imprimir', $orden->id) }}"
+                                                target="_blank"
+                                                class="btn btn-secondary btn-xs">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            No hay órdenes próximas a entregar.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @can('ver ordenes trabajo')
+                        <a href="{{ route('ordenes-trabajo.index') }}" class="btn btn-info btn-sm">
+                            Ver órdenes
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>

@@ -9,6 +9,8 @@ use App\Models\Insumo;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\Cotizacion;
+use App\Models\OrdenTrabajo;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -87,6 +89,94 @@ class DashboardIndex extends Component
             ->where('estado', '!=', 'Anulada')
             ->where('saldo_pendiente', '>', 0)
             ->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Cuentas por cobrar
+|--------------------------------------------------------------------------
+*/
+
+        $cuentasPorCobrarPendientes = Venta::query()
+            ->where('estado', '!=', 'Anulada')
+            ->where('saldo_pendiente', '>', 0)
+            ->sum('saldo_pendiente');
+
+        $cantidadCuentasPorCobrarPendientes = Venta::query()
+            ->where('estado', '!=', 'Anulada')
+            ->where('saldo_pendiente', '>', 0)
+            ->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Cotizaciones
+|--------------------------------------------------------------------------
+*/
+
+        $cotizacionesPendientes = Cotizacion::query()
+            ->where('estado', 'Pendiente')
+            ->count();
+
+        $cotizacionesAprobadas = Cotizacion::query()
+            ->where('estado', 'Aprobada')
+            ->count();
+
+        $cotizacionesVencidas = Cotizacion::query()
+            ->where('estado', 'Pendiente')
+            ->whereNotNull('fecha_validez')
+            ->whereDate('fecha_validez', '<', $hoy)
+            ->count();
+
+        $cotizacionesPorVencer = Cotizacion::query()
+            ->where('estado', 'Pendiente')
+            ->whereNotNull('fecha_validez')
+            ->whereDate('fecha_validez', '>=', $hoy)
+            ->whereDate('fecha_validez', '<=', now()->addDays(3)->format('Y-m-d'))
+            ->count();
+
+        $ultimasCotizacionesPendientes = Cotizacion::with('cliente')
+            ->where('estado', 'Pendiente')
+            ->orderBy('fecha_validez')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get();
+
+        /*
+|--------------------------------------------------------------------------
+| Órdenes de trabajo
+|--------------------------------------------------------------------------
+*/
+
+        $ordenesPendientes = OrdenTrabajo::query()
+            ->where('estado', 'Pendiente')
+            ->count();
+
+        $ordenesEnProceso = OrdenTrabajo::query()
+            ->whereIn('estado', ['En diseño', 'En producción'])
+            ->count();
+
+        $ordenesTerminadas = OrdenTrabajo::query()
+            ->where('estado', 'Terminado')
+            ->count();
+
+        $ordenesParaEntregarHoy = OrdenTrabajo::query()
+            ->whereNotIn('estado', ['Entregada', 'Anulada'])
+            ->whereNotNull('fecha_entrega')
+            ->whereDate('fecha_entrega', $hoy)
+            ->count();
+
+        $ordenesVencidas = OrdenTrabajo::query()
+            ->whereNotIn('estado', ['Entregada', 'Anulada'])
+            ->whereNotNull('fecha_entrega')
+            ->whereDate('fecha_entrega', '<', $hoy)
+            ->count();
+
+        $ordenesProximasEntrega = OrdenTrabajo::with('cliente')
+            ->whereNotIn('estado', ['Entregada', 'Anulada'])
+            ->whereNotNull('fecha_entrega')
+            ->orderBy('fecha_entrega')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get();
 
         $ventasPendientesHoy = (clone $ventasHoyQuery)
             ->where('estado', 'Pendiente')
@@ -271,6 +361,22 @@ class DashboardIndex extends Component
             'graficaProductosCantidades' => $graficaProductosCantidades,
             'graficaServiciosLabels' => $graficaServiciosLabels,
             'graficaServiciosCantidades' => $graficaServiciosCantidades,
+
+            'cuentasPorCobrarPendientes' => $cuentasPorCobrarPendientes,
+            'cantidadCuentasPorCobrarPendientes' => $cantidadCuentasPorCobrarPendientes,
+
+            'cotizacionesPendientes' => $cotizacionesPendientes,
+            'cotizacionesAprobadas' => $cotizacionesAprobadas,
+            'cotizacionesVencidas' => $cotizacionesVencidas,
+            'cotizacionesPorVencer' => $cotizacionesPorVencer,
+            'ultimasCotizacionesPendientes' => $ultimasCotizacionesPendientes,
+
+            'ordenesPendientes' => $ordenesPendientes,
+            'ordenesEnProceso' => $ordenesEnProceso,
+            'ordenesTerminadas' => $ordenesTerminadas,
+            'ordenesParaEntregarHoy' => $ordenesParaEntregarHoy,
+            'ordenesVencidas' => $ordenesVencidas,
+            'ordenesProximasEntrega' => $ordenesProximasEntrega,
         ]);
     }
 }
