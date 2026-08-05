@@ -12,6 +12,7 @@ use App\Models\MovimientoProductoLote;
 use App\Models\Produccion;
 use App\Models\ProduccionInsumo;
 use App\Models\Producto;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -158,6 +159,16 @@ class ProduccionIndex extends Component
                         'total' => round($totalSalidaInsumo, 2),
                     ]);
 
+                    BitacoraSistema::registrar(
+                        'Inventario insumos',
+                        'Registrar',
+                        'Registró salida de insumo por producción ' . $produccion->codigo . ': ' . $insumo->nombre . ' por cantidad ' . number_format($cantidadInsumo, 2) . '.',
+                        MovimientoInventario::class,
+                        $movimientoInsumo->id,
+                        null,
+                        $movimientoInsumo->fresh()->load('insumo')->toArray()
+                    );
+
                     ProduccionInsumo::create([
                         'produccion_id' => $produccion->id,
                         'insumo_id' => $insumo->id,
@@ -214,6 +225,26 @@ class ProduccionIndex extends Component
                 ]);
 
                 $this->actualizarCostoActualPepsProducto($producto);
+
+                BitacoraSistema::registrar(
+                    'Inventario productos',
+                    'Registrar',
+                    'Registró entrada de producto terminado por producción ' . $produccion->codigo . ': ' . $producto->nombre . ' por cantidad ' . number_format($cantidadProducto, 2) . '.',
+                    MovimientoProducto::class,
+                    $movimientoProducto->id,
+                    null,
+                    $movimientoProducto->fresh()->load('producto')->toArray()
+                );
+
+                BitacoraSistema::registrar(
+                    'Producción',
+                    'Registrar',
+                    'Registró la producción ' . $produccion->codigo . ' del producto ' . $producto->nombre . ' por cantidad ' . number_format($cantidadProducto, 2) . '.',
+                    Produccion::class,
+                    $produccion->id,
+                    null,
+                    $produccion->fresh()->load(['producto', 'insumos.insumo', 'movimientoProducto'])->toArray()
+                );
             });
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
@@ -479,6 +510,8 @@ class ProduccionIndex extends Component
                 $producto = $produccion->producto;
                 $referencia = 'Anulación ' . $produccion->codigo;
 
+                $datosAnterioresProduccion = $produccion->toArray();
+
                 /*
              * 1. Validar que el lote producido todavía tenga stock suficiente.
              */
@@ -537,6 +570,16 @@ class ProduccionIndex extends Component
                 }
 
                 $this->actualizarCostoActualPepsProducto($producto);
+
+                BitacoraSistema::registrar(
+                    'Inventario productos',
+                    'Registrar',
+                    'Registró salida de producto terminado por anulación de producción ' . $produccion->codigo . ': ' . $producto->nombre . ' por cantidad ' . number_format($produccion->cantidad, 2) . '.',
+                    MovimientoProducto::class,
+                    $movimientoSalidaProducto->id,
+                    null,
+                    $movimientoSalidaProducto->fresh()->load('producto')->toArray()
+                );
 
                 /*
              * 3. Devolver los insumos consumidos.
@@ -606,6 +649,16 @@ class ProduccionIndex extends Component
                     }
 
                     $this->actualizarCostoActualPepsInsumo($insumo);
+
+                    BitacoraSistema::registrar(
+                        'Inventario insumos',
+                        'Registrar',
+                        'Registró devolución de insumo por anulación de producción ' . $produccion->codigo . ': ' . $insumo->nombre . ' por cantidad ' . number_format($detalleInsumo->cantidad_total, 2) . '.',
+                        MovimientoInventario::class,
+                        $movimientoDevolucion->id,
+                        null,
+                        $movimientoDevolucion->fresh()->load('insumo')->toArray()
+                    );
                 }
 
                 /*
@@ -617,6 +670,17 @@ class ProduccionIndex extends Component
                     'anulado_por' => auth()->id(),
                     'motivo_anulacion' => $this->motivoAnulacion,
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Producción',
+                    'Anular',
+                    'Anuló la producción ' . $produccion->codigo . '. Motivo: ' . $this->motivoAnulacion,
+                    Produccion::class,
+                    $produccion->id,
+                    $datosAnterioresProduccion,
+                    $produccion->fresh()->load(['producto', 'insumos.insumo', 'movimientoProducto'])->toArray()
+                );
+                
             });
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
