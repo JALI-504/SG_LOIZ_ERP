@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Catalogo;
 use App\Models\Proveedor;
+use App\Models\BitacoraSistema;
 use Illuminate\Http\Request;
 
 class ProveedorController extends Controller
@@ -98,7 +99,7 @@ class ProveedorController extends Controller
             'observacion' => 'nullable|max:1000',
         ]);
 
-        Proveedor::create([
+        $proveedor = Proveedor::create([
             'nombre_comercial' => $request->nombre_comercial,
             'nombre_legal' => $request->nombre_legal,
             'tipo_proveedor' => $request->tipo_proveedor,
@@ -113,6 +114,16 @@ class ProveedorController extends Controller
             'observacion' => $request->observacion,
             'activo' => true,
         ]);
+
+        BitacoraSistema::registrar(
+            'Proveedores',
+            'Registrar',
+            'Registró el proveedor ' . $proveedor->nombre_comercial . '.',
+            Proveedor::class,
+            $proveedor->id,
+            null,
+            $proveedor->toArray()
+        );
 
         return redirect()
             ->route('proveedores.index')
@@ -156,6 +167,8 @@ class ProveedorController extends Controller
             'observacion' => 'nullable|max:1000',
         ]);
 
+        $datosAnteriores = $proveedor->toArray();
+
         $proveedor->update([
             'nombre_comercial' => $request->nombre_comercial,
             'nombre_legal' => $request->nombre_legal,
@@ -171,6 +184,16 @@ class ProveedorController extends Controller
             'observacion' => $request->observacion,
         ]);
 
+        BitacoraSistema::registrar(
+            'Proveedores',
+            'Actualizar',
+            'Actualizó el proveedor ' . $proveedor->fresh()->nombre_comercial . '.',
+            Proveedor::class,
+            $proveedor->id,
+            $datosAnteriores,
+            $proveedor->fresh()->toArray()
+        );
+
         return redirect()
             ->route('proveedores.index')
             ->with('message', 'Proveedor actualizado correctamente.');
@@ -181,12 +204,30 @@ class ProveedorController extends Controller
         if (!auth()->user()->can('editar proveedores')) {
             abort(403, 'No tiene permiso para cambiar el estado del proveedor.');
         }
-        
+
+        $datosAnteriores = $proveedor->toArray();
+
+        $estadoAnterior = $proveedor->activo ? 'Activo' : 'Inactivo';
+
         $proveedor->update([
             'activo' => !$proveedor->activo,
         ]);
 
-        $mensaje = $proveedor->activo
+        $proveedorActualizado = $proveedor->fresh();
+
+        $estadoNuevo = $proveedorActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Proveedores',
+            'Actualizar',
+            'Cambió el estado del proveedor ' . $proveedorActualizado->nombre_comercial . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Proveedor::class,
+            $proveedorActualizado->id,
+            $datosAnteriores,
+            $proveedorActualizado->toArray()
+        );
+
+        $mensaje = $proveedorActualizado->activo
             ? 'Proveedor reactivado correctamente.'
             : 'Proveedor desactivado correctamente.';
 

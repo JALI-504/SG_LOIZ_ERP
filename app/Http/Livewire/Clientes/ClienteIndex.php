@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Clientes;
 
 use App\Models\Cliente;
+use App\Models\BitacoraSistema;
 use App\Models\Departamento;
 use App\Models\Municipio;
 use Livewire\Component;
@@ -139,7 +140,7 @@ class ClienteIndex extends Component
 
         $this->validate();
 
-        Cliente::create([
+        $cliente = Cliente::create([
             'primer_nombre' => $this->primer_nombre,
             'segundo_nombre' => $this->segundo_nombre,
             'primer_apellido' => $this->primer_apellido,
@@ -160,6 +161,16 @@ class ClienteIndex extends Component
             'notas' => $this->notas,
             'activo' => $this->activo,
         ]);
+
+        BitacoraSistema::registrar(
+            'Clientes',
+            'Registrar',
+            'Registró el cliente ' . $cliente->nombre_completo . '.',
+            Cliente::class,
+            $cliente->id,
+            null,
+            $cliente->load(['departamento', 'municipio'])->toArray()
+        );
 
         $this->resetInput();
 
@@ -219,6 +230,8 @@ class ClienteIndex extends Component
 
         $cliente = Cliente::findOrFail($this->cliente_id);
 
+        $datosAnteriores = $cliente->load(['departamento', 'municipio'])->toArray();
+
         $cliente->update([
             'primer_nombre' => $this->primer_nombre,
             'segundo_nombre' => $this->segundo_nombre,
@@ -241,6 +254,16 @@ class ClienteIndex extends Component
             'activo' => $this->activo,
         ]);
 
+        BitacoraSistema::registrar(
+            'Clientes',
+            'Actualizar',
+            'Actualizó el cliente ' . $cliente->fresh()->nombre_completo . '.',
+            Cliente::class,
+            $cliente->id,
+            $datosAnteriores,
+            $cliente->fresh()->load(['departamento', 'municipio'])->toArray()
+        );
+
         $this->resetInput();
 
         $this->dispatchBrowserEvent('close-cliente-modal');
@@ -253,12 +276,30 @@ class ClienteIndex extends Component
         if (!auth()->user()->can('eliminar clientes')) {
             abort(403, 'No tiene permiso para activar o desactivar clientes.');
         }
-        
+
         $cliente = Cliente::findOrFail($id);
+
+        $datosAnteriores = $cliente->load(['departamento', 'municipio'])->toArray();
+
+        $estadoAnterior = $cliente->activo ? 'Activo' : 'Inactivo';
 
         $cliente->update([
             'activo' => !$cliente->activo,
         ]);
+
+        $clienteActualizado = $cliente->fresh();
+
+        $estadoNuevo = $clienteActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Clientes',
+            'Actualizar',
+            'Cambió el estado del cliente ' . $clienteActualizado->nombre_completo . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Cliente::class,
+            $clienteActualizado->id,
+            $datosAnteriores,
+            $clienteActualizado->load(['departamento', 'municipio'])->toArray()
+        );
 
         session()->flash('message', 'Estado del cliente actualizado correctamente.');
     }
