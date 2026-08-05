@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Catalogo;
 use App\Models\Compra;
 use App\Models\PagoCompra;
+use App\Models\BitacoraSistema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -89,7 +90,9 @@ class CuentaPorPagarController extends Controller
 
         try {
             DB::transaction(function () use ($request, $compra) {
-                PagoCompra::create([
+                $datosAnterioresCompra = $compra->toArray();
+
+                $pago = PagoCompra::create([
                     'compra_id' => $compra->id,
                     'monto' => $request->monto,
                     'metodo_pago' => $request->metodo_pago,
@@ -116,13 +119,28 @@ class CuentaPorPagarController extends Controller
 
                 $compra->monto_pagado = $nuevoMontoPagado;
                 $compra->saldo_pendiente = $nuevoSaldo;
-
-                // IMPORTANTE:
-                // En compras, el estado debe seguir siendo Registrada.
-                // El saldo pendiente en 0 indica que ya está pagada.
                 $compra->estado = 'Registrada';
-
                 $compra->save();
+
+                BitacoraSistema::registrar(
+                    'Pagos proveedores',
+                    'Registrar',
+                    'Registró pago a proveedor por L ' . number_format($pago->monto, 2) . ' en la compra ' . ($compra->numero ?? 'N/D') . '.',
+                    PagoCompra::class,
+                    $pago->id,
+                    null,
+                    $pago->fresh()->load('compra')->toArray()
+                );
+
+                BitacoraSistema::registrar(
+                    'Compras',
+                    'Actualizar',
+                    'Actualizó el saldo de la compra ' . ($compra->numero ?? 'N/D') . ' después de registrar un pago a proveedor.',
+                    Compra::class,
+                    $compra->id,
+                    $datosAnterioresCompra,
+                    $compra->fresh()->toArray()
+                );
             });
 
             return redirect()
@@ -137,7 +155,6 @@ class CuentaPorPagarController extends Controller
 
     public function anularPago(Request $request, PagoCompra $pago)
     {
-        
         if (!auth()->user()->can('anular pagos proveedores')) {
             abort(403, 'No tiene permiso para anular pagos a proveedores.');
         }
@@ -166,6 +183,9 @@ class CuentaPorPagarController extends Controller
                     throw new \Exception('No se puede anular un pago de una compra anulada.');
                 }
 
+                $datosAnterioresPago = $pago->toArray();
+                $datosAnterioresCompra = $compra->toArray();
+
                 $pago->update([
                     'estado' => 'Anulado',
                     'fecha_anulacion' => now(),
@@ -192,6 +212,26 @@ class CuentaPorPagarController extends Controller
                 $compra->saldo_pendiente = $nuevoSaldo;
                 $compra->estado = 'Registrada';
                 $compra->save();
+
+                BitacoraSistema::registrar(
+                    'Pagos proveedores',
+                    'Anular',
+                    'Anuló pago a proveedor por L ' . number_format($pago->monto, 2) . ' de la compra ' . ($compra->numero ?? 'N/D') . '.',
+                    PagoCompra::class,
+                    $pago->id,
+                    $datosAnterioresPago,
+                    $pago->fresh()->load('compra')->toArray()
+                );
+
+                BitacoraSistema::registrar(
+                    'Compras',
+                    'Actualizar',
+                    'Actualizó el saldo de la compra ' . ($compra->numero ?? 'N/D') . ' después de anular un pago a proveedor.',
+                    Compra::class,
+                    $compra->id,
+                    $datosAnterioresCompra,
+                    $compra->fresh()->toArray()
+                );
             });
 
             return redirect()
