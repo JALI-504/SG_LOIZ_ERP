@@ -326,16 +326,6 @@ class OrdenTrabajoIndex extends Component
                 'user_id' => auth()->id(),
             ]);
 
-            BitacoraSistema::registrar(
-                'Órdenes de trabajo',
-                'Registrar',
-                'Registró la orden de trabajo ' . $orden->codigo . ' por L ' . number_format($orden->total, 2) . '.',
-                OrdenTrabajo::class,
-                $orden->id,
-                null,
-                $orden->load('detalles')->toArray()
-            );
-
             foreach ($this->detalles as $detalle) {
                 OrdenTrabajoDetalle::create([
                     'orden_trabajo_id' => $orden->id,
@@ -349,6 +339,16 @@ class OrdenTrabajoIndex extends Component
                     'observacion' => $detalle['observacion'],
                 ]);
             }
+
+            BitacoraSistema::registrar(
+                'Órdenes de trabajo',
+                'Registrar',
+                'Registró la orden de trabajo ' . $orden->codigo . ' por L ' . number_format($orden->total, 2) . '.',
+                OrdenTrabajo::class,
+                $orden->id,
+                null,
+                $orden->fresh()->load('detalles')->toArray()
+            );
         });
 
         $this->resetFormulario();
@@ -547,6 +547,8 @@ class OrdenTrabajoIndex extends Component
                     ->lockForUpdate()
                     ->findOrFail($this->ordenConvertirId);
 
+                $datosAnterioresOrden = $orden->toArray();
+
                 if ($orden->estado === 'Anulada') {
                     throw new \Exception('No se puede convertir una orden anulada.');
                 }
@@ -582,7 +584,7 @@ class OrdenTrabajoIndex extends Component
                 $estadoVenta = $saldoPendiente <= 0 ? 'Pagada' : 'Pendiente';
 
                 $venta = Venta::create([
-                    'cliente_id' => $orden->cliente_id ?: null,
+                    'cliente_id' => $clienteIdVenta ?: null,
                     'metodo_pago' => $this->metodoPagoConversion,
                     'estado' => $estadoVenta,
 
@@ -653,31 +655,33 @@ class OrdenTrabajoIndex extends Component
                         'total' => $item['total'],
                     ]);
                     
-                    BitacoraSistema::registrar(
-                        'Órdenes de trabajo',
-                        'Convertir',
-                        'Convirtió la orden de trabajo ' . $orden->codigo . ' en la venta ' . $venta->numero . '.',
-                        OrdenTrabajo::class,
-                        $orden->id,
-                        $orden->toArray(),
-                        $orden->fresh()->toArray()
-                    );
-
-                    BitacoraSistema::registrar(
-                        'Ventas',
-                        'Registrar',
-                        'Registró la venta ' . $venta->numero . ' desde la orden de trabajo ' . $orden->codigo . '.',
-                        Venta::class,
-                        $venta->id,
-                        null,
-                        $venta->load('detalles')->toArray()
-                    );
                 }
 
                 $orden->update([
                     'venta_id' => $venta->id,
                     'estado' => 'Entregada',
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Órdenes de trabajo',
+                    'Convertir',
+                    'Convirtió la orden de trabajo ' . $orden->codigo . ' en la venta ' . $venta->numero . '.',
+                    OrdenTrabajo::class,
+                    $orden->id,
+                    $datosAnterioresOrden,
+                    $orden->fresh()->load('detalles')->toArray()
+                );
+
+                BitacoraSistema::registrar(
+                    'Ventas',
+                    'Registrar',
+                    'Registró la venta ' . $venta->numero . ' desde la orden de trabajo ' . $orden->codigo . '.',
+                    Venta::class,
+                    $venta->id,
+                    null,
+                    $venta->fresh()->load('detalles')->toArray()
+                );
+
             });
         } catch (\Exception $e) {
             $this->errorConversionVenta = $e->getMessage();
