@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Productos;
 
 use App\Models\Catalogo;
 use App\Models\Producto;
+use App\Models\BitacoraSistema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -188,7 +189,7 @@ class ProductoIndex extends Component
 
         $this->validate();
 
-        Producto::create([
+        $producto = Producto::create([
             'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'codigo_barra' => $this->codigo_barra ? trim($this->codigo_barra) : null,
             'nombre' => trim($this->nombre),
@@ -204,7 +205,6 @@ class ProductoIndex extends Component
             'largo_cm' => $this->largo_cm,
             'espesor_mm' => $this->espesor_mm,
 
-            // 'stock_actual' => $this->stock_actual,
             'stock_minimo' => $this->stock_minimo,
 
             'costo_compra' => $this->costo_compra,
@@ -217,6 +217,16 @@ class ProductoIndex extends Component
             'tipo_impuesto' => $this->tipo_impuesto,
             'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
+
+        BitacoraSistema::registrar(
+            'Productos',
+            'Registrar',
+            'Registró el producto ' . $producto->nombre . '.',
+            Producto::class,
+            $producto->id,
+            null,
+            $producto->toArray()
+        );
 
         $this->resetInput();
 
@@ -280,6 +290,8 @@ class ProductoIndex extends Component
 
         $producto = Producto::findOrFail($this->producto_id);
 
+        $datosAnteriores = $producto->toArray();
+
         $producto->update([
             'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : $producto->codigo,
             'codigo_barra' => $this->codigo_barra ? trim($this->codigo_barra) : null,
@@ -298,8 +310,6 @@ class ProductoIndex extends Component
 
             // No actualizar stock_actual desde edición.
             // El stock se modifica únicamente desde movimientos.
-            // 'stock_actual' => 0,
-            // 'stock_actual' => $this->stock_actual,
             'stock_minimo' => $this->stock_minimo,
 
             'costo_compra' => $this->costo_compra,
@@ -313,6 +323,16 @@ class ProductoIndex extends Component
             'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
+        BitacoraSistema::registrar(
+            'Productos',
+            'Actualizar',
+            'Actualizó el producto ' . $producto->fresh()->nombre . '.',
+            Producto::class,
+            $producto->id,
+            $datosAnteriores,
+            $producto->fresh()->toArray()
+        );
+
         $this->resetInput();
 
         $this->dispatchBrowserEvent('close-producto-modal');
@@ -325,12 +345,30 @@ class ProductoIndex extends Component
         if (!auth()->user()->can('eliminar productos')) {
             abort(403, 'No tiene permiso para activar o desactivar productos.');
         }
-        
+
         $producto = Producto::findOrFail($id);
+
+        $datosAnteriores = $producto->toArray();
+
+        $estadoAnterior = $producto->activo ? 'Activo' : 'Inactivo';
 
         $producto->update([
             'activo' => !$producto->activo,
         ]);
+
+        $productoActualizado = $producto->fresh();
+
+        $estadoNuevo = $productoActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Productos',
+            'Actualizar',
+            'Cambió el estado del producto ' . $productoActualizado->nombre . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Producto::class,
+            $productoActualizado->id,
+            $datosAnteriores,
+            $productoActualizado->toArray()
+        );
 
         session()->flash('message', 'Estado del producto actualizado correctamente.');
     }

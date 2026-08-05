@@ -3,10 +3,11 @@
 namespace App\Http\Livewire\Servicios;
 
 use App\Models\Servicio;
+use App\Models\Catalogo;
+use App\Models\BitacoraSistema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Catalogo;
 
 class ServicioIndex extends Component
 {
@@ -142,8 +143,7 @@ class ServicioIndex extends Component
 
         $this->validate();
 
-        Servicio::create([
-            // 'codigo' => strtoupper(trim($this->codigo)),
+        $servicio = Servicio::create([
             'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'nombre' => trim($this->nombre),
             'tipo_servicio' => $this->tipo_servicio,
@@ -159,7 +159,15 @@ class ServicioIndex extends Component
             'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
-       
+        BitacoraSistema::registrar(
+            'Servicios',
+            'Registrar',
+            'Registró el servicio ' . $servicio->nombre . '.',
+            Servicio::class,
+            $servicio->id,
+            null,
+            $servicio->toArray()
+        );
 
         $this->resetInput();
 
@@ -208,8 +216,9 @@ class ServicioIndex extends Component
 
         $servicio = Servicio::findOrFail($this->servicio_id);
 
+        $datosAnteriores = $servicio->toArray();
+
         $servicio->update([
-            // 'codigo' => strtoupper(trim($this->codigo)),
             'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : $servicio->codigo,
             'nombre' => trim($this->nombre),
             'tipo_servicio' => $this->tipo_servicio,
@@ -225,6 +234,16 @@ class ServicioIndex extends Component
             'porcentaje_isv' => $this->obtenerPorcentajeIsv(),
         ]);
 
+        BitacoraSistema::registrar(
+            'Servicios',
+            'Actualizar',
+            'Actualizó el servicio ' . $servicio->fresh()->nombre . '.',
+            Servicio::class,
+            $servicio->id,
+            $datosAnteriores,
+            $servicio->fresh()->toArray()
+        );
+
         $this->resetInput();
 
         $this->dispatchBrowserEvent('close-servicio-modal');
@@ -237,12 +256,30 @@ class ServicioIndex extends Component
         if (!auth()->user()->can('eliminar servicios')) {
             abort(403, 'No tiene permiso para activar o desactivar servicios.');
         }
-        
+
         $servicio = Servicio::findOrFail($id);
+
+        $datosAnteriores = $servicio->toArray();
+
+        $estadoAnterior = $servicio->activo ? 'Activo' : 'Inactivo';
 
         $servicio->update([
             'activo' => !$servicio->activo,
         ]);
+
+        $servicioActualizado = $servicio->fresh();
+
+        $estadoNuevo = $servicioActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Servicios',
+            'Actualizar',
+            'Cambió el estado del servicio ' . $servicioActualizado->nombre . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Servicio::class,
+            $servicioActualizado->id,
+            $datosAnteriores,
+            $servicioActualizado->toArray()
+        );
 
         session()->flash('message', 'Estado del servicio actualizado correctamente.');
     }
