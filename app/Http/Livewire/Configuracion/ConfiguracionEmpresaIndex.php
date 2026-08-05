@@ -4,7 +4,10 @@ namespace App\Http\Livewire\Configuracion;
 
 use App\Models\ConfiguracionEmpresa;
 use App\Models\Venta;
+use App\Models\BitacoraSistema;
+
 use Illuminate\Support\Facades\Storage;
+
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -225,6 +228,8 @@ class ConfiguracionEmpresaIndex extends Component
 
         $configuracion = ConfiguracionEmpresa::findOrFail($this->configuracion_id);
 
+        $datosAnteriores = $configuracion->toArray();
+
         $rutaLogo = $configuracion->logo;
 
         if ($this->logoNuevo) {
@@ -291,8 +296,20 @@ class ConfiguracionEmpresaIndex extends Component
 
         $this->logo = $rutaLogo;
         $this->logoNuevo = null;
-     
+
         $this->prefijo_recibo = strtoupper($this->prefijo_recibo);
+
+        $configuracionActualizada = $configuracion->fresh();
+
+        BitacoraSistema::registrar(
+            'Configuración',
+            'Actualizar',
+            'Actualizó la configuración del negocio ' . ($configuracionActualizada->nombre_comercial ?? 'N/D') . '.',
+            ConfiguracionEmpresa::class,
+            $configuracionActualizada->id,
+            $datosAnteriores,
+            $configuracionActualizada->toArray()
+        );
 
         session()->flash('message', 'Configuración del negocio actualizada correctamente.');
     }
@@ -303,6 +320,8 @@ class ConfiguracionEmpresaIndex extends Component
 
         $configuracion = ConfiguracionEmpresa::findOrFail($this->configuracion_id);
 
+        $datosAnteriores = $configuracion->toArray();
+
         if ($configuracion->logo && Storage::disk('public')->exists($configuracion->logo)) {
             Storage::disk('public')->delete($configuracion->logo);
         }
@@ -310,6 +329,18 @@ class ConfiguracionEmpresaIndex extends Component
         $configuracion->update([
             'logo' => null,
         ]);
+
+        $configuracionActualizada = $configuracion->fresh();
+
+        BitacoraSistema::registrar(
+            'Configuración',
+            'Actualizar',
+            'Eliminó el logo de la configuración del negocio ' . ($configuracionActualizada->nombre_comercial ?? 'N/D') . '.',
+            ConfiguracionEmpresa::class,
+            $configuracionActualizada->id,
+            $datosAnteriores,
+            $configuracionActualizada->toArray()
+        );
 
         $this->logo = null;
         $this->logoNuevo = null;
