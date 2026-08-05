@@ -3,10 +3,11 @@
 namespace App\Http\Livewire\Catalogos;
 
 use App\Models\Catalogo;
+use App\Models\TipoCatalogo;
+use App\Models\BitacoraSistema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\TipoCatalogo;
 
 class CatalogoIndex extends Component
 {
@@ -130,13 +131,23 @@ class CatalogoIndex extends Component
 
         $this->validate();
 
-        Catalogo::create([
+        $catalogo = Catalogo::create([
             'tipo' => $this->tipo,
             'nombre' => trim($this->nombre),
             'descripcion' => $this->descripcion,
             'orden' => $this->orden,
             'activo' => $this->activo,
         ]);
+
+        BitacoraSistema::registrar(
+            'Catálogos',
+            'Registrar',
+            'Registró la opción de catálogo ' . $catalogo->nombre . ' en el tipo ' . $catalogo->tipo . '.',
+            Catalogo::class,
+            $catalogo->id,
+            null,
+            $catalogo->toArray()
+        );
 
         $this->resetInput();
 
@@ -171,6 +182,8 @@ class CatalogoIndex extends Component
 
         $catalogo = Catalogo::findOrFail($this->catalogo_id);
 
+        $datosAnteriores = $catalogo->toArray();
+
         $catalogo->update([
             'tipo' => $this->tipo,
             'nombre' => trim($this->nombre),
@@ -178,6 +191,16 @@ class CatalogoIndex extends Component
             'orden' => $this->orden,
             'activo' => $this->activo,
         ]);
+
+        BitacoraSistema::registrar(
+            'Catálogos',
+            'Actualizar',
+            'Actualizó la opción de catálogo ' . $catalogo->fresh()->nombre . ' del tipo ' . $catalogo->fresh()->tipo . '.',
+            Catalogo::class,
+            $catalogo->id,
+            $datosAnteriores,
+            $catalogo->fresh()->toArray()
+        );
 
         $this->resetInput();
 
@@ -192,9 +215,27 @@ class CatalogoIndex extends Component
 
         $catalogo = Catalogo::findOrFail($id);
 
+        $datosAnteriores = $catalogo->toArray();
+
+        $estadoAnterior = $catalogo->activo ? 'Activo' : 'Inactivo';
+
         $catalogo->update([
             'activo' => !$catalogo->activo,
         ]);
+
+        $catalogoActualizado = $catalogo->fresh();
+
+        $estadoNuevo = $catalogoActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Catálogos',
+            'Actualizar',
+            'Cambió el estado de la opción de catálogo ' . $catalogoActualizado->nombre . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Catalogo::class,
+            $catalogoActualizado->id,
+            $datosAnteriores,
+            $catalogoActualizado->toArray()
+        );
 
         session()->flash('message', 'Estado del catálogo actualizado correctamente.');
     }
