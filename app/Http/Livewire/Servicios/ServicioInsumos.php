@@ -5,10 +5,10 @@ namespace App\Http\Livewire\Servicios;
 use App\Models\Insumo;
 use App\Models\Servicio;
 use App\Models\ServicioInsumo;
+use App\Models\Catalogo;
+use App\Models\BitacoraSistema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
-use App\Models\Catalogo;
-
 class ServicioInsumos extends Component
 {
     public $servicio;
@@ -72,13 +72,25 @@ class ServicioInsumos extends Component
 
         $this->validate();
 
-        ServicioInsumo::create([
+        $insumo = Insumo::findOrFail($this->insumo_id);
+
+        $receta = ServicioInsumo::create([
             'servicio_id' => $this->servicio_id,
             'insumo_id' => $this->insumo_id,
             'cantidad_por_unidad' => $this->cantidad_por_unidad,
         ]);
 
         $this->actualizarCostoServicio();
+
+        BitacoraSistema::registrar(
+            'Recetas de servicios',
+            'Registrar',
+            'Agregó el insumo ' . $insumo->nombre . ' al servicio ' . $this->servicio->nombre . '. Cantidad por unidad: ' . $this->cantidad_por_unidad . '.',
+            ServicioInsumo::class,
+            $receta->id,
+            null,
+            $receta->fresh()->load(['servicio', 'insumo'])->toArray()
+        );
 
         $this->resetInput();
 
@@ -109,8 +121,14 @@ class ServicioInsumos extends Component
 
         $this->validate();
 
-        $receta = ServicioInsumo::where('servicio_id', $this->servicio_id)
+        $receta = ServicioInsumo::with(['servicio', 'insumo'])
+            ->where('servicio_id', $this->servicio_id)
             ->findOrFail($this->receta_id);
+
+        $datosAnteriores = $receta->toArray();
+
+        $insumoAnterior = optional($receta->insumo)->nombre ?? 'N/D';
+        $cantidadAnterior = $receta->cantidad_por_unidad;
 
         $receta->update([
             'insumo_id' => $this->insumo_id,
@@ -118,6 +136,20 @@ class ServicioInsumos extends Component
         ]);
 
         $this->actualizarCostoServicio();
+
+        $recetaActualizada = $receta->fresh()->load(['servicio', 'insumo']);
+
+        $insumoNuevo = optional($recetaActualizada->insumo)->nombre ?? 'N/D';
+
+        BitacoraSistema::registrar(
+            'Recetas de servicios',
+            'Actualizar',
+            'Actualizó la receta del servicio ' . $this->servicio->nombre . '. Insumo anterior: ' . $insumoAnterior . ', cantidad anterior: ' . $cantidadAnterior . '. Nuevo insumo: ' . $insumoNuevo . ', nueva cantidad: ' . $this->cantidad_por_unidad . '.',
+            ServicioInsumo::class,
+            $recetaActualizada->id,
+            $datosAnteriores,
+            $recetaActualizada->toArray()
+        );
 
         $this->resetInput();
 
@@ -129,13 +161,30 @@ class ServicioInsumos extends Component
         if (!auth()->user()->can('editar servicios')) {
             abort(403, 'No tiene permiso para eliminar insumos del servicio.');
         }
-        
-        $receta = ServicioInsumo::where('servicio_id', $this->servicio_id)
+
+        $receta = ServicioInsumo::with(['servicio', 'insumo'])
+            ->where('servicio_id', $this->servicio_id)
             ->findOrFail($id);
+
+        $datosAnteriores = $receta->toArray();
+
+        $recetaId = $receta->id;
+        $insumoNombre = optional($receta->insumo)->nombre ?? 'N/D';
+        $cantidad = $receta->cantidad_por_unidad;
 
         $receta->delete();
 
         $this->actualizarCostoServicio();
+
+        BitacoraSistema::registrar(
+            'Recetas de servicios',
+            'Eliminar',
+            'Eliminó el insumo ' . $insumoNombre . ' del servicio ' . $this->servicio->nombre . '. Cantidad por unidad eliminada: ' . $cantidad . '.',
+            ServicioInsumo::class,
+            $recetaId,
+            $datosAnteriores,
+            null
+        );
 
         session()->flash('message', 'Insumo eliminado del servicio.');
     }
@@ -216,4 +265,5 @@ class ServicioInsumos extends Component
             'margen' => $margen,
         ]);
     }
+
 }

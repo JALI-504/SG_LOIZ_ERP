@@ -26,4 +26,5 @@ class ServicioInsumo extends Model
     {
         return $this->belongsTo(Insumo::class);
     }
+
 }
