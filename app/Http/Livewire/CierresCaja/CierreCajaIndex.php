@@ -290,7 +290,7 @@ class CierreCajaIndex extends Component
                 CierreCaja::class,
                 $cierre->id,
                 null,
-                $cierre->toArray()
+                $cierre->fresh()->load('usuario')->toArray()
             );
         });
 
@@ -384,7 +384,7 @@ class CierreCajaIndex extends Component
             CierreCaja::class,
             $cierre->id,
             $datosAnteriores,
-            $cierre->fresh()->toArray()
+            $cierre->fresh()->load(['usuario', 'usuarioAnulacion'])->toArray()
         );
 
         $this->cerrarModalAnulacion();
