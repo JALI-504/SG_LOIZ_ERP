@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Usuarios;
 
 use App\Models\User;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -168,10 +169,22 @@ class UsuarioIndex extends Component
             'email' => trim($this->email),
             'password' => Hash::make($this->password),
             'activo' => (bool) $this->activo,
-
         ]);
 
         $usuario->syncRoles([$this->rol]);
+
+        $datosNuevos = $usuario->fresh()->load('roles')->toArray();
+        unset($datosNuevos['password'], $datosNuevos['remember_token']);
+
+        BitacoraSistema::registrar(
+            'Usuarios',
+            'Registrar',
+            'Registró el usuario ' . $usuario->name . ' con el rol ' . $this->rol . '.',
+            User::class,
+            $usuario->id,
+            null,
+            $datosNuevos
+        );
 
         $this->resetInput();
 
@@ -220,6 +233,11 @@ class UsuarioIndex extends Component
             return;
         }
 
+        $datosAnteriores = $usuario->toArray();
+        unset($datosAnteriores['password'], $datosAnteriores['remember_token']);
+
+        $rolAnterior = optional($usuario->roles->first())->name ?? 'Sin rol';
+
         $usuario->update([
             'name' => trim($this->name),
             'email' => trim($this->email),
@@ -227,6 +245,21 @@ class UsuarioIndex extends Component
         ]);
 
         $usuario->syncRoles([$this->rol]);
+
+        $usuarioActualizado = $usuario->fresh()->load('roles');
+
+        $datosNuevos = $usuarioActualizado->toArray();
+        unset($datosNuevos['password'], $datosNuevos['remember_token']);
+
+        BitacoraSistema::registrar(
+            'Usuarios',
+            'Actualizar',
+            'Actualizó el usuario ' . $usuarioActualizado->name . '. Rol anterior: ' . $rolAnterior . '. Rol nuevo: ' . $this->rol . '.',
+            User::class,
+            $usuarioActualizado->id,
+            $datosAnteriores,
+            $datosNuevos
+        );
 
         $this->resetInput();
 
@@ -239,16 +272,38 @@ class UsuarioIndex extends Component
     {
         $this->autorizarDesactivarUsuarios();
 
-        $usuario = User::findOrFail($id);
+        $usuario = User::with('roles')->findOrFail($id);
 
         if ($usuario->id === auth()->id()) {
             session()->flash('error', 'No puede desactivar su propio usuario.');
             return;
         }
 
+        $datosAnteriores = $usuario->toArray();
+        unset($datosAnteriores['password'], $datosAnteriores['remember_token']);
+
+        $estadoAnterior = $usuario->activo ? 'Activo' : 'Inactivo';
+
         $usuario->update([
             'activo' => !$usuario->activo,
         ]);
+
+        $usuarioActualizado = $usuario->fresh()->load('roles');
+
+        $estadoNuevo = $usuarioActualizado->activo ? 'Activo' : 'Inactivo';
+
+        $datosNuevos = $usuarioActualizado->toArray();
+        unset($datosNuevos['password'], $datosNuevos['remember_token']);
+
+        BitacoraSistema::registrar(
+            'Usuarios',
+            'Actualizar',
+            'Cambió el estado del usuario ' . $usuarioActualizado->name . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            User::class,
+            $usuarioActualizado->id,
+            $datosAnteriores,
+            $datosNuevos
+        );
 
         session()->flash('message', 'Estado del usuario actualizado correctamente.');
     }
@@ -282,6 +337,21 @@ class UsuarioIndex extends Component
         $usuario->update([
             'password' => Hash::make($this->nueva_password),
         ]);
+
+        BitacoraSistema::registrar(
+            'Usuarios',
+            'Actualizar',
+            'Cambió la contraseña del usuario ' . $usuario->name . '.',
+            User::class,
+            $usuario->id,
+            null,
+            [
+                'usuario_id' => $usuario->id,
+                'name' => $usuario->name,
+                'email' => $usuario->email,
+                'accion' => 'Contraseña actualizada',
+            ]
+        );
 
         $this->usuarioPasswordId = null;
         $this->nueva_password = null;
