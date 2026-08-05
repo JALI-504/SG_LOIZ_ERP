@@ -468,6 +468,8 @@ class CotizacionIndex extends Component
                     ->lockForUpdate()
                     ->findOrFail($this->cotizacionConvertirId);
 
+                $datosAnterioresCotizacion = $cotizacion->toArray();
+
                 if ($cotizacion->estado === 'Anulada') {
                     throw new \Exception('No se puede convertir una cotización anulada.');
                 }
@@ -524,7 +526,7 @@ class CotizacionIndex extends Component
                     'Convirtió la cotización ' . $cotizacion->codigo . ' en la orden de trabajo ' . $orden->codigo . '.',
                     Cotizacion::class,
                     $cotizacion->id,
-                    $cotizacion->toArray(),
+                    $datosAnterioresCotizacion,
                     $cotizacion->fresh()->load('ordenTrabajo')->toArray()
                 );
 
