@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Roles;
 
+use App\Models\BitacoraSistema;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -93,6 +94,18 @@ class RolIndex extends Component
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
+        $rolActualizado = $rol->fresh()->load('permissions');
+
+        BitacoraSistema::registrar(
+            'Roles y permisos',
+            'Registrar',
+            'Registró el rol ' . $rolActualizado->name . ' con ' . count($this->permisosSeleccionados) . ' permisos.',
+            Role::class,
+            $rolActualizado->id,
+            null,
+            $this->datosRolBitacora($rolActualizado)
+        );
+
         $this->resetInput();
         $this->mostrarModalRol = false;
 
@@ -126,12 +139,22 @@ class RolIndex extends Component
 
         $this->validate();
 
-        $rol = Role::findOrFail($this->rol_id);
+        $rol = Role::with('permissions')->findOrFail($this->rol_id);
 
         if ($rol->name === 'Administrador') {
             session()->flash('error', 'El rol Administrador no se puede modificar desde esta pantalla.');
             return;
         }
+
+        $datosAnteriores = $this->datosRolBitacora($rol);
+
+        $nombreAnterior = $rol->name;
+
+        $permisosAnteriores = $rol->permissions
+            ->pluck('name')
+            ->sort()
+            ->values()
+            ->toArray();
 
         $rol->update([
             'name' => trim($this->name),
@@ -140,6 +163,24 @@ class RolIndex extends Component
         $rol->syncPermissions($this->permisosSeleccionados);
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $rolActualizado = $rol->fresh()->load('permissions');
+
+        $permisosNuevos = $rolActualizado->permissions
+            ->pluck('name')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        BitacoraSistema::registrar(
+            'Roles y permisos',
+            'Actualizar',
+            'Actualizó el rol ' . $nombreAnterior . ' a ' . $rolActualizado->name . '. Permisos anteriores: ' . count($permisosAnteriores) . '. Permisos nuevos: ' . count($permisosNuevos) . '.',
+            Role::class,
+            $rolActualizado->id,
+            $datosAnteriores,
+            $this->datosRolBitacora($rolActualizado)
+        );
 
         $this->resetInput();
         $this->mostrarModalRol = false;
@@ -151,7 +192,7 @@ class RolIndex extends Component
     {
         $this->autorizarEliminarRoles();
 
-        $rol = Role::findOrFail($id);
+        $rol = Role::with('permissions')->findOrFail($id);
 
         if ($rol->name === 'Administrador') {
             session()->flash('error', 'El rol Administrador no se puede eliminar.');
@@ -168,9 +209,24 @@ class RolIndex extends Component
             return;
         }
 
+        $datosAnteriores = $this->datosRolBitacora($rol);
+
+        $rolId = $rol->id;
+        $rolNombre = $rol->name;
+
         $rol->delete();
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        BitacoraSistema::registrar(
+            'Roles y permisos',
+            'Eliminar',
+            'Eliminó el rol ' . $rolNombre . '.',
+            Role::class,
+            $rolId,
+            $datosAnteriores,
+            null
+        );
 
         session()->flash('message', 'Rol eliminado correctamente.');
     }
@@ -179,6 +235,24 @@ class RolIndex extends Component
     {
         $this->mostrarModalRol = false;
         $this->resetInput();
+    }
+
+    private function datosRolBitacora($rol)
+    {
+        if (!$rol->relationLoaded('permissions')) {
+            $rol->load('permissions');
+        }
+
+        return [
+            'id' => $rol->id,
+            'name' => $rol->name,
+            'guard_name' => $rol->guard_name,
+            'permisos' => $rol->permissions
+                ->pluck('name')
+                ->sort()
+                ->values()
+                ->toArray(),
+        ];
     }
 
     private function resetInput()
