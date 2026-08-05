@@ -218,6 +218,16 @@ class InsumoIndex extends Component
                     'Registro inicial del insumo'
                 );
             }
+
+            BitacoraSistema::registrar(
+                'Insumos',
+                'Registrar',
+                'Registró el insumo ' . $insumo->nombre . '.',
+                Insumo::class,
+                $insumo->id,
+                null,
+                $insumo->fresh()->toArray()
+            );
         });
 
         $this->resetInput();
@@ -277,6 +287,8 @@ class InsumoIndex extends Component
 
         $insumo = Insumo::findOrFail($this->insumo_id);
 
+        $datosAnteriores = $insumo->toArray();
+
         $insumo->update([
             'codigo' => $this->codigo ? strtoupper(trim($this->codigo)) : null,
             'nombre' => trim($this->nombre),
@@ -303,6 +315,16 @@ class InsumoIndex extends Component
             'activo' => $this->activo,
         ]);
 
+        BitacoraSistema::registrar(
+            'Insumos',
+            'Actualizar',
+            'Actualizó el insumo ' . $insumo->fresh()->nombre . '.',
+            Insumo::class,
+            $insumo->id,
+            $datosAnteriores,
+            $insumo->fresh()->toArray()
+        );
+
         $this->resetInput();
 
         $this->dispatchBrowserEvent('close-insumo-modal');
@@ -318,9 +340,27 @@ class InsumoIndex extends Component
 
         $insumo = Insumo::findOrFail($id);
 
+        $datosAnteriores = $insumo->toArray();
+
+        $estadoAnterior = $insumo->activo ? 'Activo' : 'Inactivo';
+
         $insumo->update([
             'activo' => !$insumo->activo,
         ]);
+
+        $insumoActualizado = $insumo->fresh();
+
+        $estadoNuevo = $insumoActualizado->activo ? 'Activo' : 'Inactivo';
+
+        BitacoraSistema::registrar(
+            'Insumos',
+            'Actualizar',
+            'Cambió el estado del insumo ' . $insumoActualizado->nombre . ' de ' . $estadoAnterior . ' a ' . $estadoNuevo . '.',
+            Insumo::class,
+            $insumoActualizado->id,
+            $datosAnteriores,
+            $insumoActualizado->toArray()
+        );
 
         session()->flash('message', 'Estado del insumo actualizado correctamente.');
     }
