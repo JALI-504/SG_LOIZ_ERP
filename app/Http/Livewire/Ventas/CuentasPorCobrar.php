@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Ventas;
 use App\Models\Catalogo;
 use App\Models\PagoVenta;
 use App\Models\Venta;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -157,7 +158,7 @@ class CuentasPorCobrar extends Component
 
         try {
             DB::transaction(function () use ($venta) {
-                PagoVenta::create([
+                $pago = PagoVenta::create([
                     'venta_id' => $venta->id,
                     'monto' => $this->monto_abono,
                     'metodo_pago' => $this->metodo_pago,
@@ -167,6 +168,17 @@ class CuentasPorCobrar extends Component
                 ]);
 
                 $this->recalcularSaldoVenta($venta->id);
+
+                BitacoraSistema::registrar(
+                    'Abonos clientes',
+                    'Registrar',
+                    'Registró abono de cliente por L ' . number_format($pago->monto, 2) . ' a la venta ' . ($pago->venta->numero ?? 'N/D') . '.',
+                    PagoVenta::class,
+                    $pago->id,
+                    null,
+                    $pago->load('venta')->toArray()
+                );
+
             });
 
             $this->resetFormularioAbono();

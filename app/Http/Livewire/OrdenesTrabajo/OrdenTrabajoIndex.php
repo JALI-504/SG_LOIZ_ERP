@@ -21,6 +21,7 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\Departamento;
 use App\Models\Municipio;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -325,6 +326,16 @@ class OrdenTrabajoIndex extends Component
                 'user_id' => auth()->id(),
             ]);
 
+            BitacoraSistema::registrar(
+                'Órdenes de trabajo',
+                'Registrar',
+                'Registró la orden de trabajo ' . $orden->codigo . ' por L ' . number_format($orden->total, 2) . '.',
+                OrdenTrabajo::class,
+                $orden->id,
+                null,
+                $orden->load('detalles')->toArray()
+            );
+
             foreach ($this->detalles as $detalle) {
                 OrdenTrabajoDetalle::create([
                     'orden_trabajo_id' => $orden->id,
@@ -363,9 +374,22 @@ class OrdenTrabajoIndex extends Component
             return;
         }
 
+        $datosAnteriores = $orden->toArray();
+        $estadoAnterior = $orden->estado;
+
         $orden->update([
             'estado' => $nuevoEstado,
         ]);
+
+        BitacoraSistema::registrar(
+            'Órdenes de trabajo',
+            'Actualizar',
+            'Cambió el estado de la orden ' . $orden->codigo . ' de ' . $estadoAnterior . ' a ' . $orden->fresh()->estado . '.',
+            OrdenTrabajo::class,
+            $orden->id,
+            $datosAnteriores,
+            $orden->fresh()->toArray()
+        );
 
         session()->flash('message', 'Estado de la orden actualizado correctamente.');
     }
@@ -442,12 +466,24 @@ class OrdenTrabajoIndex extends Component
             return;
         }
 
+        $datosAnteriores = $orden->toArray();
+
         $orden->update([
             'estado' => 'Anulada',
             'fecha_anulacion' => now(),
             'anulado_por' => auth()->id(),
             'motivo_anulacion' => $this->motivoAnulacion,
         ]);
+
+        BitacoraSistema::registrar(
+            'Órdenes de trabajo',
+            'Anular',
+            'Anuló la orden de trabajo ' . $orden->codigo . '. Motivo: ' . $this->motivoAnulacion,
+            OrdenTrabajo::class,
+            $orden->id,
+            $datosAnteriores,
+            $orden->fresh()->toArray()
+        );
 
         $this->cerrarModalAnulacion();
 
@@ -616,6 +652,26 @@ class OrdenTrabajoIndex extends Component
                         'subtotal' => $item['subtotal'],
                         'total' => $item['total'],
                     ]);
+                    
+                    BitacoraSistema::registrar(
+                        'Órdenes de trabajo',
+                        'Convertir',
+                        'Convirtió la orden de trabajo ' . $orden->codigo . ' en la venta ' . $venta->numero . '.',
+                        OrdenTrabajo::class,
+                        $orden->id,
+                        $orden->toArray(),
+                        $orden->fresh()->toArray()
+                    );
+
+                    BitacoraSistema::registrar(
+                        'Ventas',
+                        'Registrar',
+                        'Registró la venta ' . $venta->numero . ' desde la orden de trabajo ' . $orden->codigo . '.',
+                        Venta::class,
+                        $venta->id,
+                        null,
+                        $venta->load('detalles')->toArray()
+                    );
                 }
 
                 $orden->update([

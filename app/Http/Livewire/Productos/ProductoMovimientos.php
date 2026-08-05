@@ -6,12 +6,13 @@ use App\Models\LoteProducto;
 use App\Models\MovimientoProducto;
 use App\Models\MovimientoProductoLote;
 use App\Models\Producto;
-use Illuminate\Support\Facades\DB;
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\LoteInsumo;
 use App\Models\MovimientoInventario;
 use App\Models\MovimientoInventarioLote;
+use App\Models\BitacoraSistema;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class ProductoMovimientos extends Component
 {
@@ -193,6 +194,16 @@ class ProductoMovimientos extends Component
                     ]);
 
                     $this->actualizarCostoActualPeps($producto);
+
+                    BitacoraSistema::registrar(
+                        'Inventario productos',
+                        'Registrar',
+                        'Registró movimiento de producto: ' . $movimiento->tipo_movimiento . ' del producto ' . $producto->nombre . ' por cantidad ' . number_format($movimiento->cantidad, 2) . '.',
+                        MovimientoProducto::class,
+                        $movimiento->id,
+                        null,
+                        $movimiento->fresh()->load('producto')->toArray()
+                    );
                 }
             });
         } catch (\Exception $e) {
@@ -243,6 +254,16 @@ class ProductoMovimientos extends Component
         ]);
 
         $this->actualizarCostoActualPeps($producto);
+
+        BitacoraSistema::registrar(
+            'Inventario productos',
+            'Registrar',
+            'Registró movimiento de producto: ' . $movimiento->tipo_movimiento . ' del producto ' . ($movimiento->producto->nombre ?? 'N/D') . ' por cantidad ' . number_format($movimiento->cantidad, 2) . '.',
+            MovimientoProducto::class,
+            $movimiento->id,
+            null,
+            $movimiento->load('producto')->toArray()
+        );
     }
 
     private function descontarPorPeps($producto, $cantidadSalida, $movimientoId)

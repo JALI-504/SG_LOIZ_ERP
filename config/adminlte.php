@@ -542,7 +542,12 @@ return [
    
             ],
         ],
-
+        [
+            'text' => 'Bitácora',
+            'route' => 'bitacora.index',
+            'icon' => 'fas fa-clipboard-check',
+            'can' => 'ver bitacora',
+        ],
         [
             'text' => 'Seguridad',
             'icon' => 'fas fa-shield-alt',

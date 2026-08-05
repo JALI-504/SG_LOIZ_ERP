@@ -15,6 +15,7 @@ use App\Models\MovimientoInventarioLote;
 use App\Models\MovimientoProducto;
 use App\Models\MovimientoProductoLote;
 use App\Models\PagoCompra;
+use App\Models\BitacoraSistema;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -287,7 +288,7 @@ class CompraController extends Controller
                 ]);
 
                 if ($montoPagado > 0) {
-                    PagoCompra::create([
+                    $pagoInicial = PagoCompra::create([
                         'compra_id' => $compra->id,
                         'monto' => $montoPagado,
                         'metodo_pago' => $request->metodo_pago,
@@ -297,6 +298,16 @@ class CompraController extends Controller
                             : 'Abono inicial registrado al momento de la compra.',
                         'estado' => 'Activo',
                     ]);
+
+                    BitacoraSistema::registrar(
+                        'Pagos proveedores',
+                        'Registrar',
+                        'Registró pago inicial de proveedor por L ' . number_format($pagoInicial->monto, 2) . ' en la compra ' . $compra->numero . '.',
+                        PagoCompra::class,
+                        $pagoInicial->id,
+                        null,
+                        $pagoInicial->load('compra')->toArray()
+                    );
                 }
 
                 foreach ($detallesPreparados as $detalle) {
@@ -306,6 +317,16 @@ class CompraController extends Controller
 
                     $this->registrarEntradaInventarioCompra($compra, $detalleCompra);
                 }
+
+                BitacoraSistema::registrar(
+                    'Compras',
+                    'Registrar',
+                    'Registró la compra ' . $compra->numero . ' por L ' . number_format($compra->total, 2) . '.',
+                    Compra::class,
+                    $compra->id,
+                    null,
+                    $compra->load(['proveedor', 'detalles', 'pagos'])->toArray()
+                );
             });
 
             return redirect()
@@ -349,6 +370,8 @@ class CompraController extends Controller
 
         try {
             DB::transaction(function () use ($compra) {
+                $datosAnteriores = $compra->load(['proveedor', 'detalles', 'pagos'])->toArray();
+
                 $this->revertirInventarioCompra($compra);
 
                 $observacionAnterior = $compra->observacion ? $compra->observacion . "\n" : '';
@@ -359,6 +382,16 @@ class CompraController extends Controller
                     'saldo_pendiente' => 0,
                     'observacion' => $observacionAnterior . 'Compra anulada el ' . now()->format('d/m/Y H:i'),
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Compras',
+                    'Anular',
+                    'Anuló la compra ' . $compra->numero . '. El inventario fue revertido.',
+                    Compra::class,
+                    $compra->id,
+                    $datosAnteriores,
+                    $compra->fresh()->load(['proveedor', 'detalles', 'pagos'])->toArray()
+                );
             });
 
             return redirect()
@@ -424,6 +457,16 @@ class CompraController extends Controller
         ]);
 
         $this->actualizarCostoActualPepsInsumo($insumo);
+
+        BitacoraSistema::registrar(
+            'Inventario insumos',
+            'Registrar',
+            'Registró entrada automática de insumo por compra ' . $compra->numero . ': ' . $insumo->nombre . ' por cantidad ' . number_format($detalle->cantidad, 2) . '.',
+            MovimientoInventario::class,
+            $movimiento->id,
+            null,
+            $movimiento->fresh()->load('insumo')->toArray()
+        );
     }
 
     private function registrarEntradaProductoCompra(Compra $compra, CompraDetalle $detalle)
@@ -470,6 +513,16 @@ class CompraController extends Controller
         ]);
 
         $this->actualizarCostoActualPepsProducto($producto);
+
+        BitacoraSistema::registrar(
+            'Inventario productos',
+            'Registrar',
+            'Registró entrada automática de producto por compra ' . $compra->numero . ': ' . $producto->nombre . ' por cantidad ' . number_format($detalle->cantidad, 2) . '.',
+            MovimientoProducto::class,
+            $movimiento->id,
+            null,
+            $movimiento->fresh()->load('producto')->toArray()
+        );
     }
 
     private function actualizarCostoActualPepsInsumo($insumo)

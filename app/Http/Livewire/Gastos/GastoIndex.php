@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Gastos;
 
 use App\Models\Catalogo;
 use App\Models\Gasto;
+use App\Models\BitacoraSistema;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -157,7 +158,7 @@ class GastoIndex extends Component
 
         $this->validate();
 
-        Gasto::create([
+        $gasto = Gasto::create([
             'fecha' => $this->fecha,
             'categoria' => $this->categoria,
             'descripcion' => $this->descripcion,
@@ -168,6 +169,16 @@ class GastoIndex extends Component
             'observacion' => $this->observacion,
             'estado' => 'Registrado',
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Registrar',
+            'Registró el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . ' en la categoría ' . $gasto->categoria . '.',
+            Gasto::class,
+            $gasto->id,
+            null,
+            $gasto->toArray()
+        );
 
         $this->resetFormulario();
 
@@ -213,6 +224,8 @@ class GastoIndex extends Component
             return;
         }
 
+        $datosAnteriores = $gasto->toArray();
+
         $gasto->update([
             'fecha' => $this->fecha,
             'categoria' => $this->categoria,
@@ -224,6 +237,16 @@ class GastoIndex extends Component
             'observacion' => $this->observacion,
             'estado' => 'Registrado',
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Actualizar',
+            'Actualizó el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+            Gasto::class,
+            $gasto->id,
+            $datosAnteriores,
+            $gasto->fresh()->toArray()
+        );
 
         $this->resetFormulario();
 
@@ -247,10 +270,22 @@ class GastoIndex extends Component
 
         $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
 
+        $datosAnteriores = $gasto->toArray();
+
         $gasto->update([
             'estado' => 'Anulado',
             'observacion' => $observacionAnterior . 'Gasto anulado el ' . now()->format('d/m/Y H:i'),
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Anular',
+            'Anuló el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+            Gasto::class,
+            $gasto->id,
+            $datosAnteriores,
+            $gasto->fresh()->toArray()
+        );
 
         $this->resetFormulario();
 
@@ -270,12 +305,24 @@ class GastoIndex extends Component
             return;
         }
 
+        $datosAnteriores = $gasto->toArray();
+
         $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
 
         $gasto->update([
             'estado' => 'Registrado',
             'observacion' => $observacionAnterior . 'Gasto reactivado el ' . now()->format('d/m/Y H:i'),
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Reactivar',
+            'Reactivó el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+            Gasto::class,
+            $gasto->id,
+            $datosAnteriores,
+            $gasto->fresh()->toArray()
+        );
 
         $this->resetFormulario();
 

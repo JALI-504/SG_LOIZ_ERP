@@ -17,6 +17,7 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\PagoVenta;
 use App\Models\ConfiguracionEmpresa;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -654,6 +655,16 @@ class VentaIndex extends Component
                     ]);
                 }
 
+                BitacoraSistema::registrar(
+                    'Ventas',
+                    'Registrar',
+                    'Registró la venta ' . $venta->numero . ' por L ' . number_format($venta->total, 2) . '.',
+                    Venta::class,
+                    $venta->id,
+                    null,
+                    $venta->load(['detalles', 'pagos'])->toArray()
+                );
+                
                 session()->flash('message', 'Venta registrada correctamente. Número: ' . $venta->numero);
             });
 

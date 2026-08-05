@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Catalogo;
 use App\Models\Gasto;
+use App\Models\BitacoraSistema;
 use Illuminate\Http\Request;
 
 class GastoController extends Controller
@@ -41,7 +42,7 @@ class GastoController extends Controller
             'observacion' => 'nullable|max:500',
         ]);
 
-        Gasto::create([
+        $gasto = Gasto::create([
             'fecha' => $request->fecha,
             'categoria' => $request->categoria,
             'descripcion' => $request->descripcion,
@@ -52,6 +53,16 @@ class GastoController extends Controller
             'observacion' => $request->observacion,
             'estado' => 'Registrado',
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Registrar',
+            'Registró el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . ' en la categoría ' . $gasto->categoria . '.',
+            Gasto::class,
+            $gasto->id,
+            null,
+            $gasto->toArray()
+        );
 
         return redirect()
             ->route('gastos.index')
@@ -103,6 +114,8 @@ class GastoController extends Controller
             'observacion' => 'nullable|max:500',
         ]);
 
+        $datosAnteriores = $gasto->toArray();
+        
         $gasto->update([
             'fecha' => $request->fecha,
             'categoria' => $request->categoria,
@@ -114,6 +127,16 @@ class GastoController extends Controller
             'observacion' => $request->observacion,
             'estado' => 'Registrado',
         ]);
+
+        BitacoraSistema::registrar(
+            'Gastos',
+            'Actualizar',
+            'Actualizó el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+            Gasto::class,
+            $gasto->id,
+            $datosAnteriores,
+            $gasto->fresh()->toArray()
+        );
 
         return redirect()
             ->route('gastos.index')

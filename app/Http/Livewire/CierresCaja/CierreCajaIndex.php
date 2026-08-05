@@ -6,6 +6,7 @@ use App\Models\CierreCaja;
 use App\Models\Gasto;
 use App\Models\PagoCompra;
 use App\Models\PagoVenta;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -248,7 +249,7 @@ class CierreCajaIndex extends Component
         $this->cargarResumenCaja();
 
         DB::transaction(function () {
-            CierreCaja::create([
+            $cierre = CierreCaja::create([
                 'fecha' => $this->fecha,
                 'user_id' => auth()->id(),
 
@@ -281,6 +282,16 @@ class CierreCajaIndex extends Component
                 'observacion' => $this->observacion,
                 'estado' => 'Cerrado',
             ]);
+
+            BitacoraSistema::registrar(
+                'Cierre de caja',
+                'Registrar',
+                'Registró el cierre de caja ' . $cierre->codigo . ' para la fecha ' . $cierre->fecha . '.',
+                CierreCaja::class,
+                $cierre->id,
+                null,
+                $cierre->toArray()
+            );
         });
 
         $this->resetFormulario();
@@ -357,12 +368,24 @@ class CierreCajaIndex extends Component
             return;
         }
 
+        $datosAnteriores = $cierre->toArray();
+
         $cierre->update([
             'estado' => 'Anulado',
             'fecha_anulacion' => now(),
             'anulado_por' => auth()->id(),
             'motivo_anulacion' => $this->motivoAnulacion,
         ]);
+
+        BitacoraSistema::registrar(
+            'Cierre de caja',
+            'Anular',
+            'Anuló el cierre de caja ' . $cierre->codigo . '. Motivo: ' . $this->motivoAnulacion,
+            CierreCaja::class,
+            $cierre->id,
+            $datosAnteriores,
+            $cierre->fresh()->toArray()
+        );
 
         $this->cerrarModalAnulacion();
 

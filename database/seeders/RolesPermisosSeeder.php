@@ -107,6 +107,9 @@ class RolesPermisosSeeder extends Seeder
             'anular cierres caja',
             'imprimir cierres caja',
 
+            // Bitácora / Auditoría
+            'ver bitacora',
+
             // Configuración
             'ver configuracion',
             'editar configuracion',

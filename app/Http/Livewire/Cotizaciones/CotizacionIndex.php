@@ -9,6 +9,7 @@ use App\Models\OrdenTrabajo;
 use App\Models\OrdenTrabajoDetalle;
 use App\Models\Producto;
 use App\Models\Servicio;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -298,6 +299,16 @@ class CotizacionIndex extends Component
                     'observacion' => $detalle['observacion'],
                 ]);
             }
+
+            BitacoraSistema::registrar(
+                'Cotizaciones',
+                'Registrar',
+                'Registró la cotización ' . $cotizacion->codigo . ' por L ' . number_format($cotizacion->total, 2) . '.',
+                Cotizacion::class,
+                $cotizacion->id,
+                null,
+                $cotizacion->load('detalles')->toArray()
+            );
         });
 
         $this->resetFormulario();
@@ -383,12 +394,24 @@ class CotizacionIndex extends Component
             return;
         }
 
+        $datosAnteriores = $cotizacion->toArray();
+
         $cotizacion->update([
             'estado' => 'Anulada',
             'fecha_anulacion' => now(),
             'anulado_por' => auth()->id(),
             'motivo_anulacion' => $this->motivoAnulacion,
         ]);
+
+        BitacoraSistema::registrar(
+            'Cotizaciones',
+            'Anular',
+            'Anuló la cotización ' . $cotizacion->codigo . '. Motivo: ' . $this->motivoAnulacion,
+            Cotizacion::class,
+            $cotizacion->id,
+            $datosAnteriores,
+            $cotizacion->fresh()->toArray()
+        );
 
         $this->cerrarModalAnulacion();
 
@@ -494,6 +517,27 @@ class CotizacionIndex extends Component
                     'estado' => 'Aprobada',
                     'orden_trabajo_id' => $orden->id,
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Cotizaciones',
+                    'Convertir',
+                    'Convirtió la cotización ' . $cotizacion->codigo . ' en la orden de trabajo ' . $orden->codigo . '.',
+                    Cotizacion::class,
+                    $cotizacion->id,
+                    $cotizacion->toArray(),
+                    $cotizacion->fresh()->load('ordenTrabajo')->toArray()
+                );
+
+                BitacoraSistema::registrar(
+                    'Órdenes de trabajo',
+                    'Registrar',
+                    'Creó la orden de trabajo ' . $orden->codigo . ' desde la cotización ' . $cotizacion->codigo . '.',
+                    OrdenTrabajo::class,
+                    $orden->id,
+                    null,
+                    $orden->load('detalles')->toArray()
+                );
+                
             });
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());

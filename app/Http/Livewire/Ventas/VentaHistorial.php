@@ -5,12 +5,13 @@ namespace App\Http\Livewire\Ventas;
 use App\Models\Catalogo;
 use App\Models\PagoVenta;
 use App\Models\Venta;
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\MovimientoInventario;
 use App\Models\MovimientoInventarioLote;
 use App\Models\MovimientoProducto;
 use App\Models\MovimientoProductoLote;
+use App\Models\BitacoraSistema;
+use Livewire\Component;
+use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
 
 class VentaHistorial extends Component
@@ -137,12 +138,24 @@ class VentaHistorial extends Component
 
                 $observacionAnterior = $venta->observacion ? $venta->observacion . "\n" : '';
 
+                $datosAnteriores = $venta->toArray();
+
                 $venta->update([
                     'estado' => 'Anulada',
                     'monto_pagado' => 0,
                     'saldo_pendiente' => 0,
                     'observacion' => $observacionAnterior . 'Venta anulada el ' . now()->format('d/m/Y H:i'),
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Ventas',
+                    'Anular',
+                    'Anuló la venta ' . $venta->numero . '.',
+                    Venta::class,
+                    $venta->id,
+                    $datosAnteriores,
+                    $venta->fresh()->load(['detalles', 'pagos'])->toArray()
+                );
             });
 
             $this->ventaSeleccionadaId = null;
@@ -178,11 +191,24 @@ class VentaHistorial extends Component
 
         try {
             DB::transaction(function () use ($pago) {
+
+                $datosAnteriores = $pago->toArray();
+
                 $pago->update([
                     'estado' => 'Anulado',
                     'fecha_anulacion' => now(),
                     'observacion_anulacion' => 'Abono anulado desde historial de ventas.',
                 ]);
+
+                BitacoraSistema::registrar(
+                    'Abonos clientes',
+                    'Anular',
+                    'Anuló el abono de cliente por L ' . number_format($pago->monto, 2) . ' de la venta ' . ($pago->venta->numero ?? 'N/D') . '.',
+                    PagoVenta::class,
+                    $pago->id,
+                    $datosAnteriores,
+                    $pago->fresh()->toArray()
+                );
 
                 $this->recalcularSaldoVenta($pago->venta_id);
             });

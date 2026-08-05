@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\CierreCaja;
+use App\Models\BitacoraSistema;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -40,5 +41,10 @@ class User extends Authenticatable
     public function cierresCajaAnulados()
     {
         return $this->hasMany(CierreCaja::class, 'anulado_por');
+    }
+
+    public function bitacorasSistema()
+    {
+        return $this->hasMany(BitacoraSistema::class, 'user_id');
     }
 }

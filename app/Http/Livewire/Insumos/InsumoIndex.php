@@ -4,13 +4,14 @@ namespace App\Http\Livewire\Insumos;
 
 use App\Models\Insumo;
 use App\Models\MovimientoInventario;
+use App\Models\LoteInsumo;
+use App\Models\MovimientoInventarioLote;
+use App\Models\Catalogo;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\LoteInsumo;
-use App\Models\MovimientoInventarioLote;
-use App\Models\Catalogo;
 
 class InsumoIndex extends Component
 {
@@ -411,6 +412,16 @@ class InsumoIndex extends Component
                     'total' => round($totalSalida, 2),
                 ]);
 
+                BitacoraSistema::registrar(
+                    'Inventario insumos',
+                    'Registrar',
+                    'Registró movimiento de inventario: ' . $this->movimiento_tipo . ' del insumo ' . $insumo->nombre . ' por cantidad ' . number_format($cantidad, 2) . '.',
+                    MovimientoInventario::class,
+                    $movimiento->id,
+                    null,
+                    $movimiento->load('insumo')->toArray()
+                );
+
                 $this->actualizarCostoActualPeps($insumo);
             }
         });
@@ -458,6 +469,16 @@ class InsumoIndex extends Component
         ]);
 
         $this->actualizarCostoActualPeps($insumo);
+
+        BitacoraSistema::registrar(
+            'Inventario insumos',
+            'Registrar',
+            'Registró movimiento de inventario: ' . $tipoMovimiento . ' del insumo ' . $insumo->nombre . ' por cantidad ' . number_format($cantidad, 2) . '.',
+            MovimientoInventario::class,
+            $movimiento->id,
+            null,
+            $movimiento->load('insumo')->toArray()
+        );
     }
 
     private function descontarPorPeps($insumo, $cantidadSalida, $movimientoId)

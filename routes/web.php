@@ -314,6 +314,17 @@ Route::middleware(['auth'])->group(function () {
     })->name('cierres-caja.imprimir')
         ->middleware('permission:imprimir cierres caja');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bitácora / Auditoría
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/bitacora', function () {
+        return view('bitacora.index');
+    })->name('bitacora.index')
+        ->middleware('permission:ver bitacora');
+
 
     /*
     |--------------------------------------------------------------------------
