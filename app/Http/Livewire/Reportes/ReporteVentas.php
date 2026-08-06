@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Reportes;
 use App\Models\Catalogo;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\BitacoraSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -103,6 +104,29 @@ class ReporteVentas extends Component
         $fechaHasta = $this->fechaHasta ?: 'actual';
 
         $nombreArchivo = 'reporte_ventas_' . $fechaDesde . '_al_' . $fechaHasta . '.csv';
+
+        BitacoraSistema::registrar(
+            'Reportes',
+            'Exportar',
+            'Exportó el reporte de ventas del ' . $fechaDesde . ' al ' . $fechaHasta . ' en CSV.',
+            null,
+            null,
+            null,
+            [
+                'reporte' => 'Ventas',
+                'formato' => 'CSV',
+                'archivo' => $nombreArchivo,
+                'fecha_desde' => $fechaDesde,
+                'fecha_hasta' => $fechaHasta,
+                'metodo_pago' => $this->filtroMetodoPago,
+                'tipo_item' => $this->filtroTipoItem,
+                'comprobante' => $this->filtroComprobante,
+                'total_ventas' => $totalVentas,
+                'total_vendido' => round((float) $totalVendido, 2),
+                'total_descuentos' => round((float) $totalDescuentos, 2),
+                'registros_detalle' => $detalles->count(),
+            ]
+        );
 
         return response()->streamDownload(function () use ($detalles, $totalVentas, $totalVendido, $totalDescuentos) {
             $handle = fopen('php://output', 'w');
@@ -397,6 +421,26 @@ class ReporteVentas extends Component
         $fechaHasta = $this->fechaHasta ?: 'actual';
 
         $nombreArchivo = 'reporte_ventas_' . $fechaDesde . '_al_' . $fechaHasta . '.xls';
+
+        BitacoraSistema::registrar(
+            'Reportes',
+            'Exportar',
+            'Exportó el reporte de ventas del ' . $fechaDesde . ' al ' . $fechaHasta . ' en Excel.',
+            null,
+            null,
+            null,
+            [
+                'reporte' => 'Ventas',
+                'formato' => 'Excel',
+                'archivo' => $nombreArchivo,
+                'fecha_desde' => $fechaDesde,
+                'fecha_hasta' => $fechaHasta,
+                'metodo_pago' => $this->filtroMetodoPago,
+                'tipo_item' => $this->filtroTipoItem,
+                'comprobante' => $this->filtroComprobante,
+                'registros_detalle' => $detalles->count(),
+            ]
+        );
 
         $html = view('reportes.excel.ventas', [
             'detalles' => $detalles,

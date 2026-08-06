@@ -7,6 +7,7 @@ use App\Models\Gasto;
 use App\Models\PagoCompra;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\BitacoraSistema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -282,6 +283,30 @@ class ReporteFinancieroController extends Controller
             ->get();
 
         $nombreArchivo = 'reporte_financiero_' . $fechaDesde . '_al_' . $fechaHasta . '.xls';
+
+        BitacoraSistema::registrar(
+            'Reportes',
+            'Exportar',
+            'Exportó el reporte financiero del ' . $fechaDesde . ' al ' . $fechaHasta . ' en Excel.',
+            null,
+            null,
+            null,
+            [
+                'reporte' => 'Financiero',
+                'formato' => 'Excel',
+                'archivo' => $nombreArchivo,
+                'fecha_desde' => $fechaDesde,
+                'fecha_hasta' => $fechaHasta,
+                'cantidad_ventas' => $cantidadVentas,
+                'total_ventas' => round((float) $totalVentas, 2),
+                'cantidad_gastos' => $cantidadGastos,
+                'total_gastos' => round((float) $totalGastos, 2),
+                'cantidad_compras' => $cantidadCompras,
+                'total_compras' => round((float) $totalCompras, 2),
+                'total_pagos_proveedores' => round((float) $totalPagosProveedoresActivos, 2),
+                'flujo_neto_estimado' => round((float) $flujoNetoEstimado, 2),
+            ]
+        );
 
         return response()
             ->view('reportes.excel.financiero', [
