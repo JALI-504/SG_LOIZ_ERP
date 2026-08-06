@@ -201,7 +201,11 @@
 
 <body>
     <div class="botones">
-        <button onclick="window.print()" class="btn">
+        {{-- <button onclick="window.print()" class="btn">
+            Imprimir
+        </button> --}}
+
+        <button type="button" onclick="registrarImpresionCierre()" class="btn">
             Imprimir
         </button>
 
@@ -548,5 +552,18 @@
             </div>
         </div>
     </div>
+    <script>
+        function registrarImpresionCierre() {
+            fetch("{{ route('cierres-caja.registrar-impresion', $cierre->id) }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "Accept": "application/json"
+                }
+            }).finally(function () {
+                window.print();
+            });
+        }
+    </script>
 </body>
 </html>

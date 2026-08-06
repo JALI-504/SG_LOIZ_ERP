@@ -314,6 +314,48 @@ Route::middleware(['auth'])->group(function () {
     })->name('cierres-caja.imprimir')
         ->middleware('permission:imprimir cierres caja');
 
+
+    Route::post('/cierres-caja/{cierre}/registrar-impresion', function (\App\Models\CierreCaja $cierre) {
+        if (!auth()->user()->can('imprimir cierres caja')) {
+            abort(403, 'No tiene permiso para imprimir cierres de caja.');
+        }
+
+        $cierre->load(['usuario', 'usuarioAnulacion']);
+
+        \App\Models\BitacoraSistema::registrar(
+            'Cierre de caja',
+            'Imprimir',
+            'Imprimió el cierre de caja ' . $cierre->codigo . ' de fecha ' . $cierre->fecha . '.',
+            \App\Models\CierreCaja::class,
+            $cierre->id,
+            null,
+            [
+                'codigo' => $cierre->codigo,
+                'fecha' => $cierre->fecha,
+                'estado' => $cierre->estado,
+                'monto_inicial' => $cierre->monto_inicial,
+                'ventas_efectivo' => $cierre->ventas_efectivo,
+                'ventas_transferencia' => $cierre->ventas_transferencia,
+                'ventas_tarjeta' => $cierre->ventas_tarjeta,
+                'ventas_otros' => $cierre->ventas_otros,
+                'gastos_registrados' => $cierre->gastos_registrados,
+                'pagos_proveedores' => $cierre->pagos_proveedores,
+                'otros_ingresos' => $cierre->otros_ingresos,
+                'otros_egresos' => $cierre->otros_egresos,
+                'efectivo_esperado' => $cierre->efectivo_esperado,
+                'efectivo_contado' => $cierre->efectivo_contado,
+                'diferencia' => $cierre->diferencia,
+                'usuario_cierre' => $cierre->usuario ? $cierre->usuario->name : 'Sistema',
+                'impreso_en' => now()->format('Y-m-d H:i:s'),
+            ]
+        );
+
+        return response()->json([
+            'ok' => true,
+        ]);
+    })->name('cierres-caja.registrar-impresion')
+        ->middleware(['auth', 'permission:imprimir cierres caja']);
+
     /*
     |--------------------------------------------------------------------------
     | Bitácora / Auditoría
