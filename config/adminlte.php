@@ -565,6 +565,12 @@ return [
                     'icon' => 'fas fa-user-shield',
                     'can' => 'ver roles',
                 ],
+                [
+                    'text' => 'Respaldos',
+                    'route' => 'respaldos.index',
+                    'icon' => 'fas fa-database',
+                    'can' => 'ver respaldos',
+                ],
             ],
         ],
 

@@ -542,4 +542,15 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/compras/{compra}/anular', [CompraController::class, 'anular'])
         ->name('compras.anular')
         ->middleware('permission:anular compras');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Respaldo - BackUp
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/respaldos', function () {
+        return view('respaldos.index');
+    })->name('respaldos.index')
+        ->middleware('permission:ver respaldos');
 });

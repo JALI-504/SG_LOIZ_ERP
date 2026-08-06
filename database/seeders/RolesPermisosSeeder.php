@@ -128,6 +128,11 @@ class RolesPermisosSeeder extends Seeder
             'editar roles',
             'eliminar roles',
             'asignar permisos roles',
+
+            // Respaldos
+            'ver respaldos',
+            'generar respaldos',
+            'descargar respaldos',
             
         ];
 
