@@ -4,11 +4,146 @@
         {{ \Carbon\Carbon::parse($hoy)->format('d/m/Y') }}
     </div>
 
+    {{-- Alertas administrativas --}}
+    <div class="row">
+        <div class="col-md-4">
+            @if ($aperturaCajaAbierta)
+                <div class="alert {{ $cajaPendienteCierre ? 'alert-danger' : 'alert-success' }}">
+                    <strong>
+                        <i class="fas fa-cash-register"></i>
+                        Caja abierta:
+                    </strong>
+                    {{ $aperturaCajaAbierta->codigo }}
+
+                    <br>
+                    <small>
+                        Fecha:
+                        {{ \Carbon\Carbon::parse($aperturaCajaAbierta->fecha)->format('d/m/Y') }}
+                        |
+                        Monto inicial:
+                        L {{ number_format($aperturaCajaAbierta->monto_inicial, 2) }}
+                    </small>
+
+                    <br>
+                    <small>
+                        Responsable:
+                        {{ $aperturaCajaAbierta->usuario->name ?? 'Sistema' }}
+                    </small>
+
+                    @if ($cajaPendienteCierre)
+                        <br>
+                        <span class="badge badge-danger">
+                            Caja pendiente de cierre
+                        </span>
+                    @endif
+                </div>
+            @else
+                <div class="alert alert-warning">
+                    <strong>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No hay caja abierta.
+                    </strong>
+                    <br>
+                    <small>Debe realizar apertura de caja antes de operar el cierre.</small>
+                </div>
+            @endif
+        </div>
+
+        <div class="col-md-4">
+            @if ($ultimoRespaldo)
+                <div class="alert {{ $respaldoPendiente ? 'alert-warning' : 'alert-success' }}">
+                    <strong>
+                        <i class="fas fa-database"></i>
+                        Último respaldo:
+                    </strong>
+                    {{ $ultimoRespaldo->nombre_archivo }}
+
+                    <br>
+                    <small>
+                        Generado:
+                        {{ $ultimoRespaldo->fecha_generacion ? \Carbon\Carbon::parse($ultimoRespaldo->fecha_generacion)->format('d/m/Y H:i') : 'No registrado' }}
+                    </small>
+
+                    <br>
+                    <small>
+                        Por:
+                        {{ $ultimoRespaldo->usuario->name ?? 'Sistema' }}
+                        |
+                        Hace:
+                        {{ $diasUltimoRespaldo ?? 0 }} día(s)
+                    </small>
+
+                    @if ($respaldoPendiente)
+                        <br>
+                        <span class="badge badge-warning">
+                            Se recomienda generar un respaldo reciente
+                        </span>
+                    @endif
+                </div>
+            @else
+                <div class="alert alert-danger">
+                    <strong>
+                        <i class="fas fa-database"></i>
+                        No hay respaldos registrados.
+                    </strong>
+                    <br>
+                    <small>Genere un respaldo de la base de datos.</small>
+                </div>
+            @endif
+        </div>
+
+        <div class="col-md-4">
+            <div class="alert {{ ($totalProductosStockBajo + $totalInsumosStockBajo) > 0 ? 'alert-danger' : 'alert-success' }}">
+                <strong>
+                    <i class="fas fa-boxes"></i>
+                    Alertas de stock:
+                </strong>
+
+                <br>
+                <small>
+                    Productos con stock bajo:
+                    <strong>{{ number_format($totalProductosStockBajo, 0) }}</strong>
+                </small>
+
+                <br>
+                <small>
+                    Insumos con stock bajo:
+                    <strong>{{ number_format($totalInsumosStockBajo, 0) }}</strong>
+                </small>
+
+                @if (($totalProductosStockBajo + $totalInsumosStockBajo) > 0)
+                    <br>
+                    <span class="badge badge-danger">
+                        Revisar inventario
+                    </span>
+                @endif
+            </div>
+        </div>  
+    </div>
+
     {{-- Accesos rápidos --}}
     <div class="mb-3">
         @can('crear ventas')
             <a href="{{ route('ventas.index') }}" class="btn btn-success">
                 <i class="fas fa-cash-register"></i> Nueva venta
+            </a>
+        @endcan
+
+        @can('ver aperturas caja')
+            <a href="{{ route('aperturas-caja.index') }}" class="btn btn-success">
+                <i class="fas fa-door-open"></i> Apertura caja
+            </a>
+        @endcan
+
+        @can('ver cierres caja')
+            <a href="{{ route('cierres-caja.index') }}" class="btn btn-dark">
+                <i class="fas fa-cash-register"></i> Cierre caja
+            </a>
+        @endcan
+
+        @can('ver respaldos')
+            <a href="{{ route('respaldos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-database"></i> Respaldos
             </a>
         @endcan
 
@@ -772,14 +907,24 @@
         {{-- Alertas de stock --}}
         <div class="col-md-5">
             <div class="card">
-                <div class="card-header bg-danger">
+                <div class="card-header {{ ($totalProductosStockBajo + $totalInsumosStockBajo) > 0 ? 'bg-danger' : 'bg-success' }}">
                     <h3 class="card-title">
                         Alertas de inventario
+                        @if (($totalProductosStockBajo + $totalInsumosStockBajo) > 0)
+                            <span class="badge badge-light ml-2">
+                                {{ number_format($totalProductosStockBajo + $totalInsumosStockBajo, 0) }}
+                            </span>
+                        @endif
                     </h3>
                 </div>
 
                 <div class="card-body">
-                    <h5>Productos con stock bajo</h5>
+                    <h5>
+                        Productos con stock bajo
+                        <span class="badge badge-danger">
+                            {{ number_format($totalProductosStockBajo, 0) }}
+                        </span>
+                    </h5>
 
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered table-hover table-sm">
@@ -820,7 +965,12 @@
                         </table>
                     </div>
 
-                    <h5>Insumos con stock bajo</h5>
+                    <h5>
+                        Insumos con stock bajo
+                        <span class="badge badge-danger">
+                            {{ number_format($totalInsumosStockBajo, 0) }}
+                        </span>
+                    </h5>
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover table-sm">

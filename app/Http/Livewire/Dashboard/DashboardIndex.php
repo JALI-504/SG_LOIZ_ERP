@@ -11,6 +11,8 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\Cotizacion;
 use App\Models\OrdenTrabajo;
+use App\Models\AperturaCaja;
+use App\Models\RespaldoSistema;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -33,6 +35,42 @@ class DashboardIndex extends Component
         $this->autorizarVerDashboard();
 
         $hoy = now()->format('Y-m-d');
+
+        /*
+|--------------------------------------------------------------------------
+| Alertas administrativas
+|--------------------------------------------------------------------------
+*/
+
+        $aperturaCajaAbierta = AperturaCaja::with('usuario')
+            ->where('estado', 'Abierta')
+            ->orderByDesc('id')
+            ->first();
+
+        $cajaPendienteCierre = false;
+
+        if ($aperturaCajaAbierta && $aperturaCajaAbierta->fecha < $hoy) {
+            $cajaPendienteCierre = true;
+        }
+
+        $ultimoRespaldo = RespaldoSistema::with('usuario')
+            ->where('estado', 'Generado')
+            ->orderByDesc('fecha_generacion')
+            ->orderByDesc('id')
+            ->first();
+
+        $diasUltimoRespaldo = null;
+
+        if ($ultimoRespaldo && $ultimoRespaldo->fecha_generacion) {
+            $diasUltimoRespaldo = \Carbon\Carbon::parse($ultimoRespaldo->fecha_generacion)
+                ->diffInDays(now());
+        }
+
+        $respaldoPendiente = false;
+
+        if (!$ultimoRespaldo || ($diasUltimoRespaldo !== null && $diasUltimoRespaldo >= 3)) {
+            $respaldoPendiente = true;
+        }
 
         $ventasHoyQuery = Venta::whereDate('fecha', $hoy);
 
@@ -215,6 +253,15 @@ class DashboardIndex extends Component
             ->limit(8)
             ->get();
 
+        $totalProductosStockBajo = Producto::where('activo', true)
+            ->where('maneja_inventario', true)
+            ->whereColumn('stock_actual', '<=', 'stock_minimo')
+            ->count();
+
+        $totalInsumosStockBajo = Insumo::where('activo', true)
+            ->whereColumn('stock_actual', '<=', 'stock_minimo')
+            ->count();
+
         $ultimasVentas = Venta::with('cliente')
             ->orderByDesc('id')
             ->limit(8)
@@ -315,7 +362,14 @@ class DashboardIndex extends Component
             ->toArray();
 
         return view('livewire.dashboard.dashboard-index', [
+
             'hoy' => $hoy,
+
+            'aperturaCajaAbierta' => $aperturaCajaAbierta,
+            'cajaPendienteCierre' => $cajaPendienteCierre,
+            'ultimoRespaldo' => $ultimoRespaldo,
+            'diasUltimoRespaldo' => $diasUltimoRespaldo,
+            'respaldoPendiente' => $respaldoPendiente,
 
             'totalVentasHoy' => $totalVentasHoy,
             'totalVendidoHoy' => $totalVendidoHoy,
@@ -347,6 +401,8 @@ class DashboardIndex extends Component
 
             'productosStockBajo' => $productosStockBajo,
             'insumosStockBajo' => $insumosStockBajo,
+            'totalProductosStockBajo' => $totalProductosStockBajo,
+            'totalInsumosStockBajo' => $totalInsumosStockBajo,
             'ultimasVentas' => $ultimasVentas,
             'productosMasVendidosHoy' => $productosMasVendidosHoy,
             'serviciosMasVendidosHoy' => $serviciosMasVendidosHoy,
