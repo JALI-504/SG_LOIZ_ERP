@@ -6,6 +6,7 @@ use App\Models\CierreCaja;
 use App\Models\BitacoraSistema;
 use App\Models\RespaldoSistema;
 use App\Models\AperturaCaja;
+use App\Models\CuentaBancaria;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -63,5 +64,10 @@ class User extends Authenticatable
     public function aperturasCajaAnuladas()
     {
         return $this->hasMany(AperturaCaja::class, 'anulado_por');
+    }
+
+    public function cuentasBancarias()
+    {
+        return $this->hasMany(CuentaBancaria::class, 'user_id');
     }
 }

@@ -550,6 +550,17 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Bancos
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/bancos/cuentas-bancarias', function () {
+        return view('bancos.cuentas-bancarias');
+    })->name('bancos.cuentas-bancarias')
+        ->middleware('permission:ver cuentas bancarias');
+
+    /*
+    |--------------------------------------------------------------------------
     | Respaldo - BackUp
     |--------------------------------------------------------------------------
     */

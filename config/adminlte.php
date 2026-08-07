@@ -495,7 +495,19 @@ return [
                 ],
             ],
         ],
-
+        [
+            'text' => 'Bancos',
+            'icon' => 'fas fa-university',
+            'can' => 'ver cuentas bancarias',
+            'submenu' => [
+                [
+                    'text' => 'Cuentas bancarias',
+                    'route' => 'bancos.cuentas-bancarias',
+                    'icon' => 'fas fa-credit-card',
+                    'can' => 'ver cuentas bancarias',
+                ],
+            ],
+        ],
         [
             'text' => 'Reportes',
             'icon' => 'fas fa-fw fa-chart-pie',

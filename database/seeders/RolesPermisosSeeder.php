@@ -139,6 +139,12 @@ class RolesPermisosSeeder extends Seeder
             'ver aperturas caja',
             'crear aperturas caja',
             'anular aperturas caja',
+
+            // Bancos
+            'ver cuentas bancarias',
+            'crear cuentas bancarias',
+            'editar cuentas bancarias',
+            'eliminar cuentas bancarias',
             
         ];
 
