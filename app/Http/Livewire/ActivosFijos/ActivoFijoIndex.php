@@ -46,9 +46,11 @@ class ActivoFijoIndex extends Component
 
     public $categorias = [];
 
+    public $categoriaSeleccionada = null;
+
     protected function rules()
     {
-        return [
+        $rules = [
             'categoria_activo_id' => 'required|exists:categorias_activos,id',
             'nombre' => 'required|min:3|max:180',
             'descripcion' => 'nullable|max:1000',
@@ -59,16 +61,43 @@ class ActivoFijoIndex extends Component
             'vida_util_meses' => 'required|integer|min:1|max:600',
             'depreciacion_acumulada' => 'required|numeric|min:0',
             'ubicacion' => 'nullable|max:150',
-            'responsable' => 'nullable|max:150',
             'proveedor' => 'nullable|max:150',
             'documento_compra' => 'nullable|max:150',
-            'numero_serie' => 'nullable|max:150',
-            'marca' => 'nullable|max:100',
-            'modelo' => 'nullable|max:100',
             'estado' => 'required|max:50',
             'observacion' => 'nullable|max:1000',
         ];
+
+        $categoria = CategoriaActivo::find($this->categoria_activo_id);
+
+        if ($categoria && $categoria->requiere_numero_serie) {
+            $rules['numero_serie'] = 'required|max:150';
+        } else {
+            $rules['numero_serie'] = 'nullable|max:150';
+        }
+
+        if ($categoria && $categoria->requiere_marca_modelo) {
+            $rules['marca'] = 'required|max:100';
+            $rules['modelo'] = 'required|max:100';
+        } else {
+            $rules['marca'] = 'nullable|max:100';
+            $rules['modelo'] = 'nullable|max:100';
+        }
+
+        if ($categoria && $categoria->requiere_responsable) {
+            $rules['responsable'] = 'required|max:150';
+        } else {
+            $rules['responsable'] = 'nullable|max:150';
+        }
+
+        return $rules;
     }
+
+    protected $messages = [
+        'numero_serie.required' => 'El número de serie es obligatorio para esta categoría.',
+        'marca.required' => 'La marca es obligatoria para esta categoría.',
+        'modelo.required' => 'El modelo es obligatorio para esta categoría.',
+        'responsable.required' => 'El responsable es obligatorio para esta categoría.',
+    ];
 
     public function mount()
     {
@@ -114,6 +143,8 @@ class ActivoFijoIndex extends Component
 
     private function cargarDatosCategoria()
     {
+        $this->categoriaSeleccionada = null;
+
         if (!$this->categoria_activo_id) {
             return;
         }
@@ -123,6 +154,8 @@ class ActivoFijoIndex extends Component
         if (!$categoria) {
             return;
         }
+
+        $this->categoriaSeleccionada = $categoria;
 
         if ($categoria->depreciable) {
             $this->vida_util_meses = $categoria->vida_util_meses;
@@ -171,6 +204,8 @@ class ActivoFijoIndex extends Component
         $this->modelo = $activo->modelo;
         $this->estado = $activo->estado;
         $this->observacion = $activo->observacion;
+
+        $this->cargarDatosCategoria();
 
         $this->mostrarModal = true;
     }
