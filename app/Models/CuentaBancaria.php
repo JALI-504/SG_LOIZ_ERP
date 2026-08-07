@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\MovimientoBancario;
+use App\Models\ConciliacionBancaria;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -55,5 +56,10 @@ class CuentaBancaria extends Model
     public function movimientos()
     {
         return $this->hasMany(MovimientoBancario::class, 'cuenta_bancaria_id');
+    }
+
+    public function conciliaciones()
+    {
+        return $this->hasMany(ConciliacionBancaria::class, 'cuenta_bancaria_id');
     }
 }

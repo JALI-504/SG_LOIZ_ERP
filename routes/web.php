@@ -566,6 +566,17 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Conciliacion Bancaria
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/bancos/conciliaciones-bancarias', function () {
+        return view('bancos.conciliaciones-bancarias');
+    })->name('bancos.conciliaciones-bancarias')
+        ->middleware('permission:ver conciliaciones bancarias');
+
+    /*
+    |--------------------------------------------------------------------------
     | Respaldo - BackUp
     |--------------------------------------------------------------------------
     */

@@ -512,6 +512,12 @@ return [
                     'icon' => 'fas fa-exchange-alt',
                     'can' => 'ver movimientos bancarios',
                 ],
+                [
+                    'text' => 'Conciliaciones bancarias',
+                    'route' => 'bancos.conciliaciones-bancarias',
+                    'icon' => 'fas fa-balance-scale',
+                    'can' => 'ver conciliaciones bancarias',
+                ],
             ],
         ],
         [

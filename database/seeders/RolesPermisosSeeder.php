@@ -150,6 +150,11 @@ class RolesPermisosSeeder extends Seeder
             'ver movimientos bancarios',
             'crear movimientos bancarios',
             'anular movimientos bancarios',
+
+            // Conciliación bancaria
+            'ver conciliaciones bancarias',
+            'crear conciliaciones bancarias',
+            'anular conciliaciones bancarias',
             
         ];
 
