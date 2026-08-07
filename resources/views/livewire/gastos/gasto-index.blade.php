@@ -218,7 +218,24 @@
                                 </td>
 
                                 <td>
+                                    {{-- {{ $gasto->metodo_pago }} --}}
                                     {{ $gasto->metodo_pago }}
+
+                                    @if ($gasto->cuentaBancaria)
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ $gasto->cuentaBancaria->codigo }}
+                                            -
+                                            {{ $gasto->cuentaBancaria->banco }}
+                                        </small>
+                                    @endif
+
+                                    @if ($gasto->movimientoBancario)
+                                        <br>
+                                        <span class="badge badge-info">
+                                            Mov: {{ $gasto->movimientoBancario->codigo }}
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td>

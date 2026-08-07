@@ -91,6 +91,7 @@
                     <div class="form-group col-md-6">
                         <label>Método de pago <span class="text-danger">*</span></label>
                         <select name="metodo_pago"
+                                id="metodo_pago"
                                 class="form-control @error('metodo_pago') is-invalid @enderror">
                             @foreach ($metodosPago as $metodo)
                                 <option value="{{ $metodo }}"
@@ -117,6 +118,51 @@
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
+                </div>
+                
+                @php
+                    $metodoPagoSeleccionado = strtolower(trim((string) old('metodo_pago', $gasto->metodo_pago ?? 'Efectivo')));
+
+                    $mostrarCuentaBancaria = strpos($metodoPagoSeleccionado, 'transferencia') !== false ||
+                        strpos($metodoPagoSeleccionado, 'tarjeta') !== false ||
+                        strpos($metodoPagoSeleccionado, 'deposito') !== false ||
+                        strpos($metodoPagoSeleccionado, 'depósito') !== false ||
+                        strpos($metodoPagoSeleccionado, 'cheque') !== false;
+                @endphp
+
+                <div class="form-group"
+                    id="grupo_cuenta_bancaria"
+                    style="{{ $mostrarCuentaBancaria ? '' : 'display: none;' }}">
+                    <label>Cuenta bancaria <span class="text-danger">*</span></label>
+
+                    <select name="cuenta_bancaria_id"
+                            id="cuenta_bancaria_id"
+                            class="form-control @error('cuenta_bancaria_id') is-invalid @enderror">
+                        <option value="">Seleccione una cuenta bancaria</option>
+
+                        @foreach ($cuentasBancarias as $cuenta)
+                            <option value="{{ $cuenta->id }}"
+                                {{ old('cuenta_bancaria_id', $gasto->cuenta_bancaria_id ?? '') == $cuenta->id ? 'selected' : '' }}>
+                                {{ $cuenta->codigo }}
+                                -
+                                {{ $cuenta->banco }}
+                                -
+                                {{ $cuenta->nombre_cuenta }}
+                                |
+                                Saldo: L {{ number_format($cuenta->saldo_actual, 2) }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('cuenta_bancaria_id')
+                        <span class="invalid-feedback">
+                            {{ $message }}
+                        </span>
+                    @enderror
+
+                    <small class="text-muted">
+                        Obligatorio si el método de pago es transferencia, tarjeta, depósito o cheque.
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -155,4 +201,45 @@
             </div>
         </form>
     </div>
+@stop
+
+@section('js')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const metodoPago = document.getElementById('metodo_pago');
+        const grupoCuentaBancaria = document.getElementById('grupo_cuenta_bancaria');
+        const cuentaBancaria = document.getElementById('cuenta_bancaria_id');
+
+        function metodoRequiereBanco(valor) {
+            valor = (valor || '').toLowerCase().trim();
+
+            return valor.includes('transferencia') ||
+                valor.includes('tarjeta') ||
+                valor.includes('deposito') ||
+                valor.includes('depósito') ||
+                valor.includes('cheque');
+        }
+
+        function actualizarCuentaBancaria() {
+            if (!metodoPago || !grupoCuentaBancaria) {
+                return;
+            }
+
+            if (metodoRequiereBanco(metodoPago.value)) {
+                grupoCuentaBancaria.style.display = '';
+            } else {
+                grupoCuentaBancaria.style.display = 'none';
+
+                if (cuentaBancaria) {
+                    cuentaBancaria.value = '';
+                }
+            }
+        }
+
+        if (metodoPago) {
+            metodoPago.addEventListener('change', actualizarCuentaBancaria);
+            actualizarCuentaBancaria();
+        }
+    });
+</script>
 @stop

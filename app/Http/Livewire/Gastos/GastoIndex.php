@@ -7,6 +7,8 @@ use App\Models\Gasto;
 use App\Models\BitacoraSistema;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Services\BancoMovimientoService;
+use Illuminate\Support\Facades\DB;
 
 class GastoIndex extends Component
 {
@@ -103,7 +105,7 @@ class GastoIndex extends Component
 
     private function queryGastos()
     {
-        return Gasto::query()
+        return Gasto::with(['cuentaBancaria', 'movimientoBancario'])
             ->when($this->search, function ($query) {
                 $search = '%' . $this->search . '%';
 
@@ -261,35 +263,47 @@ class GastoIndex extends Component
             abort(403, 'No tiene permiso para anular gastos.');
         }
 
-        $gasto = Gasto::findOrFail($gastoId);
+        try {
+            DB::transaction(function () use ($gastoId) {
+                $gasto = Gasto::lockForUpdate()->findOrFail($gastoId);
 
-        if ($gasto->estado === 'Anulado') {
-            session()->flash('error', 'Este gasto ya está anulado.');
-            return;
+                if ($gasto->estado === 'Anulado') {
+                    throw new \Exception('Este gasto ya está anulado.');
+                }
+
+                $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
+
+                $datosAnteriores = $gasto->toArray();
+
+                if ($gasto->movimiento_bancario_id) {
+                    BancoMovimientoService::anularMovimiento(
+                        $gasto->movimiento_bancario_id,
+                        'Movimiento bancario anulado por anulación del gasto.'
+                    );
+                }
+
+                $gasto->update([
+                    'estado' => 'Anulado',
+                    'observacion' => $observacionAnterior . 'Gasto anulado el ' . now()->format('d/m/Y H:i'),
+                ]);
+
+                BitacoraSistema::registrar(
+                    'Gastos',
+                    'Anular',
+                    'Anuló el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+                    Gasto::class,
+                    $gasto->id,
+                    $datosAnteriores,
+                    $gasto->fresh()->toArray()
+                );
+            });
+
+            $this->resetFormulario();
+
+            session()->flash('message', 'Gasto anulado correctamente.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
         }
-
-        $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
-
-        $datosAnteriores = $gasto->toArray();
-
-        $gasto->update([
-            'estado' => 'Anulado',
-            'observacion' => $observacionAnterior . 'Gasto anulado el ' . now()->format('d/m/Y H:i'),
-        ]);
-
-        BitacoraSistema::registrar(
-            'Gastos',
-            'Anular',
-            'Anuló el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
-            Gasto::class,
-            $gasto->id,
-            $datosAnteriores,
-            $gasto->fresh()->toArray()
-        );
-
-        $this->resetFormulario();
-
-        session()->flash('message', 'Gasto anulado correctamente.');
     }
 
     public function reactivar($gastoId)
@@ -298,35 +312,64 @@ class GastoIndex extends Component
             abort(403, 'No tiene permiso para reactivar gastos.');
         }
 
-        $gasto = Gasto::findOrFail($gastoId);
+        try {
+            DB::transaction(function () use ($gastoId) {
+                $gasto = Gasto::lockForUpdate()->findOrFail($gastoId);
 
-        if ($gasto->estado === 'Registrado') {
-            session()->flash('error', 'Este gasto ya está registrado.');
-            return;
+                if ($gasto->estado === 'Registrado') {
+                    throw new \Exception('Este gasto ya está registrado.');
+                }
+
+                $datosAnteriores = $gasto->toArray();
+
+                $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
+
+                $movimientoBancarioId = null;
+
+                if (BancoMovimientoService::metodoRequiereBanco($gasto->metodo_pago)) {
+                    if (!$gasto->cuenta_bancaria_id) {
+                        throw new \Exception('No se puede reactivar este gasto porque no tiene una cuenta bancaria asociada.');
+                    }
+
+                    $movimientoBancario = BancoMovimientoService::registrarMovimiento(
+                        $gasto->cuenta_bancaria_id,
+                        'Salida',
+                        'Gasto',
+                        $gasto->monto,
+                        $gasto->referencia,
+                        'Reactivación del gasto: ' . $gasto->descripcion,
+                        'Gasto',
+                        $gasto->id,
+                        'Movimiento bancario generado automáticamente por reactivación de gasto.',
+                        $gasto->fecha ?: now()->format('Y-m-d')
+                    );
+
+                    $movimientoBancarioId = $movimientoBancario->id;
+                }
+
+                $gasto->update([
+                    'estado' => 'Registrado',
+                    'movimiento_bancario_id' => $movimientoBancarioId,
+                    'observacion' => $observacionAnterior . 'Gasto reactivado el ' . now()->format('d/m/Y H:i'),
+                ]);
+
+                BitacoraSistema::registrar(
+                    'Gastos',
+                    'Reactivar',
+                    'Reactivó el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
+                    Gasto::class,
+                    $gasto->id,
+                    $datosAnteriores,
+                    $gasto->fresh()->toArray()
+                );
+            });
+
+            $this->resetFormulario();
+
+            session()->flash('message', 'Gasto reactivado correctamente.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
         }
-
-        $datosAnteriores = $gasto->toArray();
-
-        $observacionAnterior = $gasto->observacion ? $gasto->observacion . "\n" : '';
-
-        $gasto->update([
-            'estado' => 'Registrado',
-            'observacion' => $observacionAnterior . 'Gasto reactivado el ' . now()->format('d/m/Y H:i'),
-        ]);
-
-        BitacoraSistema::registrar(
-            'Gastos',
-            'Reactivar',
-            'Reactivó el gasto #' . $gasto->id . ' por L ' . number_format($gasto->monto, 2) . '.',
-            Gasto::class,
-            $gasto->id,
-            $datosAnteriores,
-            $gasto->fresh()->toArray()
-        );
-
-        $this->resetFormulario();
-
-        session()->flash('message', 'Gasto reactivado correctamente.');
     }
 
     public function limpiarFiltros()
