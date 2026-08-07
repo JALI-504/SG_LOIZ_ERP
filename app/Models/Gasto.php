@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,6 +24,8 @@ class Gasto extends Model
         'proveedor',
         'observacion',
         'estado',
+        'cuenta_bancaria_id',
+        'movimiento_bancario_id',
     ];
 
     protected static function booted()
@@ -44,5 +48,15 @@ class Gasto extends Model
     public function getEsAnuladoAttribute()
     {
         return $this->estado === 'Anulado';
+    }
+
+    public function cuentaBancaria()
+    {
+        return $this->belongsTo(CuentaBancaria::class, 'cuenta_bancaria_id');
+    }
+
+    public function movimientoBancario()
+    {
+        return $this->belongsTo(MovimientoBancario::class, 'movimiento_bancario_id');
     }
 }

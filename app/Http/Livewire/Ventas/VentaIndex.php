@@ -18,6 +18,8 @@ use App\Models\VentaDetalle;
 use App\Models\PagoVenta;
 use App\Models\ConfiguracionEmpresa;
 use App\Models\BitacoraSistema;
+use App\Models\CuentaBancaria;
+use App\Services\BancoMovimientoService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -36,6 +38,8 @@ class VentaIndex extends Component
 
     public $monto_inicial = 0;
     public $referencia_pago_inicial;
+
+    public $cuenta_bancaria_id = null;
 
     public $metodosPago = [];
     public $estadosVenta = [];
@@ -510,6 +514,7 @@ class VentaIndex extends Component
             'monto_inicial' => 'nullable|numeric|min:0',
             'referencia_pago_inicial' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
+            'cuenta_bancaria_id' => 'nullable|exists:cuentas_bancarias,id',
         ]);
 
         if (!in_array($this->estado, ['Pagada', 'Pendiente'])) {
@@ -607,14 +612,41 @@ class VentaIndex extends Component
                         $observacionPago .= ' Retención aplicada: L ' . number_format($retencion, 2);
                     }
 
-                    PagoVenta::create([
+                    $requiereBanco = BancoMovimientoService::metodoRequiereBanco($this->metodo_pago);
+
+                    if ($requiereBanco && !$this->cuenta_bancaria_id) {
+                        throw new \Exception('Debe seleccionar una cuenta bancaria para este método de pago.');
+                    }
+
+                    $pago = PagoVenta::create([
                         'venta_id' => $venta->id,
                         'monto' => $montoParaPago,
                         'metodo_pago' => $this->metodo_pago,
+                        'cuenta_bancaria_id' => $requiereBanco ? $this->cuenta_bancaria_id : null,
+                        'movimiento_bancario_id' => null,
                         'referencia' => $this->referencia_pago_inicial,
                         'observacion' => $observacionPago,
                         'estado' => 'Activo',
                     ]);
+
+                    if ($requiereBanco) {
+                        $movimientoBancario = BancoMovimientoService::registrarMovimiento(
+                            $this->cuenta_bancaria_id,
+                            'Entrada',
+                            'Pago de venta',
+                            $montoParaPago,
+                            $this->referencia_pago_inicial,
+                            'Pago registrado desde venta ' . $venta->numero,
+                            'Venta',
+                            $venta->id,
+                            'Movimiento bancario generado automáticamente desde el POS.',
+                            now()->format('Y-m-d')
+                        );
+
+                        $pago->update([
+                            'movimiento_bancario_id' => $movimientoBancario->id,
+                        ]);
+                    }
                 }
 
                 foreach ($this->carrito as $item) {
@@ -918,6 +950,7 @@ class VentaIndex extends Component
         $this->observacion = null;
         $this->monto_inicial = 0;
         $this->referencia_pago_inicial = null;
+        $this->cuenta_bancaria_id = null;
 
         $this->limpiarCarrito();
     }
@@ -979,10 +1012,16 @@ class VentaIndex extends Component
                 ->get();
         }
 
+        $cuentasBancarias = CuentaBancaria::where('activo', true)
+            ->orderBy('banco')
+            ->orderBy('nombre_cuenta')
+            ->get();
+
         return view('livewire.ventas.venta-index', [
             'clientes' => $clientes,
             'productos' => $productos,
             'servicios' => $servicios,
+            'cuentasBancarias' => $cuentasBancarias,
         ]);
     }
 }

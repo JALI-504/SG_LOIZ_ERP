@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,6 +24,8 @@ class PagoCompra extends Model
         'estado',
         'fecha_anulacion',
         'observacion_anulacion',
+        'cuenta_bancaria_id',
+        'movimiento_bancario_id',
     ];
 
     protected static function booted()
@@ -40,5 +44,15 @@ class PagoCompra extends Model
     public function compra()
     {
         return $this->belongsTo(Compra::class);
+    }
+
+    public function cuentaBancaria()
+    {
+        return $this->belongsTo(CuentaBancaria::class, 'cuenta_bancaria_id');
+    }
+
+    public function movimientoBancario()
+    {
+        return $this->belongsTo(MovimientoBancario::class, 'movimiento_bancario_id');
     }
 }

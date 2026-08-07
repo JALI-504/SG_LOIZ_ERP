@@ -2,6 +2,8 @@
 
 namespace App\Http\Livewire\Ventas;
 
+use App\Models\CuentaBancaria;
+use App\Services\BancoMovimientoService;
 use App\Models\Catalogo;
 use App\Models\PagoVenta;
 use App\Models\Venta;
@@ -28,6 +30,7 @@ class CuentasPorCobrar extends Component
     public $monto_abono;
     public $metodo_pago = 'Efectivo';
     public $referencia;
+    public $cuenta_bancaria_id = null;
     public $observacion;
 
     public $metodosPago = [];
@@ -137,6 +140,7 @@ class CuentasPorCobrar extends Component
         $this->metodo_pago = $this->metodosPago[0] ?? 'Efectivo';
         $this->referencia = null;
         $this->observacion = null;
+        $this->cuenta_bancaria_id = null;
 
         $this->dispatchBrowserEvent('open-abono-modal');
     }
@@ -154,18 +158,46 @@ class CuentasPorCobrar extends Component
             'metodo_pago' => 'required|max:50',
             'referencia' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
+            'cuenta_bancaria_id' => 'nullable|exists:cuentas_bancarias,id',
         ]);
 
         try {
             DB::transaction(function () use ($venta) {
+                $requiereBanco = BancoMovimientoService::metodoRequiereBanco($this->metodo_pago);
+
+                if ($requiereBanco && !$this->cuenta_bancaria_id) {
+                    throw new \Exception('Debe seleccionar una cuenta bancaria para este método de pago.');
+                }
+
                 $pago = PagoVenta::create([
                     'venta_id' => $venta->id,
                     'monto' => $this->monto_abono,
                     'metodo_pago' => $this->metodo_pago,
+                    'cuenta_bancaria_id' => $requiereBanco ? $this->cuenta_bancaria_id : null,
+                    'movimiento_bancario_id' => null,
                     'referencia' => $this->referencia,
                     'observacion' => $this->observacion,
                     'estado' => 'Activo',
                 ]);
+
+                if ($requiereBanco) {
+                    $movimientoBancario = BancoMovimientoService::registrarMovimiento(
+                        $this->cuenta_bancaria_id,
+                        'Entrada',
+                        'Abono cliente',
+                        $this->monto_abono,
+                        $this->referencia,
+                        'Abono registrado a la venta ' . ($venta->numero ?? 'N/D'),
+                        'Abono cliente',
+                        $pago->id,
+                        'Movimiento bancario generado automáticamente desde cuentas por cobrar.',
+                        now()->format('Y-m-d')
+                    );
+
+                    $pago->update([
+                        'movimiento_bancario_id' => $movimientoBancario->id,
+                    ]);
+                }
 
                 $this->recalcularSaldoVenta($venta->id);
 
@@ -216,6 +248,14 @@ class CuentasPorCobrar extends Component
 
         try {
             DB::transaction(function () use ($pago) {
+
+                if ($pago->movimiento_bancario_id) {
+                    BancoMovimientoService::anularMovimiento(
+                        $pago->movimiento_bancario_id,
+                        'Movimiento bancario anulado por anulación del abono de cliente.'
+                    );
+                }
+
                 $pago->update([
                     'estado' => 'Anulado',
                     'fecha_anulacion' => now(),
@@ -269,6 +309,7 @@ class CuentasPorCobrar extends Component
         $this->monto_abono = null;
         $this->metodo_pago = $this->metodosPago[0] ?? 'Efectivo';
         $this->referencia = null;
+        $this->cuenta_bancaria_id = null;
         $this->observacion = null;
     }
 
@@ -303,6 +344,11 @@ class CuentasPorCobrar extends Component
                 ->find($this->ventaSeleccionadaId);
         }
 
+        $cuentasBancarias = CuentaBancaria::where('activo', true)
+            ->orderBy('banco')
+            ->orderBy('nombre_cuenta')
+            ->get();
+
         return view('livewire.ventas.cuentas-por-cobrar', [
             'ventas' => $ventas,
             'totalCuentas' => $totalCuentas,
@@ -313,6 +359,7 @@ class CuentasPorCobrar extends Component
             'totalFacturasFiscales' => $totalFacturasFiscales,
             'totalRecibosInternos' => $totalRecibosInternos,
             'ventaSeleccionada' => $ventaSeleccionada,
+            'cuentasBancarias' => $cuentasBancarias,
         ]);
     }
 }

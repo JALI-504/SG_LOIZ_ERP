@@ -286,7 +286,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Método de pago</label>
-                            <select class="form-control" wire:model.defer="metodo_pago">
+                            <select class="form-control" wire:model="metodo_pago">
                                 @foreach ($metodosPago as $metodo)
                                     <option value="{{ $metodo }}">{{ $metodo }}</option>
                                 @endforeach
@@ -362,6 +362,46 @@
                             @enderror
                         </div>
                     </div>
+
+                    @php
+                        $metodoPagoActual = strtolower(trim((string) $metodo_pago));
+
+                        $metodoPagoBanco = strpos($metodoPagoActual, 'transferencia') !== false ||
+                            strpos($metodoPagoActual, 'tarjeta') !== false ||
+                            strpos($metodoPagoActual, 'deposito') !== false ||
+                            strpos($metodoPagoActual, 'depósito') !== false ||
+                            strpos($metodoPagoActual, 'cheque') !== false;
+                    @endphp
+
+                    @if ($metodoPagoBanco)
+                        <div class="form-group">
+                            <label>Cuenta bancaria <span class="text-danger">*</span></label>
+
+                            <select class="form-control" wire:model.defer="cuenta_bancaria_id">
+                                <option value="">Seleccione una cuenta bancaria</option>
+
+                                @foreach ($cuentasBancarias as $cuenta)
+                                    <option value="{{ $cuenta->id }}">
+                                        {{ $cuenta->codigo }}
+                                        -
+                                        {{ $cuenta->banco }}
+                                        -
+                                        {{ $cuenta->nombre_cuenta }}
+                                        |
+                                        Saldo: L {{ number_format($cuenta->saldo_actual, 2) }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('cuenta_bancaria_id')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+
+                            <small class="text-muted">
+                                Este método de pago generará automáticamente un movimiento bancario.
+                            </small>
+                        </div>
+                    @endif
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-sm">
