@@ -42,6 +42,9 @@ class ActivoFijoIndex extends Component
     public $mostrarModal = false;
     public $mostrarModalBaja = false;
     public $activo_baja_id;
+    public $tipo_baja_form = 'Dado de baja';
+    public $documento_baja_form;
+    public $valor_recuperado_form = 0;
     public $motivo_baja_form;
 
     public $categorias = [];
@@ -348,12 +351,15 @@ class ActivoFijoIndex extends Component
 
         $activo = ActivoFijo::findOrFail($activoId);
 
-        if ($activo->estado === 'Dado de baja') {
-            session()->flash('error', 'Este activo ya está dado de baja.');
+        if (in_array($activo->estado, ['Dado de baja', 'Vendido'])) {
+            session()->flash('error', 'Este activo ya fue retirado del uso.');
             return;
         }
 
         $this->activo_baja_id = $activo->id;
+        $this->tipo_baja_form = 'Dado de baja';
+        $this->documento_baja_form = null;
+        $this->valor_recuperado_form = 0;
         $this->motivo_baja_form = null;
         $this->mostrarModalBaja = true;
     }
@@ -364,20 +370,36 @@ class ActivoFijoIndex extends Component
             abort(403, 'No tiene permiso para dar de baja activos fijos.');
         }
 
+        $this->validate([
+            'tipo_baja_form' => 'required|max:50',
+            'documento_baja_form' => 'nullable|max:150',
+            'valor_recuperado_form' => 'nullable|numeric|min:0',
+            'motivo_baja_form' => 'nullable|max:1000',
+        ]);
+
         $activo = ActivoFijo::findOrFail($this->activo_baja_id);
 
         $datosAnteriores = $activo->toArray();
 
+        $estadoFinal = 'Dado de baja';
+
+        if ($this->tipo_baja_form === 'Vendido') {
+            $estadoFinal = 'Vendido';
+        }
+
         $activo->update([
-            'estado' => 'Dado de baja',
+            'estado' => $estadoFinal,
             'fecha_baja' => now()->format('Y-m-d'),
+            'tipo_baja' => $this->tipo_baja_form,
+            'documento_baja' => $this->documento_baja_form,
+            'valor_recuperado' => $this->valor_recuperado_form ?: 0,
             'motivo_baja' => $this->motivo_baja_form,
         ]);
 
         BitacoraSistema::registrar(
             'Activos fijos',
-            'Dar de baja',
-            'Dio de baja el activo fijo ' . $activo->codigo . ' - ' . $activo->nombre . '.',
+            'Retirar activo',
+            'Retiró el activo fijo ' . $activo->codigo . ' - ' . $activo->nombre . ' por motivo: ' . $this->tipo_baja_form . '.',
             ActivoFijo::class,
             $activo->id,
             $datosAnteriores,
@@ -386,7 +408,7 @@ class ActivoFijoIndex extends Component
 
         $this->cerrarModalBaja();
 
-        session()->flash('message', 'Activo fijo dado de baja correctamente.');
+        session()->flash('message', 'Activo fijo retirado correctamente.');
     }
 
     public function reactivar($activoId)
@@ -397,8 +419,8 @@ class ActivoFijoIndex extends Component
 
         $activo = ActivoFijo::findOrFail($activoId);
 
-        if ($activo->estado !== 'Dado de baja') {
-            session()->flash('error', 'Solo se pueden reactivar activos dados de baja.');
+        if (!in_array($activo->estado, ['Dado de baja', 'Vendido'])) {
+            session()->flash('error', 'Solo se pueden reactivar activos retirados o vendidos.');
             return;
         }
 
@@ -407,6 +429,9 @@ class ActivoFijoIndex extends Component
         $activo->update([
             'estado' => 'Activo',
             'fecha_baja' => null,
+            'tipo_baja' => null,
+            'documento_baja' => null,
+            'valor_recuperado' => 0,
             'motivo_baja' => null,
         ]);
 
@@ -432,6 +457,9 @@ class ActivoFijoIndex extends Component
     public function cerrarModalBaja()
     {
         $this->activo_baja_id = null;
+        $this->tipo_baja_form = 'Dado de baja';
+        $this->documento_baja_form = null;
+        $this->valor_recuperado_form = 0;
         $this->motivo_baja_form = null;
         $this->mostrarModalBaja = false;
     }
@@ -493,19 +521,19 @@ class ActivoFijoIndex extends Component
         $totalActivos = (clone $query)->count();
 
         $totalValorCompra = (clone $query)
-            ->where('estado', '!=', 'Dado de baja')
+            ->whereNotIn('estado', ['Dado de baja', 'Vendido'])
             ->sum('valor_compra');
 
         $totalDepreciacionAcumulada = (clone $query)
-            ->where('estado', '!=', 'Dado de baja')
+            ->whereNotIn('estado', ['Dado de baja', 'Vendido'])
             ->sum('depreciacion_acumulada');
 
         $totalValorLibros = (clone $query)
-            ->where('estado', '!=', 'Dado de baja')
+            ->whereNotIn('estado', ['Dado de baja', 'Vendido'])
             ->sum('valor_en_libros');
 
         $totalBajas = (clone $query)
-            ->where('estado', 'Dado de baja')
+            ->whereIn('estado', ['Dado de baja', 'Vendido'])
             ->count();
 
         $activos = $query

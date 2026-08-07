@@ -173,7 +173,7 @@
 
                     <tbody>
                         @forelse ($activos as $activo)
-                            <tr class="{{ $activo->estado === 'Dado de baja' ? 'table-secondary' : '' }}">
+                            <tr class="{{ in_array($activo->estado, ['Dado de baja', 'Vendido']) ? 'table-secondary' : '' }}">
                                 <td>
                                     <strong>{{ $activo->codigo }}</strong>
 
@@ -250,13 +250,34 @@
                                     @if ($activo->fecha_baja)
                                         <br>
                                         <small class="text-muted">
-                                            Baja: {{ \Carbon\Carbon::parse($activo->fecha_baja)->format('d/m/Y') }}
+                                            Retiro: {{ \Carbon\Carbon::parse($activo->fecha_baja)->format('d/m/Y') }}
+                                        </small>
+                                    @endif
+
+                                    @if ($activo->tipo_baja)
+                                        <br>
+                                        <small class="text-muted">
+                                            Tipo: {{ $activo->tipo_baja }}
+                                        </small>
+                                    @endif
+
+                                    @if ($activo->valor_recuperado > 0)
+                                        <br>
+                                        <small class="text-success">
+                                            Recuperado: L {{ number_format($activo->valor_recuperado, 2) }}
+                                        </small>
+                                    @endif
+
+                                    @if ($activo->documento_baja)
+                                        <br>
+                                        <small class="text-muted">
+                                            Doc: {{ $activo->documento_baja }}
                                         </small>
                                     @endif
                                 </td>
 
                                 <td>
-                                    @if ($activo->estado !== 'Dado de baja')
+                                    @if (!in_array($activo->estado, ['Dado de baja', 'Vendido']))
                                         @can('editar activos fijos')
                                             <button type="button"
                                                     class="btn btn-primary btn-xs"
@@ -269,7 +290,7 @@
                                             <button type="button"
                                                     class="btn btn-danger btn-xs"
                                                     wire:click="abrirBaja({{ $activo->id }})">
-                                                Baja
+                                                Retirar
                                             </button>
                                         @endcan
                                     @else
@@ -655,17 +676,17 @@
         <div class="modal-backdrop fade show"></div>
     @endif
 
-    {{-- Modal baja --}}
+    {{-- Modal baja / venta / retiro --}}
     @if ($mostrarModalBaja)
         <div class="modal fade show"
-             style="display: block;"
-             tabindex="-1"
-             role="dialog">
+            style="display: block;"
+            tabindex="-1"
+            role="dialog">
             <div class="modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
                     <form wire:submit.prevent="confirmarBaja">
                         <div class="modal-header">
-                            <h5 class="modal-title">Dar de baja activo fijo</h5>
+                            <h5 class="modal-title">Retirar activo fijo</h5>
 
                             <button type="button"
                                     class="close"
@@ -674,17 +695,73 @@
                             </button>
                         </div>
 
-                        <div class="modal-body">
+                        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                             <div class="alert alert-warning">
-                                Esta acción marcará el activo como dado de baja. No se eliminará del sistema.
+                                Esta acción retirará el activo del uso. No se eliminará del sistema.
                             </div>
 
                             <div class="form-group">
-                                <label>Motivo de baja</label>
-                                <textarea class="form-control"
-                                          rows="3"
-                                          wire:model.defer="motivo_baja_form"
-                                          placeholder="Ej: Daño irreparable, obsoleto, vendido, extraviado..."></textarea>
+                                <label>Tipo de retiro <span class="text-danger">*</span></label>
+                                <select class="form-control @error('tipo_baja_form') is-invalid @enderror"
+                                        wire:model.defer="tipo_baja_form">
+                                    <option value="Dado de baja">Dado de baja</option>
+                                    <option value="Vendido">Vendido</option>
+                                    <option value="Robado">Robado</option>
+                                    <option value="Extraviado">Extraviado</option>
+                                    <option value="Obsoleto">Obsoleto</option>
+                                    <option value="Donado">Donado</option>
+                                    <option value="Dañado irreparable">Dañado irreparable</option>
+                                </select>
+
+                                @error('tipo_baja_form')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group">
+                                <label>Documento / respaldo</label>
+                                <input type="text"
+                                    class="form-control @error('documento_baja_form') is-invalid @enderror"
+                                    wire:model.defer="documento_baja_form"
+                                    placeholder="Ej: Acta, denuncia, recibo de venta, autorización...">
+
+                                @error('documento_baja_form')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="form-group">
+                                <label>Valor recuperado</label>
+                                <input type="number"
+                                    step="0.01"
+                                    min="0"
+                                    class="form-control @error('valor_recuperado_form') is-invalid @enderror"
+                                    wire:model.defer="valor_recuperado_form"
+                                    placeholder="Ej: monto recuperado por venta o seguro">
+
+                                @error('valor_recuperado_form')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+
+                                <small class="text-muted">
+                                    Úsalo si el activo fue vendido, recuperado por seguro o se recibió algún valor económico.
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Motivo / detalle del retiro</label>
+                                <textarea class="form-control @error('motivo_baja_form') is-invalid @enderror"
+                                        rows="3"
+                                        wire:model.defer="motivo_baja_form"
+                                        placeholder="Ej: Equipo dañado, robo reportado, venta autorizada, equipo obsoleto..."></textarea>
+
+                                @error('motivo_baja_form')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+
+                            <div class="alert alert-secondary mb-0">
+                                Si el activo fue robado o extraviado, registra aquí el número de denuncia o acta en el campo de documento/respaldo.
                             </div>
                         </div>
 
@@ -697,7 +774,7 @@
 
                             <button type="submit"
                                     class="btn btn-danger">
-                                Confirmar baja
+                                Confirmar retiro
                             </button>
                         </div>
                     </form>

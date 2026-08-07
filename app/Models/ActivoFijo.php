@@ -37,6 +37,9 @@ class ActivoFijo extends Model
         'fecha_baja',
         'motivo_baja',
         'observacion',
+        'tipo_baja',
+        'documento_baja',
+        'valor_recuperado',
         'user_id',
     ];
 
