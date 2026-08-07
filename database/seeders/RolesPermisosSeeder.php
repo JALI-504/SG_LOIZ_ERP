@@ -145,6 +145,11 @@ class RolesPermisosSeeder extends Seeder
             'crear cuentas bancarias',
             'editar cuentas bancarias',
             'eliminar cuentas bancarias',
+
+            // Movimientos bancarios
+            'ver movimientos bancarios',
+            'crear movimientos bancarios',
+            'anular movimientos bancarios',
             
         ];
 

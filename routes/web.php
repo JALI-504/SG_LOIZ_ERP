@@ -559,6 +559,11 @@ Route::middleware(['auth'])->group(function () {
     })->name('bancos.cuentas-bancarias')
         ->middleware('permission:ver cuentas bancarias');
 
+    Route::get('/bancos/movimientos-bancarios', function () {
+        return view('bancos.movimientos-bancarios');
+    })->name('bancos.movimientos-bancarios')
+        ->middleware('permission:ver movimientos bancarios');
+
     /*
     |--------------------------------------------------------------------------
     | Respaldo - BackUp

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\MovimientoBancario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -49,5 +50,10 @@ class CuentaBancaria extends Model
     public function getEstadoTextoAttribute()
     {
         return $this->activo ? 'Activa' : 'Inactiva';
+    }
+
+    public function movimientos()
+    {
+        return $this->hasMany(MovimientoBancario::class, 'cuenta_bancaria_id');
     }
 }

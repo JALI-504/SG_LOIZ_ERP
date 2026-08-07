@@ -7,6 +7,7 @@ use App\Models\BitacoraSistema;
 use App\Models\RespaldoSistema;
 use App\Models\AperturaCaja;
 use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -69,5 +70,15 @@ class User extends Authenticatable
     public function cuentasBancarias()
     {
         return $this->hasMany(CuentaBancaria::class, 'user_id');
+    }
+
+    public function movimientosBancarios()
+    {
+        return $this->hasMany(MovimientoBancario::class, 'user_id');
+    }
+
+    public function movimientosBancariosAnulados()
+    {
+        return $this->hasMany(MovimientoBancario::class, 'anulado_por');
     }
 }

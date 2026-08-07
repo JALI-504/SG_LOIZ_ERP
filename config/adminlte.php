@@ -506,6 +506,12 @@ return [
                     'icon' => 'fas fa-credit-card',
                     'can' => 'ver cuentas bancarias',
                 ],
+                [
+                    'text' => 'Movimientos bancarios',
+                    'route' => 'bancos.movimientos-bancarios',
+                    'icon' => 'fas fa-exchange-alt',
+                    'can' => 'ver movimientos bancarios',
+                ],
             ],
         ],
         [
