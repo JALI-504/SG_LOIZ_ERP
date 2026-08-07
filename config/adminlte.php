@@ -521,6 +521,25 @@ return [
             ],
         ],
         [
+            'text' => 'Activos fijos',
+            'icon' => 'fas fa-building',
+            'can' => 'ver activos fijos',
+            'submenu' => [
+                [
+                    'text' => 'Listado de activos',
+                    'route' => 'activos-fijos.index',
+                    'icon' => 'fas fa-laptop-house',
+                    'can' => 'ver activos fijos',
+                ],
+                [
+                    'text' => 'Categorías',
+                    'route' => 'activos-fijos.categorias',
+                    'icon' => 'fas fa-tags',
+                    'can' => 'ver categorias activos',
+                ],
+            ],
+        ],
+        [
             'text' => 'Reportes',
             'icon' => 'fas fa-fw fa-chart-pie',
             'can'  => 'ver reportes',

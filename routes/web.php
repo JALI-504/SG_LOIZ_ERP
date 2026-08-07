@@ -577,6 +577,22 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Activos Fijos
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/activos-fijos', function () {
+        return view('activos-fijos.index');
+    })->name('activos-fijos.index')
+        ->middleware('permission:ver activos fijos');
+
+    Route::get('/activos-fijos/categorias', function () {
+        return view('activos-fijos.categorias');
+    })->name('activos-fijos.categorias')
+        ->middleware('permission:ver categorias activos');
+
+    /*
+    |--------------------------------------------------------------------------
     | Respaldo - BackUp
     |--------------------------------------------------------------------------
     */

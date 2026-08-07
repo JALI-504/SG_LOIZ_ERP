@@ -155,6 +155,18 @@ class RolesPermisosSeeder extends Seeder
             'ver conciliaciones bancarias',
             'crear conciliaciones bancarias',
             'anular conciliaciones bancarias',
+
+            // Activos fijos
+            'ver activos fijos',
+            'crear activos fijos',
+            'editar activos fijos',
+            'anular activos fijos',
+
+            // Categorías de activos
+            'ver categorias activos',
+            'crear categorias activos',
+            'editar categorias activos',
+            'eliminar categorias activos',
             
         ];
 

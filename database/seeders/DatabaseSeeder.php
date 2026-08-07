@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             InsumosRecetasPruebaSeeder::class,
             ConfiguracionEmpresaSeeder::class,
             RolesPermisosSeeder::class,
+            CategoriasActivosSeeder::class,
         ]);
 
     }

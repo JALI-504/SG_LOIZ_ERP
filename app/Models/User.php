@@ -9,6 +9,8 @@ use App\Models\AperturaCaja;
 use App\Models\CuentaBancaria;
 use App\Models\MovimientoBancario;
 use App\Models\ConciliacionBancaria;
+use App\Models\CategoriaActivo;
+use App\Models\ActivoFijo;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -91,5 +93,15 @@ class User extends Authenticatable
     public function conciliacionesBancariasAnuladas()
     {
         return $this->hasMany(ConciliacionBancaria::class, 'anulado_por');
+    }
+
+    public function categoriasActivos()
+    {
+        return $this->hasMany(CategoriaActivo::class, 'user_id');
+    }
+
+    public function activosFijos()
+    {
+        return $this->hasMany(ActivoFijo::class, 'user_id');
     }
 }
