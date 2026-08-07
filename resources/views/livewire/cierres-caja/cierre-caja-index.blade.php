@@ -26,6 +26,23 @@
                 </h3>
             </div>
 
+            @if ($apertura_caja_id)
+                <div class="alert alert-info">
+                    <strong>Caja abierta:</strong>
+                    {{ $apertura_caja_codigo }}
+                    |
+                    Fecha: {{ \Carbon\Carbon::parse($apertura_caja_fecha)->format('d/m/Y') }}
+                    |
+                    Monto inicial: L {{ number_format($apertura_caja_monto_inicial, 2) }}
+                    |
+                    Responsable: {{ $apertura_caja_usuario }}
+                </div>
+            @else
+                <div class="alert alert-warning">
+                    No hay una caja abierta. Para registrar un cierre, primero debe realizar una apertura de caja.
+                </div>
+            @endif
+
             <form wire:submit.prevent="registrarCierre">
                 <div class="card-body">
                     <div class="alert alert-info">
@@ -49,10 +66,11 @@
                         <div class="form-group col-md-3">
                             <label>Monto inicial <span class="text-danger">*</span></label>
                             <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   class="form-control"
-                                   wire:model="monto_inicial">
+                                step="0.01"
+                                min="0"
+                                wire:model="monto_inicial"
+                                class="form-control @error('monto_inicial') is-invalid @enderror"
+                                readonly>
 
                             @error('monto_inicial')
                                 <small class="text-danger">{{ $message }}</small>
@@ -341,10 +359,12 @@
                 </div>
 
                 <div class="card-footer">
-                    <button type="submit"
-                            class="btn btn-primary"
-                            wire:loading.attr="disabled">
-                        <i class="fas fa-save"></i> Registrar cierre
+                    <button wire:click="registrarCierre"
+                            wire:loading.attr="disabled"
+                            @if (!$apertura_caja_id) disabled @endif
+                            class="btn btn-success">
+                        <i class="fas fa-save"></i>
+                        Registrar cierre
                     </button>
 
                     <span wire:loading class="text-info ml-2">

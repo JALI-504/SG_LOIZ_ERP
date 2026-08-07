@@ -7,6 +7,7 @@ use App\Models\Gasto;
 use App\Models\PagoCompra;
 use App\Models\PagoVenta;
 use App\Models\BitacoraSistema;
+use App\Models\AperturaCaja;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -26,6 +27,12 @@ class CierreCajaIndex extends Component
     public $otros_ingresos = 0;
     public $otros_egresos = 0;
     public $observacion;
+
+    public $apertura_caja_id = null;
+    public $apertura_caja_codigo = null;
+    public $apertura_caja_usuario = null;
+    public $apertura_caja_fecha = null;
+    public $apertura_caja_monto_inicial = 0;
 
     public $ventas_efectivo = 0;
     public $ventas_transferencia = 0;
@@ -85,7 +92,10 @@ class CierreCajaIndex extends Component
             abort(403, 'No tiene permiso para ver cierres de caja.');
         }
 
-        $this->fecha = now()->format('Y-m-d');
+        $this->cargarAperturaAbierta();
+
+        $this->fecha = $this->apertura_caja_fecha ?: now()->format('Y-m-d');
+        $this->monto_inicial = $this->apertura_caja_monto_inicial ?: 0;
 
         $this->cargarResumenCaja();
     }
@@ -113,11 +123,47 @@ class CierreCajaIndex extends Component
         }
     }
 
+    private function cargarAperturaAbierta()
+    {
+        $apertura = AperturaCaja::with('usuario')
+            ->where('estado', 'Abierta')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($apertura) {
+            $this->apertura_caja_id = $apertura->id;
+            $this->apertura_caja_codigo = $apertura->codigo;
+            $this->apertura_caja_usuario = $apertura->usuario ? $apertura->usuario->name : 'Sistema';
+            $this->apertura_caja_fecha = $apertura->fecha;
+            $this->apertura_caja_monto_inicial = $apertura->monto_inicial;
+
+            $this->fecha = $apertura->fecha;
+            $this->monto_inicial = $apertura->monto_inicial;
+        } else {
+            $this->apertura_caja_id = null;
+            $this->apertura_caja_codigo = null;
+            $this->apertura_caja_usuario = null;
+            $this->apertura_caja_fecha = null;
+            $this->apertura_caja_monto_inicial = 0;
+        }
+    }
+
     public function cargarResumenCaja()
     {
+        $this->cargarAperturaAbierta();
+
         $fecha = $this->fecha ?: now()->format('Y-m-d');
 
         $montoInicial = (float) $this->monto_inicial;
+
+        if ($this->apertura_caja_id) {
+            $fecha = $this->apertura_caja_fecha;
+            $montoInicial = (float) $this->apertura_caja_monto_inicial;
+
+            $this->fecha = $fecha;
+            $this->monto_inicial = $montoInicial;
+        }
+
         $efectivoContado = (float) $this->efectivo_contado;
         $otrosIngresos = (float) $this->otros_ingresos;
         $otrosEgresos = (float) $this->otros_egresos;
@@ -227,6 +273,13 @@ class CierreCajaIndex extends Component
             abort(403, 'No tiene permiso para crear cierres de caja.');
         }
 
+        $this->cargarAperturaAbierta();
+
+        if (!$this->apertura_caja_id) {
+            session()->flash('error', 'No hay una caja abierta. Primero debe registrar una apertura de caja.');
+            return;
+        }
+
         $this->validate([
             'fecha' => 'required|date',
             'monto_inicial' => 'required|numeric|min:0',
@@ -235,6 +288,12 @@ class CierreCajaIndex extends Component
             'otros_egresos' => 'nullable|numeric|min:0',
             'observacion' => 'nullable|max:500',
         ]);
+
+        $apertura = AperturaCaja::where('estado', 'Abierta')
+            ->findOrFail($this->apertura_caja_id);
+
+        $this->fecha = $apertura->fecha;
+        $this->monto_inicial = $apertura->monto_inicial;
 
         $existeCierre = CierreCaja::query()
             ->whereDate('fecha', $this->fecha)
@@ -248,12 +307,22 @@ class CierreCajaIndex extends Component
 
         $this->cargarResumenCaja();
 
-        DB::transaction(function () {
+        DB::transaction(function () use ($apertura) {
+            $apertura = AperturaCaja::lockForUpdate()->findOrFail($apertura->id);
+
+            if ($apertura->estado !== 'Abierta') {
+                throw new \Exception('La apertura de caja ya no está disponible para cierre.');
+            }
+
+            $datosAnterioresApertura = $apertura->toArray();
+
             $cierre = CierreCaja::create([
-                'fecha' => $this->fecha,
+                'apertura_caja_id' => $apertura->id,
+
+                'fecha' => $apertura->fecha,
                 'user_id' => auth()->id(),
 
-                'monto_inicial' => $this->monto_inicial,
+                'monto_inicial' => $apertura->monto_inicial,
 
                 'ventas_efectivo' => $this->ventas_efectivo,
                 'ventas_transferencia' => $this->ventas_transferencia,
@@ -283,14 +352,28 @@ class CierreCajaIndex extends Component
                 'estado' => 'Cerrado',
             ]);
 
+            $apertura->update([
+                'estado' => 'Cerrada',
+            ]);
+
             BitacoraSistema::registrar(
                 'Cierre de caja',
                 'Registrar',
-                'Registró el cierre de caja ' . $cierre->codigo . ' para la fecha ' . $cierre->fecha . '.',
+                'Registró el cierre de caja ' . $cierre->codigo . ' relacionado con la apertura ' . $apertura->codigo . '.',
                 CierreCaja::class,
                 $cierre->id,
                 null,
-                $cierre->fresh()->load('usuario')->toArray()
+                $cierre->fresh()->load(['usuario', 'aperturaCaja'])->toArray()
+            );
+
+            BitacoraSistema::registrar(
+                'Apertura de caja',
+                'Cerrar',
+                'Cerró la apertura de caja ' . $apertura->codigo . ' mediante el cierre ' . $cierre->codigo . '.',
+                AperturaCaja::class,
+                $apertura->id,
+                $datosAnterioresApertura,
+                $apertura->fresh()->load(['usuario', 'cierreCaja'])->toArray()
             );
         });
 
@@ -394,8 +477,10 @@ class CierreCajaIndex extends Component
 
     private function resetFormulario()
     {
-        $this->fecha = now()->format('Y-m-d');
-        $this->monto_inicial = 0;
+        $this->cargarAperturaAbierta();
+
+        $this->fecha = $this->apertura_caja_fecha ?: now()->format('Y-m-d');
+        $this->monto_inicial = $this->apertura_caja_monto_inicial ?: 0;
         $this->efectivo_contado = 0;
         $this->otros_ingresos = 0;
         $this->otros_egresos = 0;
