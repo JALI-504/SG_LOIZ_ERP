@@ -1,4 +1,68 @@
 <div>
+
+    {{-- Accesos rápidos --}}
+    <div class="mb-3" style="text-align: center">
+        @can('crear ventas')
+            <a href="{{ route('ventas.index') }}" class="btn btn-success">
+                <i class="fas fa-cash-register"></i> Nueva venta
+            </a>
+        @endcan
+
+        @can('ver aperturas caja')
+            <a href="{{ route('aperturas-caja.index') }}" class="btn btn-success">
+                <i class="fas fa-door-open"></i> Apertura caja
+            </a>
+        @endcan
+
+        @can('ver cierres caja')
+            <a href="{{ route('cierres-caja.index') }}" class="btn btn-dark">
+                <i class="fas fa-cash-register"></i> Cierre caja
+            </a>
+        @endcan
+
+        @can('ver respaldos')
+            <a href="{{ route('respaldos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-database"></i> Respaldos
+            </a>
+        @endcan
+
+        @can('ver cotizaciones')
+            <a href="{{ route('cotizaciones.index') }}" class="btn btn-warning">
+                <i class="fas fa-file-invoice-dollar"></i> Cotizaciones
+            </a>
+        @endcan
+
+        @can('ver ordenes trabajo')
+            <a href="{{ route('ordenes-trabajo.index') }}" class="btn btn-dark">
+                <i class="fas fa-clipboard-list"></i> Órdenes
+            </a>
+        @endcan
+
+        @can('ver historial ventas')
+            <a href="{{ route('ventas.historial') }}" class="btn btn-primary">
+                <i class="fas fa-receipt"></i> Historial ventas
+            </a>
+        @endcan
+
+        @can('ver reporte ventas')
+            <a href="{{ route('reportes.ventas') }}" class="btn btn-info">
+                <i class="fas fa-chart-line"></i> Reporte ventas
+            </a>
+        @endcan
+
+        @can('ver productos')
+            <a href="{{ route('productos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-cube"></i> Productos
+            </a>
+        @endcan
+
+        @can('ver insumos')
+            <a href="{{ route('insumos.index') }}" class="btn btn-secondary">
+                <i class="fas fa-boxes"></i> Insumos
+            </a>
+        @endcan
+    </div>
+
     <div class="alert alert-info">
         <strong>Resumen del día:</strong>
         {{ \Carbon\Carbon::parse($hoy)->format('d/m/Y') }}
@@ -119,69 +183,6 @@
                 @endif
             </div>
         </div>  
-    </div>
-
-    {{-- Accesos rápidos --}}
-    <div class="mb-3">
-        @can('crear ventas')
-            <a href="{{ route('ventas.index') }}" class="btn btn-success">
-                <i class="fas fa-cash-register"></i> Nueva venta
-            </a>
-        @endcan
-
-        @can('ver aperturas caja')
-            <a href="{{ route('aperturas-caja.index') }}" class="btn btn-success">
-                <i class="fas fa-door-open"></i> Apertura caja
-            </a>
-        @endcan
-
-        @can('ver cierres caja')
-            <a href="{{ route('cierres-caja.index') }}" class="btn btn-dark">
-                <i class="fas fa-cash-register"></i> Cierre caja
-            </a>
-        @endcan
-
-        @can('ver respaldos')
-            <a href="{{ route('respaldos.index') }}" class="btn btn-secondary">
-                <i class="fas fa-database"></i> Respaldos
-            </a>
-        @endcan
-
-        @can('ver cotizaciones')
-            <a href="{{ route('cotizaciones.index') }}" class="btn btn-warning">
-                <i class="fas fa-file-invoice-dollar"></i> Cotizaciones
-            </a>
-        @endcan
-
-        @can('ver ordenes trabajo')
-            <a href="{{ route('ordenes-trabajo.index') }}" class="btn btn-dark">
-                <i class="fas fa-clipboard-list"></i> Órdenes
-            </a>
-        @endcan
-
-        @can('ver historial ventas')
-            <a href="{{ route('ventas.historial') }}" class="btn btn-primary">
-                <i class="fas fa-receipt"></i> Historial ventas
-            </a>
-        @endcan
-
-        @can('ver reporte ventas')
-            <a href="{{ route('reportes.ventas') }}" class="btn btn-info">
-                <i class="fas fa-chart-line"></i> Reporte ventas
-            </a>
-        @endcan
-
-        @can('ver productos')
-            <a href="{{ route('productos.index') }}" class="btn btn-secondary">
-                <i class="fas fa-cube"></i> Productos
-            </a>
-        @endcan
-
-        @can('ver insumos')
-            <a href="{{ route('insumos.index') }}" class="btn btn-secondary">
-                <i class="fas fa-boxes"></i> Insumos
-            </a>
-        @endcan
     </div>
 
     {{-- Resumen principal --}}
@@ -622,6 +623,282 @@
                 <div class="card-body">
                     <div style="height: 300px;">
                         <canvas id="graficaServiciosHoy"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        {{-- Resumen bancario --}}
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h3 class="card-title">
+                <i class="fas fa-university"></i>
+                Resumen bancario
+            </h3>
+
+            <div class="card-tools">
+                @can('ver cuentas bancarias')
+                    <a href="{{ route('bancos.cuentas-bancarias') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-credit-card"></i>
+                        Cuentas
+                    </a>
+                @endcan
+
+                @can('ver movimientos bancarios')
+                    <a href="{{ route('bancos.movimientos-bancarios') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-exchange-alt"></i>
+                        Movimientos
+                    </a>
+                @endcan
+
+                @can('ver conciliaciones bancarias')
+                    <a href="{{ route('bancos.conciliaciones-bancarias') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-balance-scale"></i>
+                        Conciliaciones
+                    </a>
+                @endcan
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h4>L {{ number_format($saldoTotalBancos, 2) }}</h4>
+                            <p>Saldo total en bancos</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h4>{{ number_format($totalCuentasBancariasActivas, 0) }}</h4>
+                            <p>Cuentas bancarias activas</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h4>L {{ number_format($entradasBancariasMes, 2) }}</h4>
+                            <p>Entradas bancarias del mes</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h4>L {{ number_format($salidasBancariasMes, 2) }}</h4>
+                            <p>Salidas bancarias del mes</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                {{-- Cuentas bancarias --}}
+                <div class="col-md-4">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-list"></i>
+                                Cuentas bancarias
+                            </h3>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Cuenta</th>
+                                        <th class="text-right">Saldo</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse ($cuentasBancariasResumen as $cuenta)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $cuenta->codigo }}</strong><br>
+                                                <small>
+                                                    {{ $cuenta->banco }} -
+                                                    {{ $cuenta->nombre_cuenta }}
+                                                </small>
+                                            </td>
+
+                                            <td class="text-right">
+                                                @if ($cuenta->saldo_actual <= 0)
+                                                    <strong class="text-danger">
+                                                        L {{ number_format($cuenta->saldo_actual, 2) }}
+                                                    </strong>
+                                                @else
+                                                    <strong>
+                                                        L {{ number_format($cuenta->saldo_actual, 2) }}
+                                                    </strong>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                No hay cuentas bancarias activas.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Últimos movimientos --}}
+                <div class="col-md-4">
+                    <div class="card card-outline card-info">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-exchange-alt"></i>
+                                Últimos movimientos bancarios
+                            </h3>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Movimiento</th>
+                                        <th class="text-right">Monto</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse ($ultimosMovimientosBancarios as $movimiento)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $movimiento->codigo }}</strong>
+
+                                                @if ($movimiento->tipo === 'Entrada')
+                                                    <span class="badge badge-success">Entrada</span>
+                                                @else
+                                                    <span class="badge badge-danger">Salida</span>
+                                                @endif
+
+                                                <br>
+
+                                                <small>
+                                                    {{ \Carbon\Carbon::parse($movimiento->fecha)->format('d/m/Y') }}
+                                                    -
+                                                    {{ $movimiento->categoria }}
+                                                </small>
+
+                                                @if ($movimiento->cuentaBancaria)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {{ $movimiento->cuentaBancaria->banco }}
+                                                    </small>
+                                                @endif
+                                            </td>
+
+                                            <td class="text-right">
+                                                @if ($movimiento->tipo === 'Entrada')
+                                                    <strong class="text-success">
+                                                        L {{ number_format($movimiento->monto, 2) }}
+                                                    </strong>
+                                                @else
+                                                    <strong class="text-danger">
+                                                        L {{ number_format($movimiento->monto, 2) }}
+                                                    </strong>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                No hay movimientos bancarios registrados.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alertas bancarias --}}
+                <div class="col-md-4">
+                    <div class="card card-outline {{ $conciliacionesConDiferencia > 0 || $cuentasBancariasSaldoCero > 0 ? 'card-warning' : 'card-success' }}">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Alertas bancarias
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+                            @if ($cuentasBancariasSaldoCero > 0)
+                                <div class="alert alert-warning">
+                                    <strong>Cuentas sin fondos:</strong>
+                                    {{ number_format($cuentasBancariasSaldoCero, 0) }}
+                                </div>
+                            @else
+                                <div class="alert alert-success">
+                                    No hay cuentas bancarias con saldo cero o negativo.
+                                </div>
+                            @endif
+
+                            @if ($conciliacionesConDiferencia > 0)
+                                <div class="alert alert-danger">
+                                    <strong>Conciliaciones con diferencia:</strong>
+                                    {{ number_format($conciliacionesConDiferencia, 0) }}
+                                </div>
+                            @else
+                                <div class="alert alert-success">
+                                    No hay conciliaciones pendientes con diferencia.
+                                </div>
+                            @endif
+
+                            @if ($ultimaConciliacionBancaria)
+                                <div class="alert alert-info mb-0">
+                                    <strong>Última conciliación:</strong><br>
+                                    {{ $ultimaConciliacionBancaria->codigo }}
+
+                                    @if ($ultimaConciliacionBancaria->cuentaBancaria)
+                                        <br>
+                                        <small>
+                                            {{ $ultimaConciliacionBancaria->cuentaBancaria->banco }}
+                                            -
+                                            {{ $ultimaConciliacionBancaria->cuentaBancaria->nombre_cuenta }}
+                                        </small>
+                                    @endif
+
+                                    <br>
+                                    <small>
+                                        Estado:
+                                        <strong>{{ $ultimaConciliacionBancaria->estado }}</strong>
+                                    </small>
+                                </div>
+                            @else
+                                <div class="alert alert-secondary mb-0">
+                                    Todavía no hay conciliaciones bancarias registradas.
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

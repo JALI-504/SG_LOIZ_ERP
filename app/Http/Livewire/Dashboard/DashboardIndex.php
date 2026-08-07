@@ -13,6 +13,9 @@ use App\Models\Cotizacion;
 use App\Models\OrdenTrabajo;
 use App\Models\AperturaCaja;
 use App\Models\RespaldoSistema;
+use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
+use App\Models\ConciliacionBancaria;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -36,11 +39,61 @@ class DashboardIndex extends Component
 
         $hoy = now()->format('Y-m-d');
 
+        $inicioMes = now()->startOfMonth()->format('Y-m-d');
+        $finMes = now()->endOfMonth()->format('Y-m-d');
+
         /*
 |--------------------------------------------------------------------------
-| Alertas administrativas
+| Resumen bancario
 |--------------------------------------------------------------------------
 */
+
+        $saldoTotalBancos = CuentaBancaria::where('activo', true)
+            ->sum('saldo_actual');
+
+        $totalCuentasBancariasActivas = CuentaBancaria::where('activo', true)
+            ->count();
+
+        $cuentasBancariasSaldoCero = CuentaBancaria::where('activo', true)
+            ->where('saldo_actual', '<=', 0)
+            ->count();
+
+        $entradasBancariasMes = MovimientoBancario::where('estado', 'Activo')
+            ->where('tipo', 'Entrada')
+            ->whereBetween('fecha', [$inicioMes, $finMes])
+            ->sum('monto');
+
+        $salidasBancariasMes = MovimientoBancario::where('estado', 'Activo')
+            ->where('tipo', 'Salida')
+            ->whereBetween('fecha', [$inicioMes, $finMes])
+            ->sum('monto');
+
+        $ultimosMovimientosBancarios = MovimientoBancario::with('cuentaBancaria')
+            ->orderByDesc('fecha')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $conciliacionesConDiferencia = ConciliacionBancaria::where('estado', 'Con diferencia')
+            ->count();
+
+        $ultimaConciliacionBancaria = ConciliacionBancaria::with('cuentaBancaria')
+            ->where('estado', '!=', 'Anulada')
+            ->orderByDesc('fecha_fin')
+            ->orderByDesc('id')
+            ->first();
+
+        $cuentasBancariasResumen = CuentaBancaria::where('activo', true)
+            ->orderByDesc('saldo_actual')
+            ->limit(5)
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Alertas administrativas
+        |--------------------------------------------------------------------------
+        */
 
         $aperturaCajaAbierta = AperturaCaja::with('usuario')
             ->where('estado', 'Abierta')
@@ -433,6 +486,16 @@ class DashboardIndex extends Component
             'ordenesParaEntregarHoy' => $ordenesParaEntregarHoy,
             'ordenesVencidas' => $ordenesVencidas,
             'ordenesProximasEntrega' => $ordenesProximasEntrega,
+
+            'saldoTotalBancos' => $saldoTotalBancos,
+            'totalCuentasBancariasActivas' => $totalCuentasBancariasActivas,
+            'cuentasBancariasSaldoCero' => $cuentasBancariasSaldoCero,
+            'entradasBancariasMes' => $entradasBancariasMes,
+            'salidasBancariasMes' => $salidasBancariasMes,
+            'ultimosMovimientosBancarios' => $ultimosMovimientosBancarios,
+            'conciliacionesConDiferencia' => $conciliacionesConDiferencia,
+            'ultimaConciliacionBancaria' => $ultimaConciliacionBancaria,
+            'cuentasBancariasResumen' => $cuentasBancariasResumen,
         ]);
     }
 }
