@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Catalogo;
 use App\Models\Compra;
+use App\Models\CuentaBancaria;
 use App\Models\PagoCompra;
 use App\Models\BitacoraSistema;
+use App\Services\BancoMovimientoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +15,7 @@ class CuentaPorPagarController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Compra::with(['proveedor', 'pagos'])
+        $query = Compra::with(['proveedor', 'pagos.cuentaBancaria', 'pagos.movimientoBancario'])
             ->where('estado', '!=', 'Anulada')
             ->where('saldo_pendiente', '>', 0)
             ->when($request->search, function ($query) use ($request) {
@@ -53,9 +55,15 @@ class CuentaPorPagarController extends Controller
             ->pluck('nombre')
             ->toArray();
 
+        $cuentasBancarias = CuentaBancaria::where('activo', true)
+            ->orderBy('banco')
+            ->orderBy('nombre_cuenta')
+            ->get();
+
         return view('compras.cuentas-por-pagar.index', [
             'compras' => $compras,
             'metodosPago' => $metodosPago,
+            'cuentasBancarias' => $cuentasBancarias,
             'totalCuentas' => $totalCuentas,
             'totalComprado' => $totalComprado,
             'totalPagado' => $totalPagado,
@@ -84,6 +92,7 @@ class CuentaPorPagarController extends Controller
         $request->validate([
             'monto' => 'required|numeric|min:0.01|max:' . $compra->saldo_pendiente,
             'metodo_pago' => 'required|max:50',
+            'cuenta_bancaria_id' => 'nullable|exists:cuentas_bancarias,id',
             'referencia' => 'nullable|max:100',
             'observacion' => 'nullable|max:500',
         ]);
@@ -92,14 +101,41 @@ class CuentaPorPagarController extends Controller
             DB::transaction(function () use ($request, $compra) {
                 $datosAnterioresCompra = $compra->toArray();
 
+                $requiereBanco = BancoMovimientoService::metodoRequiereBanco($request->metodo_pago);
+
+                if ($requiereBanco && !$request->cuenta_bancaria_id) {
+                    throw new \Exception('Debe seleccionar una cuenta bancaria para este método de pago.');
+                }
+
                 $pago = PagoCompra::create([
                     'compra_id' => $compra->id,
                     'monto' => $request->monto,
                     'metodo_pago' => $request->metodo_pago,
+                    'cuenta_bancaria_id' => $requiereBanco ? $request->cuenta_bancaria_id : null,
+                    'movimiento_bancario_id' => null,
                     'referencia' => $request->referencia,
                     'observacion' => $request->observacion,
                     'estado' => 'Activo',
                 ]);
+
+                if ($requiereBanco) {
+                    $movimientoBancario = BancoMovimientoService::registrarMovimiento(
+                        $request->cuenta_bancaria_id,
+                        'Salida',
+                        'Pago proveedor',
+                        $request->monto,
+                        $request->referencia,
+                        'Pago registrado a la compra ' . ($compra->numero ?? 'N/D'),
+                        'Pago proveedor',
+                        $pago->id,
+                        'Movimiento bancario generado automáticamente desde cuentas por pagar.',
+                        now()->format('Y-m-d')
+                    );
+
+                    $pago->update([
+                        'movimiento_bancario_id' => $movimientoBancario->id,
+                    ]);
+                }
 
                 $totalPagosRegistrados = PagoCompra::where('compra_id', $compra->id)
                     ->where('estado', 'Activo')
@@ -129,7 +165,7 @@ class CuentaPorPagarController extends Controller
                     PagoCompra::class,
                     $pago->id,
                     null,
-                    $pago->fresh()->load('compra')->toArray()
+                    $pago->fresh()->load(['compra', 'cuentaBancaria', 'movimientoBancario'])->toArray()
                 );
 
                 BitacoraSistema::registrar(
@@ -186,6 +222,13 @@ class CuentaPorPagarController extends Controller
                 $datosAnterioresPago = $pago->toArray();
                 $datosAnterioresCompra = $compra->toArray();
 
+                if ($pago->movimiento_bancario_id) {
+                    BancoMovimientoService::anularMovimiento(
+                        $pago->movimiento_bancario_id,
+                        'Movimiento bancario anulado por anulación del pago a proveedor.'
+                    );
+                }
+
                 $pago->update([
                     'estado' => 'Anulado',
                     'fecha_anulacion' => now(),
@@ -220,7 +263,7 @@ class CuentaPorPagarController extends Controller
                     PagoCompra::class,
                     $pago->id,
                     $datosAnterioresPago,
-                    $pago->fresh()->load('compra')->toArray()
+                    $pago->fresh()->load(['compra', 'cuentaBancaria', 'movimientoBancario'])->toArray()
                 );
 
                 BitacoraSistema::registrar(

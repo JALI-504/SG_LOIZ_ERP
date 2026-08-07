@@ -242,7 +242,7 @@
 
                                             <div class="form-group mb-1">
                                                 <select name="metodo_pago"
-                                                        class="form-control form-control-sm"
+                                                        class="form-control form-control-sm metodo-pago-proveedor"
                                                         required>
                                                     @foreach ($metodosPago as $metodo)
                                                         <option value="{{ $metodo }}">
@@ -250,6 +250,29 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+
+                                            <div class="form-group mb-1 grupo-cuenta-bancaria-proveedor" style="display: none;">
+                                                <select name="cuenta_bancaria_id"
+                                                        class="form-control form-control-sm cuenta-bancaria-proveedor">
+                                                    <option value="">Seleccione cuenta bancaria</option>
+
+                                                    @foreach ($cuentasBancarias as $cuenta)
+                                                        <option value="{{ $cuenta->id }}">
+                                                            {{ $cuenta->codigo }}
+                                                            -
+                                                            {{ $cuenta->banco }}
+                                                            -
+                                                            {{ $cuenta->nombre_cuenta }}
+                                                            |
+                                                            Saldo: L {{ number_format($cuenta->saldo_actual, 2) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+
+                                                <small class="text-muted">
+                                                    Obligatorio para transferencia, tarjeta, depósito o cheque.
+                                                </small>
                                             </div>
 
                                             <div class="form-group mb-1">
@@ -326,6 +349,22 @@
 
                                                             <td>
                                                                 {{ $pago->metodo_pago }}
+
+                                                                @if ($pago->cuentaBancaria)
+                                                                    <br>
+                                                                    <small class="text-muted">
+                                                                        {{ $pago->cuentaBancaria->codigo }}
+                                                                        -
+                                                                        {{ $pago->cuentaBancaria->banco }}
+                                                                    </small>
+                                                                @endif
+
+                                                                @if ($pago->movimientoBancario)
+                                                                    <br>
+                                                                    <span class="badge badge-info">
+                                                                        Mov: {{ $pago->movimientoBancario->codigo }}
+                                                                    </span>
+                                                                @endif
                                                             </td>
 
                                                             <td>
@@ -411,4 +450,53 @@
             {{ $compras->links() }}
         </div>
     </div>
+@stop
+
+@section('js')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function metodoRequiereBanco(valor) {
+            valor = (valor || '').toLowerCase().trim();
+
+            return valor.includes('transferencia') ||
+                valor.includes('tarjeta') ||
+                valor.includes('deposito') ||
+                valor.includes('depósito') ||
+                valor.includes('cheque');
+        }
+
+        function actualizarFormularioPago(selectMetodo) {
+            const form = selectMetodo.closest('form');
+
+            if (!form) {
+                return;
+            }
+
+            const grupoCuenta = form.querySelector('.grupo-cuenta-bancaria-proveedor');
+            const cuentaSelect = form.querySelector('.cuenta-bancaria-proveedor');
+
+            if (!grupoCuenta) {
+                return;
+            }
+
+            if (metodoRequiereBanco(selectMetodo.value)) {
+                grupoCuenta.style.display = '';
+            } else {
+                grupoCuenta.style.display = 'none';
+
+                if (cuentaSelect) {
+                    cuentaSelect.value = '';
+                }
+            }
+        }
+
+        document.querySelectorAll('.metodo-pago-proveedor').forEach(function (selectMetodo) {
+            selectMetodo.addEventListener('change', function () {
+                actualizarFormularioPago(selectMetodo);
+            });
+
+            actualizarFormularioPago(selectMetodo);
+        });
+    });
+</script>
 @stop

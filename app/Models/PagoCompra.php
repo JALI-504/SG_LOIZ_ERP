@@ -26,6 +26,8 @@ class PagoCompra extends Model
         'observacion_anulacion',
         'cuenta_bancaria_id',
         'movimiento_bancario_id',
+        'cuenta_bancaria_id',
+        'movimiento_bancario_id',
     ];
 
     protected static function booted()
@@ -55,4 +57,5 @@ class PagoCompra extends Model
     {
         return $this->belongsTo(MovimientoBancario::class, 'movimiento_bancario_id');
     }
+
 }
