@@ -537,6 +537,12 @@ return [
                     'icon' => 'fas fa-tags',
                     'can' => 'ver categorias activos',
                 ],
+                [
+                    'text' => 'Depreciaciones',
+                    'route' => 'activos-fijos.depreciaciones',
+                    'icon' => 'fas fa-chart-line',
+                    'can' => 'ver depreciaciones activos',
+                ],
             ],
         ],
         [

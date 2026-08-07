@@ -11,6 +11,7 @@ use App\Models\MovimientoBancario;
 use App\Models\ConciliacionBancaria;
 use App\Models\CategoriaActivo;
 use App\Models\ActivoFijo;
+use App\Models\DepreciacionActivo;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -103,5 +104,15 @@ class User extends Authenticatable
     public function activosFijos()
     {
         return $this->hasMany(ActivoFijo::class, 'user_id');
+    }
+
+    public function depreciacionesActivos()
+    {
+        return $this->hasMany(DepreciacionActivo::class, 'user_id');
+    }
+
+    public function depreciacionesActivosAnuladas()
+    {
+        return $this->hasMany(DepreciacionActivo::class, 'anulado_por');
     }
 }

@@ -167,6 +167,11 @@ class RolesPermisosSeeder extends Seeder
             'crear categorias activos',
             'editar categorias activos',
             'eliminar categorias activos',
+
+            // Depreciaciones de activos
+            'ver depreciaciones activos',
+            'generar depreciaciones activos',
+            'anular depreciaciones activos',
             
         ];
 

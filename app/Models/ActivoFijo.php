@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\DepreciacionActivo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -150,5 +151,10 @@ class ActivoFijo extends Model
         }
 
         return 'secondary';
+    }
+
+    public function depreciaciones()
+    {
+        return $this->hasMany(DepreciacionActivo::class, 'activo_fijo_id');
     }
 }
