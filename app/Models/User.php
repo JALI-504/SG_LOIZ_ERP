@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\CierreCaja;
 use App\Models\BitacoraSistema;
 use App\Models\RespaldoSistema;
+use App\Models\AperturaCaja;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -52,5 +53,15 @@ class User extends Authenticatable
     public function respaldosSistema()
     {
         return $this->hasMany(RespaldoSistema::class, 'user_id');
+    }
+
+    public function aperturasCaja()
+    {
+        return $this->hasMany(AperturaCaja::class, 'user_id');
+    }
+
+    public function aperturasCajaAnuladas()
+    {
+        return $this->hasMany(AperturaCaja::class, 'anulado_por');
     }
 }

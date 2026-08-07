@@ -356,6 +356,11 @@ Route::middleware(['auth'])->group(function () {
     })->name('cierres-caja.registrar-impresion')
         ->middleware(['auth', 'permission:imprimir cierres caja']);
 
+    Route::get('/aperturas-caja', function () {
+        return view('aperturas-caja.index');
+    })->name('aperturas-caja.index')
+        ->middleware('permission:ver aperturas caja');
+
     /*
     |--------------------------------------------------------------------------
     | Bitácora / Auditoría

@@ -133,6 +133,11 @@ class RolesPermisosSeeder extends Seeder
             'ver respaldos',
             'generar respaldos',
             'descargar respaldos',
+
+            // Apertura de caja
+            'ver aperturas caja',
+            'crear aperturas caja',
+            'anular aperturas caja',
             
         ];
 

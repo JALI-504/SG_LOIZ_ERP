@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\AperturaCaja;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -47,6 +48,8 @@ class CierreCaja extends Model
         'fecha_anulacion',
         'anulado_por',
         'motivo_anulacion',
+
+        'apertura_caja_id',
     ];
 
     protected static function booted()
@@ -103,5 +106,10 @@ class CierreCaja extends Model
     public function getEstaCuadradoAttribute()
     {
         return (float) $this->diferencia === 0.0;
+    }
+
+    public function aperturaCaja()
+    {
+        return $this->belongsTo(AperturaCaja::class, 'apertura_caja_id');
     }
 }

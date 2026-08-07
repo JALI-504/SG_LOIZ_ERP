@@ -345,6 +345,12 @@ return [
                     'can'  => 'ver cuentas por cobrar',
                 ],
                 [
+                    'text' => 'Apertura de caja',
+                    'route' => 'aperturas-caja.index',
+                    'icon' => 'fas fa-door-open',
+                    'can' => 'ver aperturas caja',
+                ],
+                [
                     'text' => 'Cierre de caja',
                     'route' => 'cierres-caja.index',
                     'icon' => 'fas fa-cash-register',
