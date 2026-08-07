@@ -19,6 +19,10 @@ class RespaldoIndex extends Component
     public $perPage = 10;
     public $generando = false;
 
+    public $mostrarModalEliminar = false;
+    public $respaldoEliminarId = null;
+    public $respaldoEliminarNombre = null;
+
     public function mount()
     {
         if (!auth()->user()->can('ver respaldos')) {
@@ -149,6 +153,11 @@ class RespaldoIndex extends Component
 
         $respaldo = RespaldoSistema::findOrFail($id);
 
+        if ($respaldo->estado === 'Eliminado') {
+            session()->flash('error', 'Este respaldo ya fue eliminado y no puede descargarse.');
+            return;
+        }
+
         $rutaCompleta = storage_path('app/' . $respaldo->ruta_archivo);
 
         if (!file_exists($rutaCompleta)) {
@@ -202,6 +211,95 @@ class RespaldoIndex extends Component
         }
 
         return null;
+    }
+
+    public function abrirEliminar($id)
+    {
+        if (!auth()->user()->can('eliminar respaldos')) {
+            abort(403, 'No tiene permiso para eliminar respaldos.');
+        }
+
+        $respaldo = RespaldoSistema::findOrFail($id);
+
+        if ($respaldo->estado === 'Eliminado') {
+            session()->flash('error', 'Este respaldo ya fue eliminado.');
+            return;
+        }
+
+        $respaldosGenerados = RespaldoSistema::where('estado', 'Generado')->count();
+
+        if ($respaldosGenerados <= 1) {
+            session()->flash('error', 'No puede eliminar el último respaldo disponible del sistema.');
+            return;
+        }
+
+        $this->respaldoEliminarId = $respaldo->id;
+        $this->respaldoEliminarNombre = $respaldo->nombre_archivo;
+        $this->mostrarModalEliminar = true;
+    }
+
+    public function cerrarModalEliminar()
+    {
+        $this->mostrarModalEliminar = false;
+        $this->respaldoEliminarId = null;
+        $this->respaldoEliminarNombre = null;
+    }
+
+    public function confirmarEliminar()
+    {
+        if (!auth()->user()->can('eliminar respaldos')) {
+            abort(403, 'No tiene permiso para eliminar respaldos.');
+        }
+
+        if (!$this->respaldoEliminarId) {
+            session()->flash('error', 'No se seleccionó ningún respaldo para eliminar.');
+            $this->cerrarModalEliminar();
+            return;
+        }
+
+        $respaldo = RespaldoSistema::findOrFail($this->respaldoEliminarId);
+
+        if ($respaldo->estado === 'Eliminado') {
+            session()->flash('error', 'Este respaldo ya fue eliminado.');
+            $this->cerrarModalEliminar();
+            return;
+        }
+
+        $respaldosGenerados = RespaldoSistema::where('estado', 'Generado')->count();
+
+        if ($respaldosGenerados <= 1) {
+            session()->flash('error', 'No puede eliminar el último respaldo disponible del sistema.');
+            $this->cerrarModalEliminar();
+            return;
+        }
+
+        $datosAnteriores = $respaldo->toArray();
+
+        $rutaCompleta = storage_path('app/' . $respaldo->ruta_archivo);
+        $archivoExistia = file_exists($rutaCompleta);
+
+        if ($archivoExistia) {
+            @unlink($rutaCompleta);
+        }
+
+        $respaldo->update([
+            'estado' => 'Eliminado',
+            'observacion' => 'Respaldo eliminado manualmente desde el sistema. Archivo físico ' . ($archivoExistia ? 'eliminado correctamente.' : 'no encontrado en el servidor.'),
+        ]);
+
+        BitacoraSistema::registrar(
+            'Respaldos',
+            'Eliminar',
+            'Eliminó el respaldo de base de datos ' . $respaldo->nombre_archivo . '.',
+            RespaldoSistema::class,
+            $respaldo->id,
+            $datosAnteriores,
+            $respaldo->fresh()->toArray()
+        );
+
+        $this->cerrarModalEliminar();
+
+        session()->flash('message', 'Respaldo eliminado correctamente.');
     }
 
     public function render()

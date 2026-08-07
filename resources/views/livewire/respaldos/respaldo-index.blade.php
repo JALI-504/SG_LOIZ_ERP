@@ -7,6 +7,14 @@
             </button>
         </div>
     @endif
+    @if (session()->has('message'))
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session('message') }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    @endif
 
     @if (session()->has('error'))
         <div class="alert alert-danger alert-dismissible fade show">
@@ -110,6 +118,10 @@
                                         <span class="badge badge-success">
                                             Generado
                                         </span>
+                                    @elseif ($respaldo->estado === 'Eliminado')
+                                        <span class="badge badge-danger">
+                                            Eliminado
+                                        </span>
                                     @else
                                         <span class="badge badge-secondary">
                                             {{ $respaldo->estado }}
@@ -118,13 +130,25 @@
                                 </td>
 
                                 <td>
-                                    @can('descargar respaldos')
-                                        <button wire:click="descargar({{ $respaldo->id }})"
-                                                class="btn btn-primary btn-sm"
-                                                title="Descargar respaldo">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    @endcan
+                                    @if ($respaldo->estado === 'Generado')
+                                        @can('descargar respaldos')
+                                            <button wire:click="descargar({{ $respaldo->id }})"
+                                                    class="btn btn-primary btn-sm"
+                                                    title="Descargar respaldo">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        @endcan
+
+                                        @can('eliminar respaldos')
+                                            <button wire:click="abrirEliminar({{ $respaldo->id }})"
+                                                    class="btn btn-danger btn-sm"
+                                                    title="Eliminar respaldo">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endcan
+                                    @else
+                                        <span class="text-muted">Sin acciones</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -141,4 +165,62 @@
             {{ $respaldos->links() }}
         </div>
     </div>
+
+    @if ($mostrarModalEliminar)
+        <div class="modal fade show"
+            style="display: block;"
+            tabindex="-1"
+            role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger">
+                        <h5 class="modal-title">
+                            Eliminar respaldo
+                        </h5>
+
+                        <button type="button"
+                                class="close"
+                                wire:click="cerrarModalEliminar">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            Esta acción eliminará el archivo físico del respaldo en el servidor.
+                        </div>
+
+                        <p>
+                            ¿Está seguro de eliminar el respaldo?
+                        </p>
+
+                        <p>
+                            <strong>{{ $respaldoEliminarNombre }}</strong>
+                        </p>
+
+                        <small class="text-muted">
+                            El sistema no permitirá eliminar el último respaldo disponible.
+                        </small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                wire:click="cerrarModalEliminar">
+                            Cancelar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-danger"
+                                wire:click="confirmarEliminar">
+                            <i class="fas fa-trash"></i>
+                            Confirmar eliminación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-backdrop fade show"></div>
+    @endif
 </div>
