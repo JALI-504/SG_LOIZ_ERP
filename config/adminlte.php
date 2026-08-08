@@ -543,6 +543,12 @@ return [
                     'icon' => 'fas fa-chart-line',
                     'can' => 'ver depreciaciones activos',
                 ],
+                [
+                    'text' => 'Reportes',
+                    'route' => 'activos-fijos.reportes',
+                    'icon' => 'fas fa-file-alt',
+                    'can' => 'ver activos fijos',
+                ],
             ],
         ],
         [

@@ -596,6 +596,11 @@ Route::middleware(['auth'])->group(function () {
     })->name('activos-fijos.depreciaciones')
         ->middleware('permission:ver depreciaciones activos');
 
+    Route::get('/activos-fijos/reportes', function () {
+        return view('activos-fijos.reportes');
+    })->name('activos-fijos.reportes')
+        ->middleware('permission:ver activos fijos');
+
     /*
     |--------------------------------------------------------------------------
     | Respaldo - BackUp
