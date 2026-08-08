@@ -629,7 +629,7 @@
         </div>
     </div>
 
-        {{-- Resumen bancario --}}
+    {{-- Resumen bancario --}}
     <div class="card">
         <div class="card-header bg-primary">
             <h3 class="card-title">
@@ -901,6 +901,270 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Resumen activos fijos --}}
+    <div class="card">
+        <div class="card-header bg-secondary">
+            <h3 class="card-title">
+                <i class="fas fa-building"></i>
+                Resumen de activos fijos
+            </h3>
+
+            <div class="card-tools">
+                @can('ver activos fijos')
+                    <a href="{{ route('activos-fijos.index') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-laptop-house"></i>
+                        Activos
+                    </a>
+                @endcan
+
+                @can('ver depreciaciones activos')
+                    <a href="{{ route('activos-fijos.depreciaciones') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-chart-line"></i>
+                        Depreciaciones
+                    </a>
+                @endcan
+
+                @can('ver activos fijos')
+                    <a href="{{ route('activos-fijos.reportes') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-file-alt"></i>
+                        Reportes
+                    </a>
+                @endcan
+            </div>
+        </div>
+
+        <div class="card-body">
+            {{-- Cuadros resumen --}}
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h4>{{ number_format($totalActivosFijosVigentes, 0) }}</h4>
+                            <p>Activos vigentes</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-laptop-house"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h4>L {{ number_format($valorLibrosActivosFijos, 2) }}</h4>
+                            <p>Valor en libros</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h4>L {{ number_format($depreciacionAcumuladaActivosFijos, 2) }}</h4>
+                            <p>Depreciación acumulada</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="small-box {{ $activosFijosEnAlerta > 0 ? 'bg-danger' : 'bg-primary' }}">
+                        <div class="inner">
+                            <h4>{{ number_format($activosFijosEnAlerta, 0) }}</h4>
+                            <p>Mantenimiento / dañados</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Detalles --}}
+            <div class="row">
+                {{-- Últimos activos registrados --}}
+                <div class="col-md-4">
+                    <div class="card card-outline card-info">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-plus-circle"></i>
+                                Últimos activos registrados
+                            </h3>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Activo</th>
+                                        <th>Valor libros</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse ($ultimosActivosFijos as $activo)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $activo->codigo }}</strong><br>
+                                                {{ $activo->nombre }}
+
+                                                @if ($activo->categoriaActivo)
+                                                    <br>
+                                                    <span class="badge badge-info">
+                                                        {{ $activo->categoriaActivo->nombre }}
+                                                    </span>
+                                                @endif
+
+                                                <br>
+                                                <span class="badge badge-{{ $activo->estado_clase }}">
+                                                    {{ $activo->estado }}
+                                                </span>
+                                            </td>
+
+                                            <td class="text-right">
+                                                <strong>
+                                                    L {{ number_format($activo->valor_en_libros, 2) }}
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                No hay activos registrados.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Últimos retiros --}}
+                <div class="col-md-4">
+                    <div class="card card-outline card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Últimos activos retirados
+                            </h3>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Activo</th>
+                                        <th>Recuperado</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse ($ultimosActivosFijosRetirados as $activo)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $activo->codigo }}</strong><br>
+                                                {{ $activo->nombre }}
+
+                                                @if ($activo->tipo_baja)
+                                                    <br>
+                                                    <span class="badge badge-secondary">
+                                                        {{ $activo->tipo_baja }}
+                                                    </span>
+                                                @endif
+
+                                                @if ($activo->fecha_baja)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {{ \Carbon\Carbon::parse($activo->fecha_baja)->format('d/m/Y') }}
+                                                    </small>
+                                                @endif
+                                            </td>
+
+                                            <td class="text-right">
+                                                <strong>
+                                                    L {{ number_format($activo->valor_recuperado, 2) }}
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                No hay activos retirados.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alertas --}}
+                <div class="col-md-4">
+                    <div class="card card-outline {{ $activosFijosEnAlerta > 0 || $activosFijosRobadosExtraviados > 0 ? 'card-warning' : 'card-success' }}">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-bell"></i>
+                                Alertas de activos
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+                            @if ($activosFijosEnAlerta > 0)
+                                <div class="alert alert-warning">
+                                    <strong>Atención:</strong>
+                                    hay {{ number_format($activosFijosEnAlerta, 0) }} activo(s) en mantenimiento o dañados.
+                                </div>
+                            @else
+                                <div class="alert alert-success">
+                                    No hay activos dañados o en mantenimiento.
+                                </div>
+                            @endif
+
+                            @if ($activosFijosRobadosExtraviados > 0)
+                                <div class="alert alert-danger">
+                                    <strong>Robados / extraviados:</strong>
+                                    {{ number_format($activosFijosRobadosExtraviados, 0) }} activo(s).
+                                </div>
+                            @else
+                                <div class="alert alert-success">
+                                    No hay activos robados o extraviados registrados.
+                                </div>
+                            @endif
+
+                            <div class="alert alert-info mb-0">
+                                <strong>Depreciado en {{ $periodoActualDepreciacion }}:</strong><br>
+                                L {{ number_format($totalDepreciadoPeriodoActual, 2) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Resumen financiero corto --}}
+            <div class="alert alert-light border mb-0">
+                <strong>Valor de compra vigente:</strong>
+                L {{ number_format($valorCompraActivosFijos, 2) }}
+
+                <span class="mx-2">|</span>
+
+                <strong>Valor en libros:</strong>
+                L {{ number_format($valorLibrosActivosFijos, 2) }}
+
+                <span class="mx-2">|</span>
+
+                <strong>Activos retirados:</strong>
+                {{ number_format($activosFijosRetirados, 0) }}
             </div>
         </div>
     </div>

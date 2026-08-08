@@ -16,6 +16,8 @@ use App\Models\RespaldoSistema;
 use App\Models\CuentaBancaria;
 use App\Models\MovimientoBancario;
 use App\Models\ConciliacionBancaria;
+use App\Models\ActivoFijo;
+use App\Models\DepreciacionActivo;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -43,10 +45,10 @@ class DashboardIndex extends Component
         $finMes = now()->endOfMonth()->format('Y-m-d');
 
         /*
-|--------------------------------------------------------------------------
-| Resumen bancario
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Resumen bancario
+        |--------------------------------------------------------------------------
+        */
 
         $saldoTotalBancos = CuentaBancaria::where('activo', true)
             ->sum('saldo_actual');
@@ -182,10 +184,10 @@ class DashboardIndex extends Component
             ->count();
 
         /*
-|--------------------------------------------------------------------------
-| Cuentas por cobrar
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Cuentas por cobrar
+        |--------------------------------------------------------------------------
+        */
 
         $cuentasPorCobrarPendientes = Venta::query()
             ->where('estado', '!=', 'Anulada')
@@ -198,10 +200,10 @@ class DashboardIndex extends Component
             ->count();
 
         /*
-|--------------------------------------------------------------------------
-| Cotizaciones
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Cotizaciones
+        |--------------------------------------------------------------------------
+        */
 
         $cotizacionesPendientes = Cotizacion::query()
             ->where('estado', 'Pendiente')
@@ -232,10 +234,10 @@ class DashboardIndex extends Component
             ->get();
 
         /*
-|--------------------------------------------------------------------------
-| Órdenes de trabajo
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Órdenes de trabajo
+        |--------------------------------------------------------------------------
+        */
 
         $ordenesPendientes = OrdenTrabajo::query()
             ->where('estado', 'Pendiente')
@@ -414,6 +416,51 @@ class DashboardIndex extends Component
             })
             ->toArray();
 
+        /*
+|--------------------------------------------------------------------------
+| Resumen de activos fijos
+|--------------------------------------------------------------------------
+*/
+
+        $totalActivosFijosVigentes = ActivoFijo::whereNotIn('estado', ['Dado de baja', 'Vendido'])
+            ->count();
+
+        $valorCompraActivosFijos = ActivoFijo::whereNotIn('estado', ['Dado de baja', 'Vendido'])
+            ->sum('valor_compra');
+
+        $depreciacionAcumuladaActivosFijos = ActivoFijo::whereNotIn('estado', ['Dado de baja', 'Vendido'])
+            ->sum('depreciacion_acumulada');
+
+        $valorLibrosActivosFijos = ActivoFijo::whereNotIn('estado', ['Dado de baja', 'Vendido'])
+            ->sum('valor_en_libros');
+
+        $activosFijosEnAlerta = ActivoFijo::whereIn('estado', ['En mantenimiento', 'Dañado'])
+            ->count();
+
+        $activosFijosRetirados = ActivoFijo::whereIn('estado', ['Dado de baja', 'Vendido'])
+            ->count();
+
+        $activosFijosRobadosExtraviados = ActivoFijo::whereIn('tipo_baja', ['Robado', 'Extraviado'])
+            ->count();
+
+        $ultimosActivosFijos = ActivoFijo::with('categoriaActivo')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $ultimosActivosFijosRetirados = ActivoFijo::with('categoriaActivo')
+            ->whereIn('estado', ['Dado de baja', 'Vendido'])
+            ->orderByDesc('fecha_baja')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $periodoActualDepreciacion = now()->format('Y-m');
+
+        $totalDepreciadoPeriodoActual = DepreciacionActivo::where('estado', 'Registrada')
+            ->where('periodo', $periodoActualDepreciacion)
+            ->sum('monto');
+
         return view('livewire.dashboard.dashboard-index', [
 
             'hoy' => $hoy,
@@ -496,6 +543,18 @@ class DashboardIndex extends Component
             'conciliacionesConDiferencia' => $conciliacionesConDiferencia,
             'ultimaConciliacionBancaria' => $ultimaConciliacionBancaria,
             'cuentasBancariasResumen' => $cuentasBancariasResumen,
+
+            'totalActivosFijosVigentes' => $totalActivosFijosVigentes,
+            'valorCompraActivosFijos' => $valorCompraActivosFijos,
+            'depreciacionAcumuladaActivosFijos' => $depreciacionAcumuladaActivosFijos,
+            'valorLibrosActivosFijos' => $valorLibrosActivosFijos,
+            'activosFijosEnAlerta' => $activosFijosEnAlerta,
+            'activosFijosRetirados' => $activosFijosRetirados,
+            'activosFijosRobadosExtraviados' => $activosFijosRobadosExtraviados,
+            'ultimosActivosFijos' => $ultimosActivosFijos,
+            'ultimosActivosFijosRetirados' => $ultimosActivosFijosRetirados,
+            'periodoActualDepreciacion' => $periodoActualDepreciacion,
+            'totalDepreciadoPeriodoActual' => $totalDepreciadoPeriodoActual,
         ]);
     }
 }
